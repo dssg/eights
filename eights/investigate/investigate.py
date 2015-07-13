@@ -14,8 +14,11 @@ def open_JSON():
 def describe_col(col):
     return describe_column(col)
 def describe_all(M):
+    #TODO takes matrix OR list of columns
     return [describe_column(M[x]) for x in M.dtype.names]
-def histogram(L, n = len(L)): 
+def histogram(L, n=None): 
+    if n is None:
+        n = len(L)
     return Counter(L).most_common(n)
 def print_crosstab(L_1, L_2):
     #assume np.structured arrays?
@@ -24,7 +27,7 @@ def print_crosstab(L_1, L_2):
     return crosstab_dict
 
 
-def box_plot(col):
+def plot_box_plot(col):
     """Makes a box plot for a feature
     comment
     

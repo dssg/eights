@@ -3,33 +3,41 @@ from collections import Counter
 
 from truncate_helper import *
 
-def remove_cols_if_all_same_value(M):
-    remove_column_list =[name for name in M.dtype.names if are_all_col_equal(M[name])]
-    M = remove_these_columns(M, remove_column_list)
-    return M
-    
-def remove_cols_if_one_unique_value(M):
-    remove_column_list = [name for name in M.name if is_only_one_unique(M[name])]
-    M = remove_cols(M, remove_column_list)
-    return M    
+def col_has_all_same_val(col):
+    return np.all(col==col[0])
 
-def remove_cols_if_few_unique_values(M,threshold):
-    remove_column_list =[name for name in M.name if are_few_unique(M[name],threshold)]
-    M = remove_cols(M, remove_column_list)
-    return M
-    
-#Negative examples(critera flip floped here
-def remove_rows_if_too_far_from(M, col_id, origin, dist):
-    remove_row_list = [row_id for row_id, entry in enumerate(M[col_id]) if too_far_from(entry, origin, max_dist)]
-    M = remove_rows(M, remove_row_list)
-    return M
-    
-#negative example(ie ousdie region)
-def remove_rows_if_outside_region(M, col_id, region):
-    remove_row_list = [row_id for row_id, entry in enumerate(M[col_id]) if not is_within_region(entry, region)]
-    M = remove_rows(M, remove_row_list)
-    return M
+def col_has_one_unique_val(col):
+    d = Counter(col)
+    if len(d) == 2: #ignores case for -999, null
+        return (1 in d.values())
+    return False
 
+def col_has_few_unique_values(col):
+    d = Counter(col)
+    vals = sort(d.values())
+    return ( sum(vals[:-1]) < threshold) 
 
+def remove_cols(M):
+    raise NotImplementedError
+
+def remove_rows_if_true(M, lamd):
+    raise NotImplementedError
+
+def row_val_eq(M, col_name, boundary):
+    return M[col_name] == boundary
+
+def row_val_lt(M, col_name, boundary):
+    return M[col_name] < boundary
+
+def row_val_gt(M, col_name, boundary):
+    return M[col_name] > boundary
+
+def row_val_between(M, col_name, boundary):
+    return np.and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
+
+def row_not_within_region(M, col_name, boundar):
+    raise NotImplementedError:
+
+    
     
 

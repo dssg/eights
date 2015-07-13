@@ -2,21 +2,6 @@ import csv
 import numpy as np
 from collections import Counter
 
-@np.vectorize
-def validate_time(date_text):
-    if not date_text:
-        return False
-    try:
-        np.datetime64(date_text)
-        return True
-    except ValueError:
-        return False
-
-def str_to_time(date_text):
-    try:
-        return np.datetime64(date_text)
-    except ValueError:
-        return np.datetime64('NaT')    
 
 def open_simple_csv_as_list(file_loc):
     with open(file_loc, 'rb') as f:
@@ -58,44 +43,6 @@ def set_structured_array_datetime_as_day(first_pass,file_loc):
                          converters=converter, missing_values=missing_values,
                          filling_values=filling_values)
  
-def cast_np_nd_to_sa(nd, dtype=None):
-    """
-    
-    Returns a view of a numpy, single-type, 0, 1 or 2-dimensional array as a
-    structured array
-    Parameters
-    ----------
-    nd : numpy.ndarray
-        The array to view
-    dtype : numpy.dtype or None (optional)
-        The type of the structured array. If not provided, or None, nd.dtype is
-        used for all columns.
-        If the dtype requested is not homogeneous and the datatype of each
-        column is not identical nd.dtype, this operation may involve copying
-        and conversion. Consequently, this operation should be avoided with
-        heterogeneous or different datatypes.
-    Returns
-    -------
-    A structured numpy.ndarray
-    """
-    if nd.ndim not in (0, 1, 2):
-        raise TypeError('np_nd_to_sa only takes 0, 1 or 2-dimensional arrays')
-    nd_dtype = nd.dtype
-    if nd.ndim <= 1:
-        nd = nd.reshape(nd.size, 1)
-    if dtype is None:
-        n_cols = nd.shape[1]
-        dtype = np.dtype({'names': map('f{}'.format, xrange(n_cols)),
-                          'formats': [nd_dtype for i in xrange(n_cols)]})
-        return nd.reshape(nd.size).view(dtype)
-    type_len = nd_dtype.itemsize
-    if all(dtype[i] == nd_dtype for i in xrange(len(dtype))):
-        return nd.reshape(nd.size).view(dtype)
-    # if the user requests an incompatible type, we have to convert
-    cols = (nd[:,i].astype(dtype[i]) for i in xrange(len(dtype))) 
-    return np.array(it.izip(*cols), dtype=dtype)
-    
-
 def convert_list_to_structured_array(L, col_names, type_info):
     type_fixed = []
     for idx, x in enumerate(type_info):
