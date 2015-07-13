@@ -1,0 +1,23 @@
+import numpy as np
+
+def print_Matrix_row_col(M, L_1, L_2,):
+    row_format ="{:>15}" * (len(L_2) + 1)
+    print row_format.format("", *L_2)
+    for team, row in zip(L_1, M):
+        print row_format.format(team, *row)
+    return None
+
+def print_crosstab_dict(a_dict):
+    #MOVE THIS
+    K_1 = a_dict.keys()
+    K_2 = np.unique([item for sublist in [list(x.elements()) for x in a_dict.values()] for item in sublist])
+    #Here for simplicity REMOVE
+    M = np.zeros(shape=(len(K_1),len(K_2)))
+    for idx, x in enumerate(K_1):
+        for idy, y in enumerate(K_2):
+            M[idx,idy] = a_dict[x][y]
+    row_format ="{:>15}" * (len(K_2) + 1)
+    print row_format.format("", *K_2)
+    for team, row in zip(K_1, M):
+        print row_format.format(team, *row)
+    return None
