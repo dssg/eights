@@ -1,6 +1,6 @@
 import numpy as np
 
-def print_Matrix_row_col(M, L_1, L_2,):
+def print_matrix_row_col(M, L_1, L_2,):
     row_format ="{:>15}" * (len(L_2) + 1)
     print row_format.format("", *L_2)
     for team, row in zip(L_1, M):
@@ -21,3 +21,21 @@ def print_crosstab_dict(a_dict):
     for team, row in zip(K_1, M):
         print row_format.format(team, *row)
     return None
+
+# all of the below take output from any func in perambulate or operate
+
+def generate_report(info):
+    raise NotImplementedError
+
+def plot_roc(info):
+    raise NotImplementedError
+
+def plot_prec_recall(info):
+    raise NotImplementedError
+
+def get_top_features(info):
+    raise NotImplementedError
+
+def get_roc_auc(info):
+    raise NotImplementedError
+
