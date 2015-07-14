@@ -5,7 +5,7 @@ import numpy as np
 
 
 from collections import Counter
-from pylab import pcolor, show, colorbar, xticks, yticks, figure
+import matplotlib.pyplot as plt
 
 def open_csv(file_loc):
     f = open_csv_as_structured_array(file_loc)
@@ -79,14 +79,13 @@ def plot_correlation_matrix(M):
     
     cc = np.corrcoef(M, rowvar=0)
     
-    fig = figure()
-    pcolor(cc)
-    colorbar()
-    yticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
-    xticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
+    fig = plt.figure()
+    plt.pcolor(cc)
+    plt.colorbar()
+    plt.yticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
+    plt.xticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
     return fig
     #set rowvar =0 for rows are items, cols are features
-    raise NotImplementedError
     
 def plot_correlation_scatter_plot(M):
     """Makes a grid of scatter plots representing relationship between variables
@@ -102,7 +101,52 @@ def plot_correlation_scatter_plot(M):
     matplotlib.figure.Figure
     
     """
-    raise NotImplementedError
+    # TODO work for all three types that M might be
+    # TODO ignore classification variables
+    # adapted from the excellent 
+    # http://stackoverflow.com/questions/7941207/is-there-a-function-to-make-scatterplot-matrices-in-matplotlib
+    
+    if is_sa(M):
+        names = M.dtype.names
+        M = cast_np_sa_to_nd(M)
+    else:
+        names = ['f{}'.format(i) for i in xrange(M.shape[1])]    
+
+    numvars, numdata = M.shape
+    fig, axes = plt.subplots(nrows=numvars, ncols=numvars)
+    fig.subplots_adjust(hspace=0.05, wspace=0.05)
+
+    for ax in axes.flat:
+        # Hide all ticks and labels
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_visible(False)
+
+        # Set up ticks only on one side for the "edge" subplots...
+        if ax.is_first_col():
+            ax.yaxis.set_ticks_position('left')
+        if ax.is_last_col():
+            ax.yaxis.set_ticks_position('right')
+        if ax.is_first_row():
+            ax.xaxis.set_ticks_position('top')
+        if ax.is_last_row():
+            ax.xaxis.set_ticks_position('bottom')
+
+    # Plot the M.
+    for i, j in zip(*np.triu_indices_from(axes, k=1)):
+        for x, y in [(i,j), (j,i)]:
+            axes[x,y].plot(M[x], M[y], **kwargs)
+
+    # Label the diagonal subplots...
+    for i, label in enumerate(names):
+        axes[i,i].annotate(label, (0.5, 0.5), xycoords='axes fraction',
+                ha='center', va='center')
+
+    # Turn on the proper x or y axes ticks.
+    for i, j in zip(range(numvars), itertools.cycle((-1, 0))):
+        axes[j,i].xaxis.set_visible(True)
+        axes[i,j].yaxis.set_visible(True)
+
+    return fig
     
 def plot_histogram(col, missing_val=np.nan):
     """Plot histogram of variables in col

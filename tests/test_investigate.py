@@ -6,6 +6,7 @@ utils.add_to_python_path()
 
 from eights.investigate.investigate import open_csv, describe_col
 from eights.investigate.investigate import plot_correlation_matrix
+from eights.investigate.investigate import plot_correlation_scatter_plot
 
 class TestInvestigate(unittest.TestCase):
     def test_open_csv(self):
@@ -22,6 +23,12 @@ class TestInvestigate(unittest.TestCase):
     def test_plot_correlation_matrix(self):
         data = rand(100, 10)
         fig = plot_correlation_matrix(data)
+        
+    def test_plot_correlation_scatter_plot(self):
+        data = rand(100, 10)
+        fig = plot_correlation_scatter_plot(data)
+        fig.show()
+        import pdb; pdb.set_trace()
 
 
 if __name__ == '__main__':
