@@ -1,3 +1,4 @@
+import numpy as np
 
 @np.vectorize
 def validate_time(date_text):
@@ -85,3 +86,10 @@ def dist_less_than(lat_1, lon_1, lat_2, lon_2, threshold):
     
     """
     return (distance(lat_1, lon_1, lat_2, lon_2) < threshold)
+    
+def is_sa(M):
+    return is_nd(M) and M.dtype.names is not None
+    
+def is_nd(M):
+    return isinstance(M, np.ndarray)
+

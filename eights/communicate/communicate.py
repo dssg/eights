@@ -8,7 +8,6 @@ def print_matrix_row_col(M, L_1, L_2,):
     return None
 
 def print_crosstab_dict(a_dict):
-    #MOVE THIS
     K_1 = a_dict.keys()
     K_2 = np.unique([item for sublist in [list(x.elements()) for x in a_dict.values()] for item in sublist])
     #Here for simplicity REMOVE
@@ -21,6 +20,17 @@ def print_crosstab_dict(a_dict):
     for team, row in zip(K_1, M):
         print row_format.format(team, *row)
     return None
+    
+def print_describe_all(a_dict):
+    K_1 = a_dict.keys()
+    K_2 = a_dict.values()
+    row_format ="{:>15}" * (2)
+    print row_format.format("", *a_dict.keys())
+    for team, row in zip(K_1, K_2):
+        print row_format.format(team, row)
+    return None
+    
+    
 
 # all of the below take output from any func in perambulate or operate
 

@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 from collections import Counter
-
+from ..utils import *
 
 def open_simple_csv_as_list(file_loc):
     with open(file_loc, 'rb') as f:
@@ -61,13 +61,13 @@ def convert_list_to_structured_array(L, col_names, type_info):
 
 def describe_column(col):
     if col.dtype.kind not in ['f','i']:
-        return []
+        return {}
     cnt = len(col)
     mean = np.mean(np.array(col))
     std = np.std(np.array(col))
     mi = min(col)
     mx = max(col)
-    return [cnt, mean, std, mi, mx]
+    return {'Count:' : cnt,'Mean:': mean, 'Standard Dev:': std, 'Minimal ': mi,'Maximal:': mx}
 
 def crosstab(L_1, L_2):
     #is this nessasry?
