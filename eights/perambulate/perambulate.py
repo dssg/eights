@@ -24,13 +24,14 @@ subset_iters = {SWEEP_TRAINING_SIZE: subset_sweep_training_size}
 
 sk_learn_cvs = {K_FOLD: KFOLD}
 #TODO others
-    
-class Experiment(object):
-    def __init__(self, clfs={}, subsets={}, cvs={}):
-        self.clfs = clfs
-        self.subsets = subsets
-        self.cvs = cvs
 
+class Run(object):
+    def __init__(
+        self,
+        clf,
+        test_indices):
+        self.clf = clf
+        self.test_indices = test_indices
 
 class Trial(object):
     def __init__(
@@ -51,6 +52,74 @@ class Trial(object):
         self.cv_id = cv_id
         self.cv_params = cv_params
 
+    def run(self):
+        runs = []
+        for subset in subset_iters[self.subset_id](**self.subst_params):
+            runs_this_subset = []
+            y_sub = self.y[subset]
+            M_sub = self.M[subset]
+            cv_cls = sk_learn_cvs[self.cv_id]
+            cv_kwargs = **self.cv_param
+            expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
+            if 'n' in expected_cv_kwargs:
+                cv_kwargs['n'] = y_sub.shape[0]
+            if 'y' in expected_cv_kwargs:
+                cv_kwargs['y'] = y_sub
+            cv_inst = cv_cls(**cv_kwargs)
+            for train, test in cv_inst:
+                clf_inst = sk_learn_clfs[self.clf_id](**self.clf_params)
+                clf_inst.fit(M_sub[train], y_sub[train])
+                test_indices = subset[test]
+                runs_this_subset.append(Run(clf_inst, test_indices))
+            runs.append(runs_this_subset)    
+        self.runs = runs
+        return runs
+    
+class Experiment(object):
+    def __init__(self, M, y, clfs={}, subsets={}, cvs={}):
+        self.M = M
+        self.y = y
+        self.clfs = clfs
+        self.subsets = subsets
+        self.cvs = cvs
+        self.trials = None
+        
+    def __run_all_trials(self, trials):
+        # TODO some multiprocess thing
+        
+        for trial in trials:
+            trial.run()
+            
+    def __trainspose_dict_of_lists(self, dol):
+        # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
+        return (dict(izip(dol, x)) for 
+                x in product(*dol.itervalues()))
+
+    def run(self):
+        trials = []
+        for clf_id in self.clfs:
+            all_clf_ps = self.clfs[clf_id]
+            for clf_params in self.__transpose_dict_of_lists(all_clf_ps):
+                for subset_id in self.subsets:
+                    all_sub_ps = self.subsets[subset_id]
+                    for subset_params in self.__transpose_dict_of_lists(all_sub_ps):
+                        for cv_id in self.cvs:
+                            all_cv_ps = self.cvs[cv_id]
+                            for cv_params in self.__transpose_dict_of_lists(all_cv_ps):
+                                trial = Trial(
+                                    M=self.M,
+                                    y=self.y,
+                                    clf_id=clf_id,
+                                    clf_params=clf_params,
+                                    subset_id=subset_id,
+                                    subset_params=subset_params,
+                                    cv_id=cv_id
+                                    cv_params=cv_params)
+                                trials.append(trial)
+        self.__run_all_trials(trials)
+        self.trials = trials
+        return trials
+
 def subset_sweep_training_size(y, subset_size, n_subsets):
     
     count = Counter(y)
@@ -65,70 +134,6 @@ def subset_sweep_training_size(y, subset_size, n_subsets):
         yield all_indices
 
 
-class Run(object):
-    def __init__(
-        self,
-        clf,
-        test_indices):
-        self.clf = clf
-        self.test_indices = test_indices
-
-def run_trial(trail):
-    
-    runs = []
-    for subset in subset_iters[trail.subset_id](**trial.subst_params):
-        y_sub = trial.y[subset]
-        M_sub = trial.M[subset]
-        cv_cls = sk_learn_cvs[trial.cv_id]
-        cv_kwargs = **trial.cv_param
-        expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
-        if 'n' in expected_cv_kwargs:
-            cv_kwargs['n'] = y_sub.shape[0]
-        if 'y' in expected_cv_kwargs:
-            cv_kwargs['y'] = y_sub
-        cv_inst = cv_cls(**cv_kwargs)
-        for train, test in cv_inst:
-            clf_inst = sk_learn_clfs[trial.clf_id](**trial.clf_params)
-            clf_inst.fit(M_sub[train], y_sub[train])
-            test_indices = subset[test]
-            runs.append(Run(clf_inst, test_indices))
-            
-    trial.runs = runs
-    
-def run_all_trials(trials):
-    # TODO some multiprocess thing
-    
-    for trial in trials:
-        run_trial(trial)
-        
-def trainspose_dict_of_lists(dol):
-    # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
-    return (dict(izip(dol, x)) for 
-            x in product(*dol.itervalues()))
-
-def run_experiment(M, y, experiment):
-    trial = []
-    for clf_id in exeriment.clfs:
-        all_clf_ps = experiment.clfs[clf_id]
-        for clf_params in transpose_dict_of_lists(all_clf_ps):
-            for subset_id in experiment.subsets:
-                all_sub_ps = experiment.subsets[subset_id]
-                for subset_params in transpose_dict_of_lists(all_sub_ps):
-                    for cv_id in experiment.cvs:
-                        all_cv_ps = experiment.cvs[cv_id]
-                        for cv_params in transpose_dict_of_lists(all_cv_ps):
-                            trial = Trial(
-                                M-M,
-                                y=y,
-                                clf_id=clf_id,
-                                clf_params=clf_params,
-                                subset_id=subset_id,
-                                subset_params=subset_params,
-                                cv_id=cv_id
-                                cv_params=cv_params)
-                            trials.append(trial)
-    run_all_trials(trials)
-    return trials
 
 def sliding_window(l,w,tst_w):
     ret = []
