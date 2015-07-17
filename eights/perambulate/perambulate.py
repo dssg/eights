@@ -1,3 +1,9 @@
+import inspect
+import itertools as it
+import numpy as np
+
+from collections import Counter
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC as SKSVC
 from sklearn.tree import DecisionTreeClassifier
@@ -7,23 +13,38 @@ from sklearn.cross_validation import KFold
 from random import sample
 
 (RF, SVC, DESC_TREE, ADA_BOOST,
-NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE,
-NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD) = range(12)
+ NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE,
+ NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD) = range(11)
 
 clf_ids =  (RF, SVC, DESC_TREE, ADA_BOOST)
 subset_ids = (NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE)
 cv_ids = (NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD)
     
-sk_learn_clfs = {RF: RandomForestClassifier,
-                 SVC: SKSVC,
-                 DESC_TREE: DecisionTreeClassifier,
-                 ADA_BOOST: AdaBoostClassifier}   
+def subset_sweep_training_size(y, subset_size, n_subsets=3):
+    
+    count = Counter(y)
+    size_space = float(sum(count.values()))
+    proportions = {key: count[key] / size_space for key in count}
+    n_choices = {key: int(proportions[key] * subset_size) for 
+                 key in proportions}
+    indices = {key: np.where(y == key)[0] for key in count}
+    for _ in xrange(n_subsets):
+        samples = {key: sample(indices[key], n_choices[key]) for key in count}
+        all_indices = np.sort(np.concatenate(samples.values()))
+        yield all_indices
+
+
     
 subset_iters = {SWEEP_TRAINING_SIZE: subset_sweep_training_size}
 #TODO others    
 
-sk_learn_cvs = {K_FOLD: KFOLD}
+sk_learn_cvs = {K_FOLD: KFold}
 #TODO others
+
+sk_learn_clfs = {RF: RandomForestClassifier,
+                 SVC: SKSVC,
+                 DESC_TREE: DecisionTreeClassifier,
+                 ADA_BOOST: AdaBoostClassifier}   
 
 class Run(object):
     def __init__(
@@ -44,6 +65,8 @@ class Trial(object):
         subset_params={},
         cv_id=NO_CV,
         cv_params={}):
+        self.M = M
+        self.y = y
         self.runs = None
         self.clf_id = clf_id
         self.clf_params = clf_params
@@ -54,12 +77,12 @@ class Trial(object):
 
     def run(self):
         runs = []
-        for subset in subset_iters[self.subset_id](**self.subst_params):
+        for subset in subset_iters[self.subset_id](self.y, **self.subset_params):
             runs_this_subset = []
             y_sub = self.y[subset]
             M_sub = self.M[subset]
             cv_cls = sk_learn_cvs[self.cv_id]
-            cv_kwargs = **self.cv_param
+            cv_kwargs = self.cv_params
             expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
             if 'n' in expected_cv_kwargs:
                 cv_kwargs['n'] = y_sub.shape[0]
@@ -90,10 +113,10 @@ class Experiment(object):
         for trial in trials:
             trial.run()
             
-    def __trainspose_dict_of_lists(self, dol):
+    def __transpose_dict_of_lists(self, dol):
         # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
-        return (dict(izip(dol, x)) for 
-                x in product(*dol.itervalues()))
+        return (dict(it.izip(dol, x)) for 
+                x in it.product(*dol.itervalues()))
 
     def run(self):
         trials = []
@@ -113,26 +136,12 @@ class Experiment(object):
                                     clf_params=clf_params,
                                     subset_id=subset_id,
                                     subset_params=subset_params,
-                                    cv_id=cv_id
+                                    cv_id=cv_id,
                                     cv_params=cv_params)
                                 trials.append(trial)
         self.__run_all_trials(trials)
         self.trials = trials
         return trials
-
-def subset_sweep_training_size(y, subset_size, n_subsets):
-    
-    count = Counter(y)
-    size_space = float(sum(count.values()))
-    proportions = {key: count[key] / size_space for key in count}
-    n_choices = {key: int(proportions[key] * subset_size) for 
-                 key in proportions}
-    indices = {key: np.where(y == key)[0] for key in count}
-    for _ in xrange(n_subsets):
-        samples = {key: sample(indices[key], n_choices[key]) for key in count}
-        all_indices = np.sort(np.concatenate(samples.values()))
-        yield all_indices
-
 
 
 def sliding_window(l,w,tst_w):

@@ -1,18 +1,25 @@
-# from sklearn tutorial
+import unittest
 
-from eights.perambulate.perambulate import run_experiment, Experiment
+from sklearn import datasets
 
-class TestSKLearnParity(unittest.TestCase):
+import utils_for_tests as utils
+utils.add_to_python_path()
 
-    def test_sklearn_parity(self):
+from eights.perambulate.perambulate import *
+
+class TestPerambulate(unittest.TestCase):
+
+    def test_perambulate(self):
         iris = datasets.load_iris()
-
         y = iris.target
         M = iris.data
-        # Converts 2-dimensional homogeneous array to structured array
-        M = cast_np_nd_to_sa(M)
+        clfs = {RF: {}}
+        subsets = {SWEEP_TRAINING_SIZE: {'subset_size': [10]}}
+        cvs = {K_FOLD: {}}
+        exp = Experiment(M, y, clfs, subsets, cvs)
+        print exp.run()
 
-	exp = Experiment(...)
-
+if __name__ == '__main__':
+    unittest.main()
 	
 
