@@ -14,11 +14,10 @@ class TestPerambulate(unittest.TestCase):
         y = iris.target
         M = iris.data
         clfs = {RF: {}}
-        subsets = {SWEEP_TRAINING_SIZE: {'subset_size': [10]}}
+        subsets = {SWEEP_TRAINING_SIZE: {'subset_size': [20, 40, 60, 80, 100]}}
         cvs = {K_FOLD: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
-        print exp.run()
-        import pdb; pdb.set_trace()
+        print exp.average_score()
 
 if __name__ == '__main__':
     unittest.main()

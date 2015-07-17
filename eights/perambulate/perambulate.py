@@ -117,6 +117,17 @@ class Trial(object):
             runs.append(runs_this_subset)    
         self.runs = runs
         return runs
+
+    def average_score(self):
+        self.run()
+        M = self.M
+        y = self.y
+        return np.mean(
+                [np.mean(
+                    [run.clf.score(
+                        M[run.test_indices], y[run.test_indices])
+                     for run in subset])
+                 for subset in self.runs])
     
 class Experiment(object):
     def __init__(self, M, y, clfs={}, subsets={}, cvs={}):
@@ -174,6 +185,9 @@ class Experiment(object):
         self.trials = trials
         return trials
 
+    def average_score(self):
+        self.run()
+        return [(trial, trial.average_score()) for trial in self.trials]
 
 def sliding_window(l,w,tst_w):
     ret = []
