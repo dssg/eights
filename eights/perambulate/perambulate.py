@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC as SKSVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.cross_validation import KFold
+from sklearn.cross_validation import KFold, StratifiedKFold
 
 from random import sample
 
@@ -38,7 +38,9 @@ def subset_sweep_training_size(y, subset_size, n_subsets=3):
 subset_iters = {SWEEP_TRAINING_SIZE: subset_sweep_training_size}
 #TODO others    
 
-sk_learn_cvs = {K_FOLD: KFold}
+sk_learn_cvs = {K_FOLD: KFold,
+                STRAT_ACTUAL_K_FOLD: StratifiedKFold,
+                STRAT_EVEN_K_FOLD: StratifiedKFold}
 #TODO others
 
 sk_learn_clfs = {RF: RandomForestClassifier,
@@ -55,9 +57,8 @@ class Run(object):
         self.test_indices = test_indices
 
     def __repr__(self):
-        return 'Run(clf={}, test_indices={})'.format(
-                self.clf, 
-                self.test_indices)
+        return 'Run(clf={})'.format(
+                self.clf)
 
 class Trial(object):
     def __init__(
