@@ -18,6 +18,7 @@ class TestPerambulate(unittest.TestCase):
         cvs = {K_FOLD: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
         print exp.run()
+        import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
     unittest.main()

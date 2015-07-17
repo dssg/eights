@@ -54,6 +54,11 @@ class Run(object):
         self.clf = clf
         self.test_indices = test_indices
 
+    def __repr__(self):
+        return 'Run(clf={}, test_indices={})'.format(
+                self.clf, 
+                self.test_indices)
+
 class Trial(object):
     def __init__(
         self, 
@@ -75,7 +80,22 @@ class Trial(object):
         self.cv_id = cv_id
         self.cv_params = cv_params
 
+    def __repr__(self):
+        return ('Trial(clf_id={}, clf_params={}, subset_id={}, '
+                'subset_params={}, cv_id={}, cv_params={})').format(
+                        self.clf_id,
+                        self.clf_params,
+                        self.subset_id,
+                        self.subset_params,
+                        self.clf_id,
+                        self.cv_params)
+
+    def has_run(self):
+        return self.runs is not None
+
     def run(self):
+        if self.has_run():
+            return self.runs
         runs = []
         for subset in subset_iters[self.subset_id](self.y, **self.subset_params):
             runs_this_subset = []
@@ -106,6 +126,12 @@ class Experiment(object):
         self.subsets = subsets
         self.cvs = cvs
         self.trials = None
+
+    def __repr__(self):
+        print 'Experiment(clfs={}, subsets={}, cvs={})'.format(
+                self.clfs, 
+                self.subsets, 
+                self.cvs)
         
     def __run_all_trials(self, trials):
         # TODO some multiprocess thing
@@ -118,7 +144,12 @@ class Experiment(object):
         return (dict(it.izip(dol, x)) for 
                 x in it.product(*dol.itervalues()))
 
+    def has_run(self):
+        return self.trials is not None
+
     def run(self):
+        if self.has_run():
+            return self.trials
         trials = []
         for clf_id in self.clfs:
             all_clf_ps = self.clfs[clf_id]
