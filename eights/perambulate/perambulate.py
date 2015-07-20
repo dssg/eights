@@ -1,4 +1,6 @@
-import inspect
+import inspect 
+import json
+import copy
 import itertools as it
 import numpy as np
 
@@ -12,13 +14,17 @@ from sklearn.cross_validation import KFold, StratifiedKFold
 
 from random import sample
 
-(RF, SVC, DESC_TREE, ADA_BOOST,
- NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE,
- NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD) = range(11)
-
+RF, SVC, DESC_TREE, ADA_BOOST = range(4)
 clf_ids =  (RF, SVC, DESC_TREE, ADA_BOOST)
+
+NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE = range(3)
 subset_ids = (NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE)
+
+NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD = range(4)
 cv_ids = (NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD)
+
+CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS = range(6)
+dimensions = (CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS)
     
 def subset_sweep_training_size(y, subset_size, n_subsets=3):
     
@@ -48,8 +54,6 @@ sk_learn_clfs = {RF: RandomForestClassifier,
                  DESC_TREE: DecisionTreeClassifier,
                  ADA_BOOST: AdaBoostClassifier}   
 
-CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS = range(6)
-dimensions = (CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS)
 
 class Run(object):
     def __init__(
@@ -89,6 +93,7 @@ class Trial(object):
                                SUBSET_PARAMS: self.subset_params,
                                CV_ID: self.cv_id,
                                CV_PARAMS: self.cv_params}
+        self.__cached_ave_score = None
 
     def __repr__(self):
         return ('Trial(clf_id={}, clf_params={}, subset_id={}, '
@@ -115,7 +120,7 @@ class Trial(object):
             y_sub = self.y[subset]
             M_sub = self.M[subset]
             cv_cls = sk_learn_cvs[self.cv_id]
-            cv_kwargs = self.cv_params
+            cv_kwargs = copy.deepcopy(self.cv_params)
             expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
             if 'n' in expected_cv_kwargs:
                 cv_kwargs['n'] = y_sub.shape[0]
@@ -132,18 +137,28 @@ class Trial(object):
         return runs
 
     def average_score(self):
+        if self.__cached_ave_score is not None:
+            return self.__cached_ave_score
         self.run()
         M = self.M
         y = self.y
-        return np.mean(
+        ave_score = np.mean(
                 [np.mean(
                     [run.clf.score(
                         M[run.test_indices], y[run.test_indices])
                      for run in subset])
                  for subset in self.runs])
+        self.__cached_ave_score = ave_score
+        return ave_score
     
 class Experiment(object):
-    def __init__(self, M, y, clfs={}, subsets={}, cvs={}):
+    def __init__(
+            self, 
+            M, 
+            y, 
+            clfs={RF: {}}, 
+            subsets={NO_SUBSET: {}}, 
+            cvs={NO_CV: {}}):
         self.M = M
         self.y = y
         self.clfs = clfs
@@ -180,7 +195,10 @@ class Experiment(object):
         other_dims = list(dimensions)
         other_dims.remove(dimension)
         for trial in trials:
-            key = [trial[dim] for dim in other_dims]
+            # http://stackoverflow.com/questions/5884066/hashing-a-python-dictionary
+            key = json.dumps(
+                    [trial[dim] for dim in other_dims],
+                    sort_keys=True)
             try:
                 categories[key].append(trial)
             except KeyError:
