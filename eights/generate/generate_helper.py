@@ -1,4 +1,7 @@
 import numpy as np
+
+import numpy.lib.recfunctions as nprf
+
 from generate_helper import *
 
 
@@ -44,8 +47,10 @@ def stack_rows(M1, M2):
 def sa_from_cols(cols):
     raise NotImplementedError
 
-def append_columns(M, cols):
-    raise NotImplementedError
+def append_columns(M, cols, names):
+    if isinstance(cols, np.ndarray):
+        cols = (cols,)
+    return nprf.append_fields(M, names, data=cols, usemask=False)
 
 def append_column(M, col):
     raise NotImplementedError

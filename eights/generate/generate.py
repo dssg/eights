@@ -1,8 +1,6 @@
 import numpy as np
 from sklearn import cross_validation
-
-
-
+import generate_helper as gh
 
 def select_by_dist_from(M, target, threshold, lat_col_name, lng_col_name):
     ret = []
@@ -12,13 +10,11 @@ def select_by_dist_from(M, target, threshold, lat_col_name, lng_col_name):
     return ret
 
 
-
-def where_all_are_true(M, lambdas, col_names, vals ):
-    raise NotImplementedError
-    to_select = vector_of_trues(M.rows)
-    for lambd, col_name in zip(lambdas, col_names):
-        to_select = np.logical_and(to_select, lambd(M[col_name]))
-    return to_select
+def where_all_are_true(M, lambdas, col_names, vals, generated_names):
+    to_select = np.ones(M.size, dtype=bool)
+    for lambd, col_name, val in zip(lambdas, col_names, vals):
+        to_select = np.logical_and(to_select, lambd(M, col_name, val))
+    return gh.append_columns(M, to_select, generated_names)
 
 #where_all_are_true(
 #    M, 
@@ -35,7 +31,7 @@ def where_val_gt(M, col_name, boundary):
     return M[col_name] > boundary
 
 def where_val_between(M, col_name, boundary):
-    return np.and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
+    return np.logical_and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
 
 #def sweep_where_all_are_true(args, M):
 #   changing_args = [arg[2] for arg in args]

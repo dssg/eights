@@ -1,26 +1,57 @@
-import inspect
-import itertools as it
-import numpy as np
-
-from collections import Counter
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC as SKSVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.cross_validation import KFold, StratifiedKFold
+from sklearn.cross_validation import KFold
 
 from random import sample
 
 (RF, SVC, DESC_TREE, ADA_BOOST,
- NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE,
- NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD) = range(11)
+NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE,
+NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD) = range(12)
 
 clf_ids =  (RF, SVC, DESC_TREE, ADA_BOOST)
 subset_ids = (NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE)
 cv_ids = (NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD)
     
-def subset_sweep_training_size(y, subset_size, n_subsets=3):
+sk_learn_clfs = {RF: RandomForestClassifier,
+                 SVC: SKSVC,
+                 DESC_TREE: DecisionTreeClassifier,
+                 ADA_BOOST: AdaBoostClassifier}   
+    
+subset_iters = {SWEEP_TRAINING_SIZE: subset_sweep_training_size}
+#TODO others    
+
+sk_learn_cvs = {K_FOLD: KFOLD}
+#TODO others
+    
+class Experiment(object):
+    def __init__(self, clfs={}, subsets={}, cvs={}):
+        self.clfs = clfs
+        self.subsets = subsets
+        self.cvs = cvs
+
+
+class Trial(object):
+    def __init__(
+        self, 
+        M,
+        y,
+        clf_id=RF,
+        clf_params={},
+        subset_id=NO_SUBSET,
+        subset_params={},
+        cv_id=NO_CV,
+        cv_params={}):
+        self.runs = None
+        self.clf_id = clf_id
+        self.clf_params = clf_params
+        self.subset_id = subset_id
+        self.subset_params = subset_params
+        self.cv_id = cv_id
+        self.cv_params = cv_params
+
+def subset_sweep_training_size(y, subset_size, n_subsets):
     
     count = Counter(y)
     size_space = float(sum(count.values()))
@@ -34,20 +65,6 @@ def subset_sweep_training_size(y, subset_size, n_subsets=3):
         yield all_indices
 
 
-    
-subset_iters = {SWEEP_TRAINING_SIZE: subset_sweep_training_size}
-#TODO others    
-
-sk_learn_cvs = {K_FOLD: KFold,
-                STRAT_ACTUAL_K_FOLD: StratifiedKFold,
-                STRAT_EVEN_K_FOLD: StratifiedKFold}
-#TODO others
-
-sk_learn_clfs = {RF: RandomForestClassifier,
-                 SVC: SKSVC,
-                 DESC_TREE: DecisionTreeClassifier,
-                 ADA_BOOST: AdaBoostClassifier}   
-
 class Run(object):
     def __init__(
         self,
@@ -56,139 +73,62 @@ class Run(object):
         self.clf = clf
         self.test_indices = test_indices
 
-    def __repr__(self):
-        return 'Run(clf={})'.format(
-                self.clf)
-
-class Trial(object):
-    def __init__(
-        self, 
-        M,
-        y,
-        clf_id=RF,
-        clf_params={},
-        subset_id=NO_SUBSET,
-        subset_params={},
-        cv_id=NO_CV,
-        cv_params={}):
-        self.M = M
-        self.y = y
-        self.runs = None
-        self.clf_id = clf_id
-        self.clf_params = clf_params
-        self.subset_id = subset_id
-        self.subset_params = subset_params
-        self.cv_id = cv_id
-        self.cv_params = cv_params
-
-    def __repr__(self):
-        return ('Trial(clf_id={}, clf_params={}, subset_id={}, '
-                'subset_params={}, cv_id={}, cv_params={})').format(
-                        self.clf_id,
-                        self.clf_params,
-                        self.subset_id,
-                        self.subset_params,
-                        self.clf_id,
-                        self.cv_params)
-
-    def has_run(self):
-        return self.runs is not None
-
-    def run(self):
-        if self.has_run():
-            return self.runs
-        runs = []
-        for subset in subset_iters[self.subset_id](self.y, **self.subset_params):
-            runs_this_subset = []
-            y_sub = self.y[subset]
-            M_sub = self.M[subset]
-            cv_cls = sk_learn_cvs[self.cv_id]
-            cv_kwargs = self.cv_params
-            expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
-            if 'n' in expected_cv_kwargs:
-                cv_kwargs['n'] = y_sub.shape[0]
-            if 'y' in expected_cv_kwargs:
-                cv_kwargs['y'] = y_sub
-            cv_inst = cv_cls(**cv_kwargs)
-            for train, test in cv_inst:
-                clf_inst = sk_learn_clfs[self.clf_id](**self.clf_params)
-                clf_inst.fit(M_sub[train], y_sub[train])
-                test_indices = subset[test]
-                runs_this_subset.append(Run(clf_inst, test_indices))
-            runs.append(runs_this_subset)    
-        self.runs = runs
-        return runs
-
-    def average_score(self):
-        self.run()
-        M = self.M
-        y = self.y
-        return np.mean(
-                [np.mean(
-                    [run.clf.score(
-                        M[run.test_indices], y[run.test_indices])
-                     for run in subset])
-                 for subset in self.runs])
+def run_trial(trail):
     
-class Experiment(object):
-    def __init__(self, M, y, clfs={}, subsets={}, cvs={}):
-        self.M = M
-        self.y = y
-        self.clfs = clfs
-        self.subsets = subsets
-        self.cvs = cvs
-        self.trials = None
-
-    def __repr__(self):
-        print 'Experiment(clfs={}, subsets={}, cvs={})'.format(
-                self.clfs, 
-                self.subsets, 
-                self.cvs)
-        
-    def __run_all_trials(self, trials):
-        # TODO some multiprocess thing
-        
-        for trial in trials:
-            trial.run()
+    runs = []
+    for subset in subset_iters[trail.subset_id](**trial.subst_params):
+        y_sub = trial.y[subset]
+        M_sub = trial.M[subset]
+        cv_cls = sk_learn_cvs[trial.cv_id]
+        cv_kwargs = **trial.cv_param
+        expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
+        if 'n' in expected_cv_kwargs:
+            cv_kwargs['n'] = y_sub.shape[0]
+        if 'y' in expected_cv_kwargs:
+            cv_kwargs['y'] = y_sub
+        cv_inst = cv_cls(**cv_kwargs)
+        for train, test in cv_inst:
+            clf_inst = sk_learn_clfs[trial.clf_id](**trial.clf_params)
+            clf_inst.fit(M_sub[train], y_sub[train])
+            test_indices = subset[test]
+            runs.append(Run(clf_inst, test_indices))
             
-    def __transpose_dict_of_lists(self, dol):
-        # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
-        return (dict(it.izip(dol, x)) for 
-                x in it.product(*dol.itervalues()))
+    trial.runs = runs
+    
+def run_all_trials(trials):
+    # TODO some multiprocess thing
+    
+    for trial in trials:
+        run_trial(trial)
+        
+def trainspose_dict_of_lists(dol):
+    # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
+    return (dict(izip(dol, x)) for 
+            x in product(*dol.itervalues()))
 
-    def has_run(self):
-        return self.trials is not None
-
-    def run(self):
-        if self.has_run():
-            return self.trials
-        trials = []
-        for clf_id in self.clfs:
-            all_clf_ps = self.clfs[clf_id]
-            for clf_params in self.__transpose_dict_of_lists(all_clf_ps):
-                for subset_id in self.subsets:
-                    all_sub_ps = self.subsets[subset_id]
-                    for subset_params in self.__transpose_dict_of_lists(all_sub_ps):
-                        for cv_id in self.cvs:
-                            all_cv_ps = self.cvs[cv_id]
-                            for cv_params in self.__transpose_dict_of_lists(all_cv_ps):
-                                trial = Trial(
-                                    M=self.M,
-                                    y=self.y,
-                                    clf_id=clf_id,
-                                    clf_params=clf_params,
-                                    subset_id=subset_id,
-                                    subset_params=subset_params,
-                                    cv_id=cv_id,
-                                    cv_params=cv_params)
-                                trials.append(trial)
-        self.__run_all_trials(trials)
-        self.trials = trials
-        return trials
-
-    def average_score(self):
-        self.run()
-        return [(trial, trial.average_score()) for trial in self.trials]
+def run_experiment(M, y, experiment):
+    trial = []
+    for clf_id in exeriment.clfs:
+        all_clf_ps = experiment.clfs[clf_id]
+        for clf_params in transpose_dict_of_lists(all_clf_ps):
+            for subset_id in experiment.subsets:
+                all_sub_ps = experiment.subsets[subset_id]
+                for subset_params in transpose_dict_of_lists(all_sub_ps):
+                    for cv_id in experiment.cvs:
+                        all_cv_ps = experiment.cvs[cv_id]
+                        for cv_params in transpose_dict_of_lists(all_cv_ps):
+                            trial = Trial(
+                                M-M,
+                                y=y,
+                                clf_id=clf_id,
+                                clf_params=clf_params,
+                                subset_id=subset_id,
+                                subset_params=subset_params,
+                                cv_id=cv_id
+                                cv_params=cv_params)
+                            trials.append(trial)
+    run_all_trials(trials)
+    return trials
 
 def sliding_window(l,w,tst_w):
     ret = []

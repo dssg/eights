@@ -7,6 +7,12 @@ import numpy as np
 from collections import Counter
 import matplotlib.pyplot as plt
 
+def convert_list_of_list_to_sa(M, c_name=None):
+    return cast_np_nd_to_sa(M, names=c_name)
+        
+        
+
+
 def open_csv(file_loc):
     f = open_csv_as_structured_array(file_loc)
     return set_structured_array_datetime_as_day(f,file_loc)

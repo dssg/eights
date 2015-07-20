@@ -16,7 +16,7 @@ def str_to_time(date_text):
     except ValueError:
         return np.datetime64('NaT')    
 
-def cast_np_nd_to_sa(nd, dtype=None):
+def cast_np_nd_to_sa(nd, dtype=None, names=None):
     """
     
     Returns a view of a numpy, single-type, 0, 1 or 2-dimensional array as a
@@ -43,7 +43,9 @@ def cast_np_nd_to_sa(nd, dtype=None):
         nd = nd.reshape(nd.size, 1)
     if dtype is None:
         n_cols = nd.shape[1]
-        dtype = np.dtype({'names': map('f{}'.format, xrange(n_cols)),
+        if names is None:
+            names = map('f{}'.format, xrange(n_cols))
+        dtype = np.dtype({'names': names,
                           'formats': [nd_dtype for i in xrange(n_cols)]})
         return nd.reshape(nd.size).view(dtype)
     type_len = nd_dtype.itemsize
