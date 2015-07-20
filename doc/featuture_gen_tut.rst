@@ -34,4 +34,50 @@ Quick test::
    # If test_equality in column 'weight' == 2 AND
    # If test_equality in column 'age' == 3 
    # return true
-   
+
+
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+import sklearn.datasets
+import eights as e
+
+
+diab = sklearn.datasets.load_diabetes()
+
+data = diab.data
+target = diab.target
+
+M= e.inv.convert_list_of_list_to_sa(data)
+
+#quick sanity check
+#e.com.plot_simple_histogram(target)   
+# i want to bin all values above 210
+y = (target >=205)
+
+# twist this into a classification problem
+
+simpleCV(M, target, RF, 10, False)
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
