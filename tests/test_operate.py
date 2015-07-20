@@ -32,7 +32,7 @@ class TestOperate(unittest.TestCase):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
         rf.fit(iris.data, iris.target)
-        result = feature_pairs_in_rf(rf)
+        result = feature_pairs_in_rf(rf, verbose=True)
         # TODO make sure these results are actually correct
         ctrl = {'Depth 3->4': 
                 Counter({(0, 3): 3, (1, 2): 2, (2, 3): 2, (0, 1): 1, 
