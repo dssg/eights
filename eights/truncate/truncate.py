@@ -33,10 +33,10 @@ def row_val_gt(M, col_name, boundary):
     return M[col_name] > boundary
 
 def row_val_between(M, col_name, boundary):
-    return np.and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
+    return np.logical_and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
 
 def row_not_within_region(M, col_name, boundar):
-    raise NotImplementedError:
+    raise NotImplementedError
 
     
     
