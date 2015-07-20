@@ -48,6 +48,9 @@ sk_learn_clfs = {RF: RandomForestClassifier,
                  DESC_TREE: DecisionTreeClassifier,
                  ADA_BOOST: AdaBoostClassifier}   
 
+CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS = range(6)
+dimensions = (CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS)
+
 class Run(object):
     def __init__(
         self,
@@ -80,6 +83,12 @@ class Trial(object):
         self.subset_params = subset_params
         self.cv_id = cv_id
         self.cv_params = cv_params
+        self.__by_dimension = {CLF_ID: self.clf_id,
+                               CLF_PARAMS: self.clf_params,
+                               SUBSET_ID: self.subset_id,
+                               SUBSET_PARAMS: self.subset_params,
+                               CV_ID: self.cv_id,
+                               CV_PARAMS: self.cv_params}
 
     def __repr__(self):
         return ('Trial(clf_id={}, clf_params={}, subset_id={}, '
@@ -90,6 +99,9 @@ class Trial(object):
                         self.subset_params,
                         self.clf_id,
                         self.cv_params)
+
+    def __getitem__(self, arg):
+        return self.__by_dimension[arg]
 
     def has_run(self):
         return self.runs is not None
@@ -155,6 +167,30 @@ class Experiment(object):
         # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
         return (dict(it.izip(dol, x)) for 
                 x in it.product(*dol.itervalues()))
+
+    def slice_on_dimension(self, dimension, value, trials=None):
+        if trials is None:
+            trials = self.run()
+        return [trial for trial in trials if trial[dimension] == value]  
+
+    def slice_by_best_score(self, dimension, trials=None):
+        if trials is None:
+            trials = self.run()
+        categories = {}
+        other_dims = list(dimensions)
+        other_dims.remove(dimension)
+        for trial in trials:
+            key = [trial[dim] for dim in other_dims]
+            try:
+                categories[key].append(trial)
+            except KeyError:
+                categories[key] = [trial]
+        result = []
+        for key in categories:
+            result.append(max(
+                categories[key], 
+                key=lambda trial: trial.average_score()))
+        return result
 
     def has_run(self):
         return self.trials is not None
