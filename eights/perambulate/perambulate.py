@@ -1,60 +1,86 @@
 import inspect 
 import json
 import copy
+import abc
 import itertools as it
 import numpy as np
 
 from collections import Counter
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC as SKSVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.cross_validation import KFold, StratifiedKFold
+from sklearn.cross_validation import _PartitionIterator
 
 from random import sample
 
-RF, SVC, DESC_TREE, ADA_BOOST = range(4)
-clf_ids =  (RF, SVC, DESC_TREE, ADA_BOOST)
+class _BaseSubsetIter(object):
+    __metaclass__ = abc.ABCMeta
 
-NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE = range(3)
-subset_ids = (NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE)
-
-NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD = range(4)
-cv_ids = (NO_CV, K_FOLD, STRAT_ACTUAL_K_FOLD, STRAT_EVEN_K_FOLD)
-
-CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS = range(6)
-dimensions = (CLF_ID, CLF_PARAMS, SUBSET_ID, SUBSET_PARAMS, CV_ID, CV_PARAMS)
+    def __init__(self, y):
+        self._y = y
     
-def subset_sweep_training_size(y, subset_size, n_subsets=3):
+    @abc.abstractmethod
+    def __iter__(self):
+        yield np.array([], dtype=int)
+
+    @abc.abstractmethod
+    def __repr__(self):
+        return ''
+
+class SubsetNoSubset(_BaseSubsetIter):
+    def __iter__(self):
+        yield np.arange(y.shape[0])
+
+    def __repr__(self):
+        return 'SubsetNoSubset()'
+
+class SubsetSweepTrainingSize(_BaseSubsetIter):
+        
+    def __init__(self, y, subset_size, n_subsets=3):
+        super(SubsetSweepTrainingSize, self).__init__(y)
+        self.__subset_size = subset_size
+        self.__n_subsets = n_subsets
+
+    def __iter__(self):
+        y = self._y
+        subset_size = self.__subset_size
+        n_subsets = self.__n_subsets
+        count = Counter(y)
+        size_space = float(sum(count.values()))
+        proportions = {key: count[key] / size_space for key in count}
+        n_choices = {key: int(proportions[key] * subset_size) for 
+                     key in proportions}
+        indices = {key: np.where(y == key)[0] for key in count}
+        for _ in xrange(n_subsets):
+            samples = {key: sample(indices[key], n_choices[key]) for key in count}
+            all_indices = np.sort(np.concatenate(samples.values()))
+            yield all_indices
+
+    def __repr__(self):
+        return 'SubsetSweepTrainingSize(subset_size={}, n_subsets={})'.format(
+                self.__subset_size,
+                self.__n_subsets)
+
+# Left here so we know which sweeps to do
+#NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE = range(3)
+
+class NoCV(_PartitionIterator):
+    """Cross validator that just returns the entire set as the training set
+    to begin with
+
+    Parameters
+    ----------
+    n : int
+        The number of rows in the data
+    """
+    def _iter_test_indices(self):
+        yield np.array([], dtype=int)
+
+CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS = range(6)
+dimensions = (CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS)
     
-    count = Counter(y)
-    size_space = float(sum(count.values()))
-    proportions = {key: count[key] / size_space for key in count}
-    n_choices = {key: int(proportions[key] * subset_size) for 
-                 key in proportions}
-    indices = {key: np.where(y == key)[0] for key in count}
-    for _ in xrange(n_subsets):
-        samples = {key: sample(indices[key], n_choices[key]) for key in count}
-        all_indices = np.sort(np.concatenate(samples.values()))
-        yield all_indices
-
-
-    
-subset_iters = {SWEEP_TRAINING_SIZE: subset_sweep_training_size}
-#TODO others    
-
-sk_learn_cvs = {K_FOLD: KFold,
-                STRAT_ACTUAL_K_FOLD: StratifiedKFold,
-                STRAT_EVEN_K_FOLD: StratifiedKFold}
-#TODO others
-
-sk_learn_clfs = {RF: RandomForestClassifier,
-                 SVC: SKSVC,
-                 DESC_TREE: DecisionTreeClassifier,
-                 ADA_BOOST: AdaBoostClassifier}   
-
-
 class Run(object):
     def __init__(
         self,
@@ -72,37 +98,37 @@ class Trial(object):
         self, 
         M,
         y,
-        clf_id=RF,
+        clf=RandomForestClassifier,
         clf_params={},
-        subset_id=NO_SUBSET,
+        subset=SubsetNoSubset,
         subset_params={},
-        cv_id=NO_CV,
+        cv=NoCV,
         cv_params={}):
         self.M = M
         self.y = y
         self.runs = None
-        self.clf_id = clf_id
+        self.clf = clf
         self.clf_params = clf_params
-        self.subset_id = subset_id
+        self.subset = subset
         self.subset_params = subset_params
-        self.cv_id = cv_id
+        self.cv = cv
         self.cv_params = cv_params
-        self.__by_dimension = {CLF_ID: self.clf_id,
+        self.__by_dimension = {CLF: self.clf,
                                CLF_PARAMS: self.clf_params,
-                               SUBSET_ID: self.subset_id,
+                               SUBSET: self.subset,
                                SUBSET_PARAMS: self.subset_params,
-                               CV_ID: self.cv_id,
+                               CV: self.cv,
                                CV_PARAMS: self.cv_params}
         self.__cached_ave_score = None
 
     def __repr__(self):
-        return ('Trial(clf_id={}, clf_params={}, subset_id={}, '
-                'subset_params={}, cv_id={}, cv_params={})').format(
-                        self.clf_id,
+        return ('Trial(clf={}, clf_params={}, subset={}, '
+                'subset_params={}, cv={}, cv_params={})').format(
+                        self.clf,
                         self.clf_params,
-                        self.subset_id,
+                        self.subset,
                         self.subset_params,
-                        self.clf_id,
+                        self.cv,
                         self.cv_params)
 
     def __getitem__(self, arg):
@@ -115,11 +141,11 @@ class Trial(object):
         if self.has_run():
             return self.runs
         runs = []
-        for subset in subset_iters[self.subset_id](self.y, **self.subset_params):
+        for subset in self.subset(self.y, **self.subset_params):
             runs_this_subset = []
             y_sub = self.y[subset]
             M_sub = self.M[subset]
-            cv_cls = sk_learn_cvs[self.cv_id]
+            cv_cls = self.cv
             cv_kwargs = copy.deepcopy(self.cv_params)
             expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
             if 'n' in expected_cv_kwargs:
@@ -128,7 +154,7 @@ class Trial(object):
                 cv_kwargs['y'] = y_sub
             cv_inst = cv_cls(**cv_kwargs)
             for train, test in cv_inst:
-                clf_inst = sk_learn_clfs[self.clf_id](**self.clf_params)
+                clf_inst = self.clf(**self.clf_params)
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
                 runs_this_subset.append(Run(clf_inst, test_indices))
@@ -156,9 +182,9 @@ class Experiment(object):
             self, 
             M, 
             y, 
-            clfs={RF: {}}, 
-            subsets={NO_SUBSET: {}}, 
-            cvs={NO_CV: {}}):
+            clfs={RandomForestClassifier: {}}, 
+            subsets={SubsetNoSubset: {}}, 
+            cvs={NoCV: {}}):
         self.M = M
         self.y = y
         self.clfs = clfs
@@ -217,23 +243,23 @@ class Experiment(object):
         if self.has_run():
             return self.trials
         trials = []
-        for clf_id in self.clfs:
-            all_clf_ps = self.clfs[clf_id]
+        for clf in self.clfs:
+            all_clf_ps = self.clfs[clf]
             for clf_params in self.__transpose_dict_of_lists(all_clf_ps):
-                for subset_id in self.subsets:
-                    all_sub_ps = self.subsets[subset_id]
+                for subset in self.subsets:
+                    all_sub_ps = self.subsets[subset]
                     for subset_params in self.__transpose_dict_of_lists(all_sub_ps):
-                        for cv_id in self.cvs:
-                            all_cv_ps = self.cvs[cv_id]
+                        for cv in self.cvs:
+                            all_cv_ps = self.cvs[cv]
                             for cv_params in self.__transpose_dict_of_lists(all_cv_ps):
                                 trial = Trial(
                                     M=self.M,
                                     y=self.y,
-                                    clf_id=clf_id,
+                                    clf=clf,
                                     clf_params=clf_params,
-                                    subset_id=subset_id,
+                                    subset=subset,
                                     subset_params=subset_params,
-                                    cv_id=cv_id,
+                                    cv=cv,
                                     cv_params=cv_params)
                                 trials.append(trial)
         self.__run_all_trials(trials)
