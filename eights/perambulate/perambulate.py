@@ -84,14 +84,22 @@ dimensions = (CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS)
 class Run(object):
     def __init__(
         self,
+        M,
+        y,
         clf,
         test_indices):
+        self.M = M
+        self.y = y
         self.clf = clf
         self.test_indices = test_indices
 
     def __repr__(self):
         return 'Run(clf={})'.format(
                 self.clf)
+
+    def score(self):
+        return self.clf.score(self.M[self.test_indices], 
+                              self.y[self.test_indices])
 
 class Trial(object):
     def __init__(
@@ -157,7 +165,8 @@ class Trial(object):
                 clf_inst = self.clf(**self.clf_params)
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
-                runs_this_subset.append(Run(clf_inst, test_indices))
+                runs_this_subset.append(Run(self.M, self.y, clf_inst, 
+                                            test_indices))
             runs.append(runs_this_subset)    
         self.runs = runs
         return runs
@@ -170,9 +179,7 @@ class Trial(object):
         y = self.y
         ave_score = np.mean(
                 [np.mean(
-                    [run.clf.score(
-                        M[run.test_indices], y[run.test_indices])
-                     for run in subset])
+                    [run.score() for run in subset])
                  for subset in self.runs])
         self.__cached_ave_score = ave_score
         return ave_score
