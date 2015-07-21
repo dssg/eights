@@ -37,3 +37,20 @@ exp = Experiment(
       ],
       [STRAT_ACTUAL_K_FOLD : {'y': y}])
 
+
+M is our matrix to train our ML algo on, its always a structured array (or an nd.array, or a list of one dimension arrays).
+Labels are the supervised learnings gold standard labels.  It is the TRUTH. Aways a one dim numpy.array
+If we use a collection of columns, that are not the full matrix it is cols.
+col is the one dimeion equiv of cols, it has the same type as labels.
+When we pass in a classifier, its an sklearn base estimator class as opposed to instance
+When we are passing a cross validation type, its a sklearn partition iterator.
+When we pass a subset method it is an iterator for which each iteration returns a set of indices. 
+Parameters for sklearn etc is always pass dictionaries of string to something.  
+There will be other stuff, but the above carved in rice paper.  
+
+
+
+
+
+
+ 

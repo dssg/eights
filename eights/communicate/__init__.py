@@ -1,2 +1,1 @@
-from communicate import (print_crosstab_dict,
-                        )
+from communicate import *

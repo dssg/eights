@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 def print_matrix_row_col(M, L_1, L_2,):
     row_format ="{:>15}" * (len(L_2) + 1)
@@ -30,7 +32,14 @@ def print_describe_all(a_dict):
         print row_format.format(team, row)
     return None
     
-    
+
+def plot_simple_histogram(x):
+    hist, bins = np.histogram(x, bins=50)
+    width = 0.7 * (bins[1] - bins[0])
+    center = (bins[:-1] + bins[1:]) / 2
+    plt.bar(center, hist, align='center', width=width)
+    plt.show()
+
 
 # all of the below take output from any func in perambulate or operate
 
