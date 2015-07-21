@@ -222,9 +222,7 @@ class Experiment(object):
         other_dims.remove(dimension)
         for trial in trials:
             # http://stackoverflow.com/questions/5884066/hashing-a-python-dictionary
-            key = json.dumps(
-                    [trial[dim] for dim in other_dims],
-                    sort_keys=True)
+            key = repr([trial[dim] for dim in other_dims])
             try:
                 categories[key].append(trial)
             except KeyError:
