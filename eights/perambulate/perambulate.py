@@ -104,7 +104,7 @@ class Run(object):
         return self.y[self.test_indices]
         
     def score(self):
-        return self.clf.score(self.__test_M() self.__test_y)
+        return self.clf.score(self.__test_M(), self.__test_y())
 
     def roc_curve(self):
         score = self.clf.predict_proba(self.__test_X())
