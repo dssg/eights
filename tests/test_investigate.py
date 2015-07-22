@@ -7,6 +7,8 @@ utils.add_to_python_path()
 from eights.investigate.investigate import open_csv, describe_col
 from eights.investigate.investigate import plot_correlation_matrix
 from eights.investigate.investigate import plot_correlation_scatter_plot
+from eights.investigate.investigate import convert_list_of_list_to_sa
+
 
 class TestInvestigate(unittest.TestCase):
     def test_open_csv(self):
@@ -29,7 +31,16 @@ class TestInvestigate(unittest.TestCase):
         fig = plot_correlation_scatter_plot(data)
         fig.show()
         import pdb; pdb.set_trace()
-
+    
+    def test_convert_list_of_list_to_sa(self):
+        test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]
+        names = ['ints','floats','strings']
+        test_1 = convert_list_of_list_to_sa(test)
+        test_2 = convert_list_of_list_to_sa(test, names)
+        correct_1 = 0
+        correct_2 = 0
+        
+        
 
 if __name__ == '__main__':
     unittest.main()

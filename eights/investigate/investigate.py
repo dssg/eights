@@ -13,6 +13,27 @@ from sklearn import cross_validation
 
 def simple_CV(M, labels, clf, clf_params={},
               cv=cross_validation.KFold, cv_parms={}):
+    """This is simple execution a clf in our module.  
+    Parameters
+    ----------
+    M : Structured array
+       The matrix you wish to use for training and testing 
+    labels : a one dimenional nd array
+       This these are the labels that are assigned to the rows in the matrix M.
+    clf : Sklearn Class object
+        This is the type of algorithim you would use. 
+    clf_params : a dictionary of parameters to assign to your clf
+        The appropriate paramterts to asign to the clf, empty dict if none.
+    cv : sklearn cv 
+        kfold if default
+    cv_parms : dict of paramters to apply to the cv
+        empty if default
+           
+    Returns
+    -------
+    temp : list
+       the list of trained models
+    """
     exp = Experiment(
         M, 
         labels, 
@@ -25,22 +46,99 @@ def simple_CV(M, labels, clf, clf_params={},
     return scores
 
 
-def convert_list_of_list_to_sa(M, c_name=None):
-    return cast_np_nd_to_sa(M, names=c_name)
+def convert_to_sa(M, c_name=None):
+    """Converts an list of lists or a np ndarray to a Structured Arrray
+    Parameters
+    ----------
+    M  : List of List or np.ndarray
+       This is the Matrix M, that it is assumed is the basis for the ML algorithm 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : Numpy Structured array
+       This is the matrix of an appropriate type that eights expects.
+       
+    """
+    if isinstance(M, type(np.array([1]))):
+        return cast_np_nd_to_sa(M, names=c_name)
+    
+    elif isinstance(M, list) and isinstance(M[0], list): #good idea or bad?
+        return cast_list_of_list_to_sa(M, names=c_name)
+    
+    elif is_sa(M):
+        return M
+        
+    else: 
+        raise TypeError # approrpriate?
         
         
 def open_csv(file_loc):
+    """single line description
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
     f = open_csv_as_structured_array(file_loc)
     return set_structured_array_datetime_as_day(f,file_loc)
     
 def open_JSON():
-    return
+    """single line description
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
+    raise NotImplementedError
+
+def open_SQL():
+    raise NotImplementedError
+    
+    
 
 #summary Statistics
-def describe_col(col):
-    return describe_column(col)
-
-def describe_all(M):
+# Silly to have two.  I should have only made one.
+def describe_cols(M):
+    """takes a SA or list of Np.rayas and returns the summary statistcs
+    Parameters
+    ----------
+    M : Structured Array or list of Numpy ND arays.
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
+    #remove the [] if only one?
     if is_sa(M):
         #then its a structured array
         return [describe_column(M[x]) for x in M.dtype.names]
@@ -49,11 +147,34 @@ def describe_all(M):
         return [describe_column(M[x]) for x in M]
         
 def histogram(L, n=None): 
+    """ returns a count of elements on the numpy array or a list 
+    Parameters
+    ----------
+    temp : list or np.ndarray
+       Description 
+    
+    Returns
+    -------
+    temp : list of tuples 
+       first element is the value, the second number is the count
+       
+    """
     if n is None:
         n = len(L)
     return Counter(L).most_common(n)
     
 def print_crosstab(L_1, L_2):
+    """this prints a crosstab results
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Returns
+    -------
+    temp : type
+       Description
+    """
     #assume np.structured arrays?
     crosstab_dict = crosstab(L_1, L_2)
     print_crosstab_dict(crosstab_dict)

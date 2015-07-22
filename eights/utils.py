@@ -16,6 +16,10 @@ def str_to_time(date_text):
     except ValueError:
         return np.datetime64('NaT')    
 
+def cast_list_of_list_to_sa(lol, dtype=None, names=None):
+    raise NotImplementedError
+
+
 def cast_np_nd_to_sa(nd, dtype=None, names=None):
     """
     
