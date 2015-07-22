@@ -119,6 +119,18 @@ def open_JSON():
     raise NotImplementedError
 
 def open_SQL():
+    """works with an sql database
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
     raise NotImplementedError
     
     
