@@ -56,8 +56,7 @@ y = (target >=205)
 
 # twist this into a classification problem
 
-simpleCV(M, target, RF, 10, False)
- 
+e.inv.simple_CV(data,target, RandomForestClassifier) 
 
 
 

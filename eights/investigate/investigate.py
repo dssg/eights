@@ -12,19 +12,17 @@ from sklearn import cross_validation
 
 
 def simple_CV(M, labels, clf, clf_params={},
-              cv=sklearn.cross_validation.KFold, cv_parms={}):
-    
+              cv=cross_validation.KFold, cv_parms={}):
     exp = Experiment(
         M, 
         labels, 
         clfs={clf: clf_params},
-        cvs={cv: sv_params})
-    runs = exp.run()[0][0]
+        cvs={cv: cv_parms})
+    runs = exp.run()
     
-    scores = [(run.clf.score(M[run.test_indices], labels[run.test_indices]) 
-                for run in runs)]
+    scores = [run.clf.score(M[run.test_indices], labels[run.test_indices]) 
+                for run in runs]
     return scores
-
 
 
 def convert_list_of_list_to_sa(M, c_name=None):
