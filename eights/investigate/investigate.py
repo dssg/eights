@@ -10,73 +10,7 @@ import matplotlib.pyplot as plt
 
 from sklearn import cross_validation
 
-
-def simple_CV(M, labels, clf, clf_params={},
-              cv=cross_validation.KFold, cv_parms={}):
-    """This is simple execution a clf in our module.  
-    Parameters
-    ----------
-    M : Structured array
-       The matrix you wish to use for training and testing 
-    labels : a one dimenional nd array
-       This these are the labels that are assigned to the rows in the matrix M.
-    clf : Sklearn Class object
-        This is the type of algorithim you would use. 
-    clf_params : a dictionary of parameters to assign to your clf
-        The appropriate paramterts to asign to the clf, empty dict if none.
-    cv : sklearn cv 
-        kfold if default
-    cv_parms : dict of paramters to apply to the cv
-        empty if default
-           
-    Returns
-    -------
-    temp : list
-       the list of trained models
-    """
-    exp = Experiment(
-        M, 
-        labels, 
-        clfs={clf: clf_params},
-        cvs={cv: cv_parms})
-    runs = exp.run()
-    
-    scores = [run.clf.score(M[run.test_indices], labels[run.test_indices]) 
-                for run in runs]
-    return scores
-
-
-def convert_to_sa(M, c_name=None):
-    """Converts an list of lists or a np ndarray to a Structured Arrray
-    Parameters
-    ----------
-    M  : List of List or np.ndarray
-       This is the Matrix M, that it is assumed is the basis for the ML algorithm 
-    
-    Attributes
-    ----------
-    temp : type
-       Description 
-       
-    Returns
-    -------
-    temp : Numpy Structured array
-       This is the matrix of an appropriate type that eights expects.
-       
-    """
-    if isinstance(M, type(np.array([1]))):
-        return cast_np_nd_to_sa(M, names=c_name)
-    
-    elif isinstance(M, list) and isinstance(M[0], list): #good idea or bad?
-        return cast_list_of_list_to_sa(M, names=c_name)
-    
-    elif is_sa(M):
-        return M
-        
-    else: 
-        raise TypeError # approrpriate?
-        
-        
+#open files 
 def open_csv(file_loc):
     """single line description
     Parameters
@@ -132,11 +66,10 @@ def open_SQL():
        
     """
     raise NotImplementedError
-    
+
     
 
-#summary Statistics
-# Silly to have two.  I should have only made one.
+#descriptive statistics
 def describe_cols(M):
     """takes a SA or list of Np.rayas and returns the summary statistcs
     Parameters
@@ -158,23 +91,7 @@ def describe_cols(M):
         #then its a list of np.arrays
         return [describe_column(M[x]) for x in M]
         
-def histogram(L, n=None): 
-    """ returns a count of elements on the numpy array or a list 
-    Parameters
-    ----------
-    temp : list or np.ndarray
-       Description 
-    
-    Returns
-    -------
-    temp : list of tuples 
-       first element is the value, the second number is the count
-       
-    """
-    if n is None:
-        n = len(L)
-    return Counter(L).most_common(n)
-    
+
 def print_crosstab(L_1, L_2):
     """this prints a crosstab results
     Parameters
@@ -193,6 +110,8 @@ def print_crosstab(L_1, L_2):
     return crosstab_dict
 
 
+
+#Plots of desrcptive statsitics
 def plot_box_plot(col):
     """Makes a box plot for a feature
     comment
@@ -302,28 +221,26 @@ def plot_correlation_scatter_plot(M):
         axes[i,j].yaxis.set_visible(True)
 
     return fig
-    
-def plot_histogram(col, missing_val=np.nan):
-    """Plot histogram of variables in col
-    
-    Includes a bar represented missing entries.
-    
-    Does a really good job showing the variation in the variable.
-    
+
+def plot_histogram(col, n=None, missing_val=np.nan): 
+    """ returns a count of elements on the numpy array or a list 
     Parameters
     ----------
-    col : np.array
-        Column to plot
-    missing_val : ?
-        Value representing a missing entry
+    temp : list or np.ndarray
+       Description 
     
     Returns
     -------
-    matplotlib.figure.Figure
-    
+    temp : list of tuples 
+       first element is the value, the second number is the count
+       
     """
+    if n is None:
+        n = len(col)
+    data = Counter(col).most_common(n) 
     raise NotImplementedError
     
+
 def plot_on_map(lat_col, lng_col):
     """Plots points on a map
     
@@ -349,5 +266,79 @@ def plot_on_timeline(col):
     Returns
     -------
     matplotlib.figure.Figure
-    """   
+    """
     raise NotImplementedError
+
+    
+
+#simple non-permabulated rfs
+def simple_CV(M, labels, clf, clf_params={},
+              cv=cross_validation.KFold, cv_parms={}):
+    """This is simple execution a clf in our module.  
+    Parameters
+    ----------
+    M : Structured array
+       The matrix you wish to use for training and testing 
+    labels : a one dimenional nd array
+       This these are the labels that are assigned to the rows in the matrix M.
+    clf : Sklearn Class object
+        This is the type of algorithim you would use. 
+    clf_params : a dictionary of parameters to assign to your clf
+        The appropriate paramterts to asign to the clf, empty dict if none.
+    cv : sklearn cv 
+        kfold if default
+    cv_parms : dict of paramters to apply to the cv
+        empty if default
+           
+    Returns
+    -------
+    temp : list
+       the list of trained models
+    """
+    exp = Experiment(
+        M, 
+        labels, 
+        clfs={clf: clf_params},
+        cvs={cv: cv_parms})
+    runs = exp.run()
+    
+    scores = [run.clf.score(M[run.test_indices], labels[run.test_indices]) 
+                for run in runs]
+    return scores
+
+
+
+#utils  ?
+def convert_to_sa(M, c_name=None):
+    """Converts an list of lists or a np ndarray to a Structured Arrray
+    Parameters
+    ----------
+    M  : List of List or np.ndarray
+       This is the Matrix M, that it is assumed is the basis for the ML algorithm 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : Numpy Structured array
+       This is the matrix of an appropriate type that eights expects.
+       
+    """
+    if isinstance(M, type(np.array([1]))):
+        return cast_np_nd_to_sa(M, names=c_name)
+    
+    elif isinstance(M, list) and isinstance(M[0], list): #good idea or bad?
+        return cast_list_of_list_to_sa(M, names=c_name)
+    
+    elif is_sa(M):
+        return M
+        
+    else: 
+        raise TypeError # approrpriate?
+        
+
+    
+    
