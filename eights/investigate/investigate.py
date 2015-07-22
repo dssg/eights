@@ -9,6 +9,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 from sklearn import cross_validation
+from sklearn.neighbors import KernelDensity
 
 #open files 
 def open_csv(file_loc):
@@ -235,10 +236,15 @@ def plot_histogram(col, n=None, missing_val=np.nan):
        first element is the value, the second number is the count
        
     """
-    if n is None:
-        n = len(col)
-    data = Counter(col).most_common(n) 
-    raise NotImplementedError
+    #if n is None:
+    #    n = len(col)
+    #data = Counter(col).most_common(n) 
+    
+    X_plot = np.linspace(-5, 10, 10)[:, np.newaxis]
+    kde = KernelDensity(kernel='gaussian', bandwidth=0.75).fit(col)
+    log_dens = kde.score_samples(X_plot)
+    return log_dens
+    #raise NotImplementedError
     
 
 def plot_on_map(lat_col, lng_col):
