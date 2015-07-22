@@ -1,15 +1,18 @@
 from investigate_helper import *
+import itertools as it
 from ..communicate import *
 from ..utils import is_sa
 import numpy as np
-
+from scipy.stats.distributions import norm
 
 
 from collections import Counter
 import matplotlib.pyplot as plt
 
+
 from sklearn import cross_validation
 from sklearn.neighbors import KernelDensity
+from sklearn.grid_search import GridSearchCV
 
 #open files 
 def open_csv(file_loc):
@@ -128,7 +131,7 @@ def plot_box_plot(col):
     """
     raise NotImplementedError
     
-def plot_correlation_matrix(M):
+def plot_correlation_matrix(M, verbose=True):
     """Plot correlation between variables in M
     
     Parameters
@@ -159,10 +162,12 @@ def plot_correlation_matrix(M):
     plt.colorbar()
     plt.yticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
     plt.xticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
+    if verbose:
+        plt.show()
     return fig
     #set rowvar =0 for rows are items, cols are features
     
-def plot_correlation_scatter_plot(M):
+def plot_correlation_scatter_plot(M, verbose=True):
     """Makes a grid of scatter plots representing relationship between variables
     
     Each scatter plot is one variable plotted against another variable
@@ -187,8 +192,8 @@ def plot_correlation_scatter_plot(M):
     else:
         names = ['f{}'.format(i) for i in xrange(M.shape[1])]    
 
-    numvars, numdata = M.shape
-    fig, axes = plt.subplots(nrows=numvars, ncols=numvars)
+    numdata, numvars = M.shape
+    fig, axes = plt.subplots(numvars, numvars)
     fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
     for ax in axes.flat:
@@ -208,8 +213,8 @@ def plot_correlation_scatter_plot(M):
 
     # Plot the M.
     for i, j in zip(*np.triu_indices_from(axes, k=1)):
-        for x, y in [(i,j), (j,i)]:
-            axes[x,y].plot(M[x], M[y], **kwargs)
+        for x, y in [(i,j), (j,i)]: 
+            axes[x,y].plot(M[x], M[y], '.')
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
@@ -217,34 +222,32 @@ def plot_correlation_scatter_plot(M):
                 ha='center', va='center')
 
     # Turn on the proper x or y axes ticks.
-    for i, j in zip(range(numvars), itertools.cycle((-1, 0))):
+    for i, j in zip(range(numvars), it.cycle((-1, 0))):
         axes[j,i].xaxis.set_visible(True)
         axes[i,j].yaxis.set_visible(True)
-
+    if verbose:
+        plt.show()
     return fig
 
-def plot_histogram(col, n=None, missing_val=np.nan): 
-    """ returns a count of elements on the numpy array or a list 
-    Parameters
-    ----------
-    temp : list or np.ndarray
-       Description 
-    
-    Returns
-    -------
-    temp : list of tuples 
-       first element is the value, the second number is the count
-       
-    """
-    #if n is None:
-    #    n = len(col)
-    #data = Counter(col).most_common(n) 
-    
-    X_plot = np.linspace(-5, 10, 10)[:, np.newaxis]
-    kde = KernelDensity(kernel='gaussian', bandwidth=0.75).fit(col)
-    log_dens = kde.score_samples(X_plot)
-    return log_dens
-    #raise NotImplementedError
+def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
+
+    x_grid = np.linspace(min(col), max(col), 1000)
+
+    grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation
+    grid.fit(col[:, None])
+
+    kde = grid.best_estimator_
+    pdf = np.exp(kde.score_samples(x_grid[:, None]))
+
+    fig, ax = plt.subplots()
+    #fig = plt.figure()
+    ax.plot(x_grid, pdf, linewidth=3, alpha=0.5, label='bw=%.2f' % kde.bandwidth)
+    ax.hist(col, 30, fc='gray', histtype='stepfilled', alpha=0.3, normed=True)
+    ax.legend(loc='upper left')
+    ax.set_xlim(min(col), max(col))
+    if verbose:
+        plt.show()
+    return fig
     
 
 def plot_on_map(lat_col, lng_col):

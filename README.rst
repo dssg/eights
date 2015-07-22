@@ -13,7 +13,9 @@
 Introduction
 ------------
 
-Eights is a a Python library and workflow templet for machine learning. 
+Eights is a a Python library and workflow templet for machine learning.
+Principally it wraps sklearn providing enhanced functionality and simplified 
+interface of often used workflows. 
 
 ------------
 Installation
@@ -53,4 +55,3 @@ Example
 Next Steps
 ----------
 
-Check out the `documentation <http://dssg.io/UPSG>`_

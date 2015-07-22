@@ -11,7 +11,7 @@ from eights.investigate.investigate import open_csv, describe_cols
 from eights.investigate.investigate import plot_correlation_matrix
 from eights.investigate.investigate import plot_correlation_scatter_plot
 from eights.investigate.investigate import convert_to_sa
-from eights.investigate.investigate import plot_histogram
+from eights.investigate.investigate import plot_kernel_density
 
 class TestInvestigate(unittest.TestCase):
     def test_open_csv(self):
@@ -30,9 +30,10 @@ class TestInvestigate(unittest.TestCase):
         fig = plot_correlation_matrix(data)
         
     def test_plot_correlation_scatter_plot(self):
-        data = rand(100, 10)
-        #fig = plot_correlation_scatter_plot(data) ##  
-        #fig.show()
+        data = rand(100, 3)
+        fig = plot_correlation_scatter_plot(data) ##  
+        fig.show()
+        
     
     def test_convert_list_of_list_to_sa(self):
         test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]
@@ -47,30 +48,8 @@ class TestInvestigate(unittest.TestCase):
         [ 5.05387508],[ 5.26197651],[ 5.13953576],[ 5.6487067 ],[ 5.1851657 ],[ 5.74520732],[ 4.47001378],
         [ 5.09516057],[ 5.08668904],[ 5.48892083],[ 4.14439814],[ 4.58574639],[ 4.3827732 ],[ 5.03868177]])
         
-        correct = np.array([-14.39823826,  -6.5120383 ,  -3.22551564,  -2.59372907,
-                -2.77393719,  -2.94132193,  -1.15432552,  -2.90292248,
-                -8.77546669, -19.20631506])
-        #self.assertTrue(np.array_equal(plot_histogram(test),correct)) 
-        from scipy.stats.distributions import norm
-        np.random.seed(0)
-        x = np.concatenate([norm(-1, 1.).rvs(400),norm(1, 0.3).rvs(100)])
-        x_grid = np.linspace(-4.5, 3.5, 1000)
-        from sklearn.grid_search import GridSearchCV
-        grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation
-        grid.fit(x[:, None])
-        print grid.best_params_
-
-
-        kde = grid.best_estimator_
-        pdf = np.exp(kde.score_samples(x_grid[:, None]))
-        from matplotlib import pyplot as plt
-        fig, ax = plt.subplots()
-        ax.plot(x_grid, pdf, linewidth=3, alpha=0.5, label='bw=%.2f' % kde.bandwidth)
-        ax.hist(x, 30, fc='gray', histtype='stepfilled', alpha=0.3, normed=True)
-        ax.legend(loc='upper left')
-        ax.set_xlim(-4.5, 3.5)
-        plt.show()
-        import pdb; pdb.set_trace()
+        plot_kernel_density(test[:,0])
+        #import pdb; pdb.set_trace()
         
         #
         #fig, ax = plt.subplots(1, 1, sharex=True, sharey=True)
