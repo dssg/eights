@@ -2,15 +2,14 @@ from sklearn.tree._tree import TREE_LEAF
 from collections import Counter
 import itertools as it
 
-def _feature_pair_report(count, description='pairs', verbose=False):
-    if verbose:
-        print description
-        print '=' * 80
-        print 'feature pair : occurences'
-        for key, freq in count.most_common():
-            print '{} : {}'.format(key, freq)
-        print '=' * 80
-        print
+def _feature_pair_report(count, description='pairs'):
+    print description
+    print '=' * 80
+    print 'feature pair : occurences'
+    for key, freq in count.most_common():
+        print '{} : {}'.format(key, freq)
+    print '=' * 80
+    print
 
 def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=False):
     """Describes the frequency of features appearing subsequently in each tree
@@ -22,11 +21,10 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=False):
     # remaining depths are weighted with 0
 
 
-    import pdb; pdb.set_trace()
-    pairs_by_est = (feature_pairs_in_tree(est) for est in rf.estimators_)
-    pairs_by_depth = (it.chain(*pair_list) for pair_list in 
-                      it.izip(*pairs_by_est))
-    pairs_flat = it.chain.from_iterable(pairs_by_depth)
+    pairs_by_est = [feature_pairs_in_tree(est) for est in rf.estimators_]
+    pairs_by_depth = [list(it.chain(*pair_list)) for pair_list in 
+                      list(it.izip_longest(*pairs_by_est, fillvalue=[]))]
+    pairs_flat = list(it.chain(*pairs_by_depth))
     depths_by_pair = {}
     for depth, pairs in enumerate(pairs_by_depth):
         for pair in pairs:
@@ -37,7 +35,7 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=False):
     average_depth_by_pair = {pair: float(sum(depths)) / len(depths) for 
                              pair, depths in depths_by_pair.iteritems()}
     counts_by_pair=Counter(pairs_flat)
-    count_pairs_by_depth = (Counter(pairs) for pairs in pairs_by_depth)
+    count_pairs_by_depth = [Counter(pairs) for pairs in pairs_by_depth]
 
     result = {}
     for depth, pairs in enumerate(count_pairs_by_depth):
