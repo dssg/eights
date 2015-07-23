@@ -2,8 +2,7 @@ from sklearn.tree._tree import TREE_LEAF
 from collections import Counter
 import itertools as it
 
-def _feature_pair_report(pairs, description='pairs', verbose=False):
-    count = Counter(pairs)
+def _feature_pair_report(count, description='pairs', verbose=False):
     if verbose:
         print description
         print '=' * 80
@@ -12,30 +11,45 @@ def _feature_pair_report(pairs, description='pairs', verbose=False):
             print '{} : {}'.format(key, freq)
         print '=' * 80
         print
-    return count
 
-def feature_pairs_in_rf(rf, verbose=False):
+def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=False):
     """Describes the frequency of features appearing subsequently in each tree
     in a random forest"""
+    # weight be depth is a vector. The 0th entry is the weight of being at
+    # depth 0; the 1st entry is the weight of being at depth 1, etc.
+    # If not provided, weights are linear with negative depth. If 
+    # the provided vector is not as long as the number of depths, then 
+    # remaining depths are weighted with 0
 
-    feature_pairs = [feature_pairs_in_tree(est) for est in rf.estimators_]
-    aggr_by_depth = {}
-    aggr_all = []
-    for tree_pairs in feature_pairs:
-        for depth, pairs in enumerate(tree_pairs):
+
+    import pdb; pdb.set_trace()
+    pairs_by_est = (feature_pairs_in_tree(est) for est in rf.estimators_)
+    pairs_by_depth = (it.chain(*pair_list) for pair_list in 
+                      it.izip(*pairs_by_est))
+    pairs_flat = it.chain.from_iterable(pairs_by_depth)
+    depths_by_pair = {}
+    for depth, pairs in enumerate(pairs_by_depth):
+        for pair in pairs:
             try:
-                aggr_by_depth[depth] += pairs
+                depths_by_pair[pair] += [depth]
             except KeyError:
-                aggr_by_depth[depth] = pairs
-            aggr_all += pairs
+                depths_by_pair[pair] = [depth]
+    average_depth_by_pair = {pair: float(sum(depths)) / len(depths) for 
+                             pair, depths in depths_by_pair.iteritems()}
+    counts_by_pair=Counter(pairs_flat)
+    count_pairs_by_depth = (Counter(pairs) for pairs in pairs_by_depth)
 
     result = {}
-    for depth in sorted(aggr_by_depth.keys()):
+    for depth, pairs in enumerate(count_pairs_by_depth):
         descr = 'Depth {}->{}'.format(depth, depth+1)
-        result[descr] = _feature_pair_report(aggr_by_depth[depth], descr, 
-                                             verbose)
+        counts = count_pairs_by_depth[depth]
+        result[descr] = counts
+        if verbose:
+            _feature_pair_report(counts, descr)
     descr = 'Overall'
-    result[descr] = _feature_pair_report(aggr_all, descr, verbose)
+    result[descr] = counts_by_pair
+    if verbose:
+        _feature_pair_report(counts_by_pair, descr)
     return result
     
 def feature_pairs_in_tree(dt):
