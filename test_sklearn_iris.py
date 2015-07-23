@@ -13,13 +13,12 @@ M = cast_np_nd_to_sa(M)
 
 #Pretend .1 is wrong so set all values of .1 in M[3] as .2
 # make a new column where its a test if col,val, (3,.2), (2,1.4) is true.
-
+print 'that'
 
 
 import pdb; pdb.set_trace()
 
 #from decontaminate import remove_null, remove_999, case_fix, truncate
-
 #from generate import donut
 #from aggregate import append_on_right, append_on_bottom
 #from truncate import remove
