@@ -4,9 +4,6 @@ import utils_for_tests as utils
 from numpy.random import rand
 utils.add_to_python_path()
 
-from sklearn.neighbors import KernelDensity
-
-
 from eights.investigate.investigate import open_csv, describe_cols
 from eights.investigate.investigate import plot_correlation_matrix
 from eights.investigate.investigate import plot_correlation_scatter_plot
@@ -27,12 +24,11 @@ class TestInvestigate(unittest.TestCase):
         
     def test_plot_correlation_matrix(self):
         data = rand(100, 10)
-        fig = plot_correlation_matrix(data)
+        fig = plot_correlation_matrix(dataverbose=False)
         
     def test_plot_correlation_scatter_plot(self):
         data = rand(100, 3)
-        fig = plot_correlation_scatter_plot(data) ##  
-        fig.show()
+        fig = plot_correlation_scatter_plot(data, verbose=False) 
         
     
     def test_convert_list_of_list_to_sa(self):
@@ -42,13 +38,14 @@ class TestInvestigate(unittest.TestCase):
         test_2 = convert_to_sa(test, names)
         correct_1 = 0
         correct_2 = 0
+        import pdb; pdb.set_trace()
         
     def test_plot_histogram(self):
         test = np.array([[ 0.94888426],[ 1.00435848],[ 0.13563403],[-0.72318153],[ 1.3204944 ],[-1.5182872 ],
         [ 5.05387508],[ 5.26197651],[ 5.13953576],[ 5.6487067 ],[ 5.1851657 ],[ 5.74520732],[ 4.47001378],
         [ 5.09516057],[ 5.08668904],[ 5.48892083],[ 4.14439814],[ 4.58574639],[ 4.3827732 ],[ 5.03868177]])
         
-        plot_kernel_density(test[:,0])
+        plot_kernel_density(test[:,0], verbose=False)
         #import pdb; pdb.set_trace()
         
         #

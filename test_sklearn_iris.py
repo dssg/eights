@@ -13,6 +13,15 @@ M = cast_np_nd_to_sa(M)
 
 #Pretend .1 is wrong so set all values of .1 in M[3] as .2
 # make a new column where its a test if col,val, (3,.2), (2,1.4) is true.
+
+where_all_are_true(
+    M,
+    [where_val_eq,where_val_eq,where_val_eq],
+    ['f0','f1','f2'],
+    [2,3,4],
+    'row1'
+)
+
 print 'that'
 
 
@@ -25,16 +34,13 @@ import pdb; pdb.set_trace()
 #from operate import run_list, fiveFunctions
 #from communicate import graph_all, results_invtestiage
 
-
 #investiage
 #M_orginal = csv_open(file_loc, file_descpiption)  # this is our original files
 #results = eights.investigate.describe_all(M_orginal)
 #results_invtestiage(results)
 
 #decontaminate
-
 #aggregate
-
 #generate
 #M = np.array([]) #this is the master Matrix we train on.
 #labels = np.array([]) # this is tells us
