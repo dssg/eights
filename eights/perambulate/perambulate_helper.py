@@ -1,3 +1,7 @@
+import abc
+from sklearn.cross_validation import _PartitionIterator
+from sklearn.ensemble import RandomForestClassifier
+
 class _BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
 

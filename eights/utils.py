@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.lib.recfunctions as nprf
+import matplotlib.mlab
 
 @np.vectorize
 def validate_time(date_text):
@@ -133,13 +134,14 @@ def is_nd(M):
 def stack_rows(M1, M2):
     raise NotImplementedError
 
+def sa_from_cols(cols):
+    return nprf.merge_arrays(cols, usemask=False)    
+
 def append_columns(M, cols, names):
     if isinstance(cols, np.ndarray):
         cols = (cols,)
     return nprf.append_fields(M, names, data=cols, usemask=False)
 
-def append_column(M, col):
-    raise NotImplementedError
 
 def remove_cols(M, col_names):
-    raise NotImplementedError
+    return nprf.drop_fields(M, col_names, usemask=False)

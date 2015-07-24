@@ -1,8 +1,5 @@
 import unittest
 import numpy as np
-import utils_for_tests as utils
-utils.add_to_python_path()
-
 from collections import Counter
 
 #from eights.truncate.truncate import (all_col_equal,

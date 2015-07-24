@@ -3,9 +3,6 @@ from sklearn.svm import SVC
 
 from sklearn import datasets
 
-import utils_for_tests as utils
-utils.add_to_python_path()
-
 from eights.perambulate.perambulate import *
 
 class TestPerambulate(unittest.TestCase):

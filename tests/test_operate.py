@@ -12,13 +12,23 @@ from collections import Counter
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import datasets
 
-import utils_for_tests as utils
-utils.add_to_python_path()
-
 from eights.operate.operate_helper import feature_pairs_in_tree
 from eights.operate.operate_helper import feature_pairs_in_rf
+import eights.operate as op
+import eights.utils as utils
+
+import utils_for_tests
 
 class TestOperate(unittest.TestCase):
+    def test_load_and_run_rf_cv(self):
+        file_loc = 'test_operate_matrix.csv'
+        M, labels = utils_for_tests.generate_test_matrix(100, 20, 
+                                                         random_state=0)
+        to_write = utils.append_cols(M, labels, 'label')
+        np.savetxt(file_loc, delimiter=',') 
+        exp = op.load_and_run_rf_cv(file_loc, -1)
+        print exp
+
     def test_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)

@@ -1,8 +1,6 @@
 import unittest
 import numpy as np
-import utils_for_tests as utils
 from numpy.random import rand
-utils.add_to_python_path()
 
 from eights.investigate.investigate import open_csv, describe_cols
 from eights.investigate.investigate import plot_correlation_matrix
