@@ -3,7 +3,6 @@ import itertools as it
 from ..communicate import *
 from ..utils import is_sa
 import numpy as np
-from scipy.stats.distributions import norm
 
 
 from collections import Counter
@@ -35,7 +34,6 @@ def open_csv(file_loc):
     """
     f = open_csv_as_structured_array(file_loc)
     return set_structured_array_datetime_as_day(f,file_loc)
-    
 def open_JSON():
     """single line description
     Parameters
@@ -55,7 +53,6 @@ def open_JSON():
        
     """
     raise NotImplementedError
-
 def open_SQL():
     """works with an sql database
     Parameters
@@ -70,8 +67,6 @@ def open_SQL():
        
     """
     raise NotImplementedError
-
-    
 
 #descriptive statistics
 def describe_cols(M):
@@ -94,8 +89,6 @@ def describe_cols(M):
     else:
         #then its a list of np.arrays
         return [describe_column(M[x]) for x in M]
-        
-
 def print_crosstab(L_1, L_2):
     """this prints a crosstab results
     Parameters
@@ -114,7 +107,6 @@ def print_crosstab(L_1, L_2):
     return crosstab_dict
 
 
-
 #Plots of desrcptive statsitics
 def plot_box_plot(col):
     """Makes a box plot for a feature
@@ -130,7 +122,6 @@ def plot_box_plot(col):
     
     """
     raise NotImplementedError
-    
 def plot_correlation_matrix(M, verbose=True):
     """Plot correlation between variables in M
     
@@ -166,7 +157,6 @@ def plot_correlation_matrix(M, verbose=True):
         plt.show()
     return fig
     #set rowvar =0 for rows are items, cols are features
-    
 def plot_correlation_scatter_plot(M, verbose=True):
     """Makes a grid of scatter plots representing relationship between variables
     
@@ -228,7 +218,6 @@ def plot_correlation_scatter_plot(M, verbose=True):
     if verbose:
         plt.show()
     return fig
-
 def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
 
     x_grid = np.linspace(min(col), max(col), 1000)
@@ -248,8 +237,6 @@ def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True):
     if verbose:
         plt.show()
     return fig
-    
-
 def plot_on_map(lat_col, lng_col):
     """Plots points on a map
     
@@ -264,7 +251,6 @@ def plot_on_map(lat_col, lng_col):
     
     """
     raise NotImplementedError
-    
 def plot_on_timeline(col):
     """Plots points on a timeline
     
@@ -315,39 +301,3 @@ def simple_CV(M, labels, clf, clf_params={},
                 for run in runs]
     return scores
 
-
-
-#utils  ?
-def convert_to_sa(M, c_name=None):
-    """Converts an list of lists or a np ndarray to a Structured Arrray
-    Parameters
-    ----------
-    M  : List of List or np.ndarray
-       This is the Matrix M, that it is assumed is the basis for the ML algorithm 
-    
-    Attributes
-    ----------
-    temp : type
-       Description 
-       
-    Returns
-    -------
-    temp : Numpy Structured array
-       This is the matrix of an appropriate type that eights expects.
-       
-    """
-    if isinstance(M, type(np.array([1]))):
-        return cast_np_nd_to_sa(M, names=c_name)
-    
-    elif isinstance(M, list) and isinstance(M[0], list): #good idea or bad?
-        return cast_list_of_list_to_sa(M, names=c_name)
-    
-    elif is_sa(M):
-        return M
-        
-    else: 
-        raise TypeError # approrpriate?
-        
-
-    
-    
