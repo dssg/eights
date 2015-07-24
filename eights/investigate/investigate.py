@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 
 from sklearn import cross_validation
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KernelDensity
 from sklearn.grid_search import GridSearchCV
 
@@ -135,8 +136,8 @@ from ..communicate.communicate import plot_on_map
 from ..communicate.communicate import plot_on_timeline
 
 #simple non-permabulated rfs
-def simple_CV(M, labels, clf, clf_params={},
-             cv=cross_validation.KFold, cv_parms={}):
+def simple_CV_clf(M, labels, clf=RandomForestClassifier, clf_params={},
+                  cv=cross_validation.KFold, cv_parms={}):
     """This is simple execution a clf in our module.  
     Parameters
     ----------
@@ -167,9 +168,4 @@ def simple_CV(M, labels, clf, clf_params={},
         labels, 
         clfs={clf: clf_params},
         cvs={cv: cv_parms})
-    runs = exp.run()
-    
-    scores = [run.clf.score(M[run.test_indices], labels[run.test_indices]) 
-                for run in runs]
-    return scores
-
+    return exp

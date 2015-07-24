@@ -16,6 +16,7 @@ from sklearn.cross_validation import _PartitionIterator
 from random import sample
 
 from .perambulate_helper import *
+import eights.utils as utils
 
 class Experiment(object):
     def __init__(
@@ -26,7 +27,7 @@ class Experiment(object):
             subsets={SubsetNoSubset: {}}, 
             cvs={NoCV: {}},
             trials=None):
-        self.M = M
+        self.M = utils.cast_np_sa_to_nd(M)
         self.y = y
         self.clfs = clfs
         self.subsets = subsets

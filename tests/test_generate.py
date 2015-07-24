@@ -1,8 +1,6 @@
 import unittest
 import numpy as np
-import utils_for_tests as utils
 from numpy.random import rand
-utils.add_to_python_path()
 import eights.investigate
 import eights.generate
 import eights.generate.generate_helper as gh
