@@ -18,7 +18,9 @@ def str_to_time(date_text):
 
 #
 def cast_list_of_list_to_sa(lol, dtype=None, names=None):
-    raise NotImplementedError
+    nd = np.array(lol)
+    return cast_np_nd_to_sa(nd, dtype=dtype, names=names)
+
 def convert_to_sa(M, c_name=None):
     """Converts an list of lists or a np ndarray to a Structured Arrray
     Parameters
@@ -37,17 +39,18 @@ def convert_to_sa(M, c_name=None):
        This is the matrix of an appropriate type that eights expects.
 
     """
-    if isinstance(M, type(np.array([1]))):#TODO
-        return cast_np_nd_to_sa(M, names=c_name)
-
-    elif isinstance(M, list) and isinstance(M[0], list): #good idea or bad?
-        return cast_list_of_list_to_sa(M, names=c_name)
-
-    elif is_sa(M):
+    if is_sa(M):
         return M
 
-    else:
-        raise TypeError # TODO
+    if is_nd(M):
+        return cast_np_nd_to_sa(M, names=c_name)
+
+    if isinstance(M, list):
+        return cast_list_of_list_to_sa(M, names=c_name)
+        # TODO make sure this function ^ ensures list of /lists/
+
+    raise ValueError('Can\'t cast to sa')
+
 def cast_np_nd_to_sa(nd, dtype=None, names=None):
     """
     
@@ -86,6 +89,7 @@ def cast_np_nd_to_sa(nd, dtype=None, names=None):
     # if the user requests an incompatible type, we have to convert
     cols = (nd[:,i].astype(dtype[i]) for i in xrange(len(dtype))) 
     return np.array(it.izip(*cols), dtype=dtype)
+
 def distance(lat_1, lon_1, lat_2, lon_2):
     from math import radians, cos, sin, asin, sqrt
     """
@@ -105,6 +109,7 @@ def distance(lat_1, lon_1, lat_2, lon_2):
     c = 2 * asin(sqrt(a)) 
     r = 3956 # 6371 Radius of earth in kilometers. Use 3956 for miles
     return c * r
+
 def dist_less_than(lat_1, lon_1, lat_2, lon_2, threshold):
     """single line description
     Parameters
@@ -117,8 +122,10 @@ def dist_less_than(lat_1, lon_1, lat_2, lon_2, threshold):
     
     """
     return (distance(lat_1, lon_1, lat_2, lon_2) < threshold)
+
 def is_sa(M):
     return is_nd(M) and M.dtype.names is not None
+
 def is_nd(M):
     return isinstance(M, np.ndarray)
 

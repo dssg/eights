@@ -71,3 +71,150 @@ def get_top_features(info):
 def get_roc_auc(info):
     raise NotImplementedError
 
+def plot_correlation_matrix(M, verbose=True):
+    """Plot correlation between variables in M
+    
+    Parameters
+    ----------
+    M : numpy structured array
+    Returns
+    -------
+    matplotlib.figure.Figure
+    
+    """
+    # http://glowingpython.blogspot.com/2012/10/visualizing-correlation-matrices.html
+    # TODO work on structured arrays or not
+    # TODO ticks are col names
+    if is_sa(M):
+        names = m.dtype.names
+        M = cast_np_sa_to_nd(M)
+    else: 
+        if is_nd(M):
+            n_cols = M.shape[1]
+        else: # list of arrays
+            n_cols = len(M)
+        names = ['f{}'.format(i) for i in xrange(n_cols)]
+    
+    #set rowvar =0 for rows are items, cols are features
+    cc = np.corrcoef(M, rowvar=0)
+    
+    fig = plt.figure()
+    plt.pcolor(cc)
+    plt.colorbar()
+    plt.yticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
+    plt.xticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
+    if verbose:
+        plt.show()
+    return fig
+
+def plot_correlation_scatter_plot(M, verbose=True):
+    """Makes a grid of scatter plots representing relationship between variables
+    
+    Each scatter plot is one variable plotted against another variable
+    
+    Parameters
+    ----------
+    M : numpy structured array
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+    
+    """
+    # TODO work for all three types that M might be
+    # TODO ignore classification variables
+    # adapted from the excellent 
+    # http://stackoverflow.com/questions/7941207/is-there-a-function-to-make-scatterplot-matrices-in-matplotlib
+    
+    if is_sa(M):
+        names = M.dtype.names
+        M = cast_np_sa_to_nd(M)
+    else:
+        names = ['f{}'.format(i) for i in xrange(M.shape[1])]    
+
+    numdata, numvars = M.shape
+    fig, axes = plt.subplots(numvars, numvars)
+    fig.subplots_adjust(hspace=0.05, wspace=0.05)
+
+    for ax in axes.flat:
+        # Hide all ticks and labels
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_visible(False)
+
+        # Set up ticks only on one side for the "edge" subplots...
+        if ax.is_first_col():
+            ax.yaxis.set_ticks_position('left')
+        if ax.is_last_col():
+            ax.yaxis.set_ticks_position('right')
+        if ax.is_first_row():
+            ax.xaxis.set_ticks_position('top')
+        if ax.is_last_row():
+            ax.xaxis.set_ticks_position('bottom')
+
+    # Plot the M.
+    for i, j in zip(*np.triu_indices_from(axes, k=1)):
+        for x, y in [(i,j), (j,i)]: 
+            axes[x,y].plot(M[x], M[y], '.')
+
+    # Label the diagonal subplots...
+    for i, label in enumerate(names):
+        axes[i,i].annotate(label, (0.5, 0.5), xycoords='axes fraction',
+                ha='center', va='center')
+
+    # Turn on the proper x or y axes ticks.
+    for i, j in zip(range(numvars), it.cycle((-1, 0))):
+        axes[j,i].xaxis.set_visible(True)
+        axes[i,j].yaxis.set_visible(True)
+    if verbose:
+        plt.show()
+    return fig
+
+def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
+
+    x_grid = np.linspace(min(col), max(col), 1000)
+
+    grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation
+    grid.fit(col[:, None])
+
+    kde = grid.best_estimator_
+    pdf = np.exp(kde.score_samples(x_grid[:, None]))
+
+    fig, ax = plt.subplots()
+    #fig = plt.figure()
+    ax.plot(x_grid, pdf, linewidth=3, alpha=0.5, label='bw=%.2f' % kde.bandwidth)
+    ax.hist(col, 30, fc='gray', histtype='stepfilled', alpha=0.3, normed=True)
+    ax.legend(loc='upper left')
+    ax.set_xlim(min(col), max(col))
+    if verbose:
+        plt.show()
+    return fig
+
+def plot_on_map(lat_col, lng_col):
+    """Plots points on a map
+    
+    Parameters
+    ----------
+    lat_col : np.array
+    lng_col : np.array
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+    
+    """
+    raise NotImplementedError
+
+def plot_on_timeline(col):
+    """Plots points on a timeline
+    
+    Parameters
+    ----------
+    col : np.array
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    raise NotImplementedError
+
+    
