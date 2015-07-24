@@ -5,16 +5,17 @@ from ..perambulate import Experiment
 from communicate_helper import *
 
 
-def print_matrix_row_col(M, L_1, L_2,):
-    row_format ="{:>15}" * (len(L_2) + 1)
-    print row_format.format("", *L_2)
-    for team, row in zip(L_1, M):
-        print row_format.format(team, *row)
-    return None
+def print_matrix_row_col(M, row_labels, col_labels):
+    row_format ="{:>15}" * (len(col_labels) + 1)
+    print row_format.format("", *col_labels)
+    for row_name, row in zip(row_labels, M):
+        print row_format.format(row_name, *row)
 
 def print_crosstab_dict(a_dict):
     K_1 = a_dict.keys()
-    K_2 = np.unique([item for sublist in [list(x.elements()) for x in a_dict.values()] for item in sublist])
+    K_2 = np.unique([item for sublist in [list(x.elements()) for 
+                                          x in a_dict.values()] 
+                     for item in sublist])
     #Here for simplicity REMOVE
     M = np.zeros(shape=(len(K_1),len(K_2)))
     for idx, x in enumerate(K_1):
@@ -24,32 +25,31 @@ def print_crosstab_dict(a_dict):
     print row_format.format("", *K_2)
     for team, row in zip(K_1, M):
         print row_format.format(team, *row)
-    return None
     
 def print_describe_all(a_dict):
-    K_1 = a_dict.keys()
-    K_2 = a_dict.values()
+    row_labels = a_dict.keys()
+    rows = a_dict.values()
     row_format ="{:>15}" * (2)
     print row_format.format("", *a_dict.keys())
-    for team, row in zip(K_1, K_2):
-        print row_format.format(team, row)
-    return None
+    for row_label, row in zip(row_labels, rows):
+        print row_format.format(row_label, row)
     
-
-def plot_simple_histogram(x):
-    hist, bins = np.histogram(x, bins=50)
+def plot_simple_histogram(col, verbose=True):
+    hist, bins = np.histogram(col, bins=50)
     width = 0.7 * (bins[1] - bins[0])
     center = (bins[:-1] + bins[1:]) / 2
+    f = figure()
     plt.bar(center, hist, align='center', width=width)
-    plt.show()
-
+    if verbose:
+        plt.show()
+    return f
 
 # all of the below take output from any func in perambulate or operate
 
 def generate_report(info):
     raise NotImplementedError
 
-def plot_roc(labels, score, title='roc', show=True):
+def plot_roc(labels, score, title='roc', verbose=True):
     fpr, tpr = roc_curve(labels, score)
     n_entries = fpr.shape[0] 
     X = (np.arange(n_entries) + 1) / float(n_entries)
@@ -59,17 +59,19 @@ def plot_roc(labels, score, title='roc', show=True):
     plt.xlabel('% Selected as True')
     plt.ylabel('Rate')
     plt.title(title)
-    if show:
+    if verbose:
         fig.show()
     return fig
 
-def plot_prec_recall(info):
+def plot_prec_recall(labels, score, verbose=True):
     raise NotImplementedError
 
-def get_top_features(info):
+def get_top_features(clf, n):
     raise NotImplementedError
 
-def get_roc_auc(info):
+# TODO features form top % of clfs
+
+def get_roc_auc(labels, score):
     raise NotImplementedError
 
 def plot_correlation_matrix(M, verbose=True):
