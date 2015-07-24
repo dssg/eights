@@ -140,3 +140,6 @@ def append_columns(M, cols, names):
 
 def append_column(M, col):
     raise NotImplementedError
+
+def remove_cols(M, col_names):
+    raise NotImplementedError
