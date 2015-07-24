@@ -52,11 +52,8 @@ def convert_list_to_structured_array(L, col_names, type_info):
         if x =='string':
             max_val = max([len(z[idx]) for z in L])
 
-            import pdb; pdb.set_trace()
-
             type_fixed.append((col_names[idx],'S'+ str(max_val)))
 
-    dtype=[('f0', int), ('f1', 'S6'), ('f2', float)]
     return np.array(L, dtype=[type_info])
 
 def describe_column(col):
@@ -74,7 +71,6 @@ def crosstab(L_1, L_2):
     L_1 = np.array(L_1)
     L_2 = np.array(L_2)
     K_1 = np.unique(L_1)
-    K_2 = np.unique(L_2)
     a_dict = {}
     for k in K_1:
         loc_k = np.where(np.array(L_1)==k)[0]

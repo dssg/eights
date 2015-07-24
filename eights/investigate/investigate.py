@@ -1,4 +1,5 @@
 from investigate_helper import *
+import itertools as it
 from ..communicate import *
 from ..utils import is_sa
 import numpy as np
@@ -8,60 +9,106 @@ import sklearn
 from collections import Counter
 import matplotlib.pyplot as plt
 
+
 from sklearn import cross_validation
+from sklearn.neighbors import KernelDensity
+from sklearn.grid_search import GridSearchCV
 
-
-def simple_CV(M, labels, clf, clf_params={},
-              cv=sklearn.cross_validation.KFold, cv_parms={}):
-    
-    exp = Experiment(
-        M, 
-        labels, 
-        clfs={clf: clf_params},
-        cvs={cv: sv_params})
-    runs = exp.run()[0][0]
-    
-    scores = [(run.clf.score(M[run.test_indices], labels[run.test_indices]) 
-                for run in runs)]
-    return scores
-
-
-
-def convert_list_of_list_to_sa(M, c_name=None):
-    return cast_np_nd_to_sa(M, names=c_name)
-        
-        
+#open files 
 def open_csv(file_loc):
+    """single line description
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
     f = open_csv_as_structured_array(file_loc)
     return set_structured_array_datetime_as_day(f,file_loc)
-    
 def open_JSON():
-    return
+    """single line description
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
+    raise NotImplementedError
+def open_SQL():
+    """works with an sql database
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
+    raise NotImplementedError
 
-#summary Statistics
-def describe_col(col):
-    return describe_column(col)
-
-def describe_all(M):
+#descriptive statistics
+def describe_cols(M):
+    """takes a SA or list of Np.rayas and returns the summary statistcs
+    Parameters
+    ----------
+    M : Structured Array or list of Numpy ND arays.
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
+    #remove the [] if only one?
     if is_sa(M):
         #then its a structured array
         return [describe_column(M[x]) for x in M.dtype.names]
     else:
         #then its a list of np.arrays
         return [describe_column(M[x]) for x in M]
-        
-def histogram(L, n=None): 
-    if n is None:
-        n = len(L)
-    return Counter(L).most_common(n)
-    
 def print_crosstab(L_1, L_2):
+    """this prints a crosstab results
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Returns
+    -------
+    temp : type
+       Description
+    """
     #assume np.structured arrays?
     crosstab_dict = crosstab(L_1, L_2)
     print_crosstab_dict(crosstab_dict)
     return crosstab_dict
 
 
+#Plots of desrcptive statsitics
 def plot_box_plot(col):
     """Makes a box plot for a feature
     comment
@@ -76,8 +123,7 @@ def plot_box_plot(col):
     
     """
     raise NotImplementedError
-    
-def plot_correlation_matrix(M):
+def plot_correlation_matrix(M, verbose=True):
     """Plot correlation between variables in M
     
     Parameters
@@ -108,10 +154,11 @@ def plot_correlation_matrix(M):
     plt.colorbar()
     plt.yticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
     plt.xticks(np.arange(0.5, M.shape[1] + 0.5), range(0, M.shape[1]))
+    if verbose:
+        plt.show()
     return fig
     #set rowvar =0 for rows are items, cols are features
-    
-def plot_correlation_scatter_plot(M):
+def plot_correlation_scatter_plot(M, verbose=True):
     """Makes a grid of scatter plots representing relationship between variables
     
     Each scatter plot is one variable plotted against another variable
@@ -136,8 +183,8 @@ def plot_correlation_scatter_plot(M):
     else:
         names = ['f{}'.format(i) for i in xrange(M.shape[1])]    
 
-    numvars, numdata = M.shape
-    fig, axes = plt.subplots(nrows=numvars, ncols=numvars)
+    numdata, numvars = M.shape
+    fig, axes = plt.subplots(numvars, numvars)
     fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
     for ax in axes.flat:
@@ -157,8 +204,8 @@ def plot_correlation_scatter_plot(M):
 
     # Plot the M.
     for i, j in zip(*np.triu_indices_from(axes, k=1)):
-        for x, y in [(i,j), (j,i)]:
-            axes[x,y].plot(M[x], M[y], **kwargs)
+        for x, y in [(i,j), (j,i)]: 
+            axes[x,y].plot(M[x], M[y], '.')
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
@@ -166,33 +213,31 @@ def plot_correlation_scatter_plot(M):
                 ha='center', va='center')
 
     # Turn on the proper x or y axes ticks.
-    for i, j in zip(range(numvars), itertools.cycle((-1, 0))):
+    for i, j in zip(range(numvars), it.cycle((-1, 0))):
         axes[j,i].xaxis.set_visible(True)
         axes[i,j].yaxis.set_visible(True)
-
+    if verbose:
+        plt.show()
     return fig
-    
-def plot_histogram(col, missing_val=np.nan):
-    """Plot histogram of variables in col
-    
-    Includes a bar represented missing entries.
-    
-    Does a really good job showing the variation in the variable.
-    
-    Parameters
-    ----------
-    col : np.array
-        Column to plot
-    missing_val : ?
-        Value representing a missing entry
-    
-    Returns
-    -------
-    matplotlib.figure.Figure
-    
-    """
-    raise NotImplementedError
-    
+def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
+
+    x_grid = np.linspace(min(col), max(col), 1000)
+
+    grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation
+    grid.fit(col[:, None])
+
+    kde = grid.best_estimator_
+    pdf = np.exp(kde.score_samples(x_grid[:, None]))
+
+    fig, ax = plt.subplots()
+    #fig = plt.figure()
+    ax.plot(x_grid, pdf, linewidth=3, alpha=0.5, label='bw=%.2f' % kde.bandwidth)
+    ax.hist(col, 30, fc='gray', histtype='stepfilled', alpha=0.3, normed=True)
+    ax.legend(loc='upper left')
+    ax.set_xlim(min(col), max(col))
+    if verbose:
+        plt.show()
+    return fig
 def plot_on_map(lat_col, lng_col):
     """Plots points on a map
     
@@ -207,7 +252,6 @@ def plot_on_map(lat_col, lng_col):
     
     """
     raise NotImplementedError
-    
 def plot_on_timeline(col):
     """Plots points on a timeline
     
@@ -218,5 +262,43 @@ def plot_on_timeline(col):
     Returns
     -------
     matplotlib.figure.Figure
-    """   
+    """
     raise NotImplementedError
+
+    
+
+#simple non-permabulated rfs
+def simple_CV(M, labels, clf, clf_params={},
+              cv=cross_validation.KFold, cv_parms={}):
+    """This is simple execution a clf in our module.  
+    Parameters
+    ----------
+    M : Structured array
+       The matrix you wish to use for training and testing 
+    labels : a one dimenional nd array
+       This these are the labels that are assigned to the rows in the matrix M.
+    clf : Sklearn Class object
+        This is the type of algorithim you would use. 
+    clf_params : a dictionary of parameters to assign to your clf
+        The appropriate paramterts to asign to the clf, empty dict if none.
+    cv : sklearn cv 
+        kfold if default
+    cv_parms : dict of paramters to apply to the cv
+        empty if default
+           
+    Returns
+    -------
+    temp : list
+       the list of trained models
+    """
+    exp = Experiment(
+        M, 
+        labels, 
+        clfs={clf: clf_params},
+        cvs={cv: cv_parms})
+    runs = exp.run()
+    
+    scores = [run.clf.score(M[run.test_indices], labels[run.test_indices]) 
+                for run in runs]
+    return scores
+

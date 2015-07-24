@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
+from ..perambulate import Experiment
 
 
 def print_matrix_row_col(M, L_1, L_2,):
