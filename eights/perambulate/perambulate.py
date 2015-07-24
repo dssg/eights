@@ -118,8 +118,8 @@ class Experiment(object):
         return [(trial, trial.average_score()) for trial in self.trials]
 
 
-def simple_sliding_window(n, training_window_size, testing_window_size):
-    for train, test in sliding_window(
+def simple_sliding_window_index(n, training_window_size, testing_window_size):
+    for train, test in sliding_window_index(
             n, 
             0, 
             train_window_size - 1, 
@@ -129,7 +129,7 @@ def simple_sliding_window(n, training_window_size, testing_window_size):
         yield train, test
             
 
-def sliding_window(n, 
+def sliding_window_index(n, 
         init_train_window_start, 
         init_train_window_end, 
         init_test_window_start,
@@ -151,8 +151,8 @@ def sliding_window(n,
     """
     raise NotImplementedError
 
-def simple_expanding_window(n, training_window_size, testing_window_size):
-    for train, test in expanding_window(
+def simple_expanding_window_index(n, training_window_size, testing_window_size):
+    for train, test in expanding_window_index(
             n, 
             0, 
             train_window_size - 1, 
@@ -161,7 +161,7 @@ def simple_expanding_window(n, training_window_size, testing_window_size):
             1):
         yield train, test
 
-def expanding_window(n, 
+def expanding_window_index(n, 
         init_train_window_start, 
         init_train_window_end, 
         init_test_window_start,
@@ -169,6 +169,70 @@ def expanding_window(n,
         increment):
     """
 
+    Parameters
+    ----------
+    n : int
+        number of rows in the matrix
+    init_train_window_start : int
+    init_train_window_end : int
+    init_test_window_start : int
+    init_test_window_end : int
+    increment : int
+        distance training and testing window are moved per iteration
+
+    """
+    raise NotImplementedError
+
+def simple_sliding_window_time(n, training_window_size, testing_window_size):
+    for train, test in sliding_window_index(
+            n, 
+            0, 
+            train_window_size - 1, 
+            train_window_size, 
+            train_window_size + testing_window_size - 1, 
+            1):
+        yield train, test
+            
+
+def sliding_window_time(n, 
+        init_train_window_start, 
+        init_train_window_end, 
+        init_test_window_start,
+        init_test_window_end,
+        increment):
+    """
+
+    Parameters
+    ----------
+    n : int
+        number of rows in the matrix
+    init_train_window_start : int
+    init_train_window_end : int
+    init_test_window_start : int
+    init_test_window_end : int
+    increment : int
+        distance training and testing window are moved per iteration
+
+    """
+    raise NotImplementedError
+
+def simple_expanding_window_time(n, training_window_size, testing_window_size):
+    for train, test in expanding_window_time(
+            n, 
+            0, 
+            train_window_size - 1, 
+            train_window_size, 
+            train_window_size + testing_window_size - 1, 
+            1):
+        yield train, test
+
+def expanding_window_time(n, 
+        init_train_window_start, 
+        init_train_window_end, 
+        init_test_window_start,
+        init_test_window_end,
+        increment):
+    """
     Parameters
     ----------
     n : int
