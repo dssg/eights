@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
 from ..perambulate import Experiment
 
 
@@ -47,8 +48,19 @@ def plot_simple_histogram(x):
 def generate_report(info):
     raise NotImplementedError
 
-def plot_roc(info):
-    raise NotImplementedError
+def plot_roc(labels, score, title='roc', show=True):
+    fpr, tpr = roc_curve(labels, score)
+    n_entries = fpr.shape[0] 
+    X = (np.arange(n_entries) + 1) / float(n_entries)
+    fig = plt.figure()
+    plt.plot(X, fpr, X, tpr)
+    plt.legend(['False Positive Rate', 'True Positive Rate'], 'upper left')
+    plt.xlabel('% Selected as True')
+    plt.ylabel('Rate')
+    plt.title(title)
+    if show:
+        fig.show()
+    return fig
 
 def plot_prec_recall(info):
     raise NotImplementedError

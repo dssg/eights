@@ -84,14 +84,32 @@ dimensions = (CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS)
 class Run(object):
     def __init__(
         self,
+        M,
+        y,
         clf,
         test_indices):
+        self.M = M
+        self.y = y
         self.clf = clf
         self.test_indices = test_indices
 
     def __repr__(self):
         return 'Run(clf={})'.format(
                 self.clf)
+
+    def __test_M(self):
+        return self.M[self.test_indices]
+
+    def __test_y(self):
+        return self.y[self.test_indices]
+        
+    def score(self):
+        return self.clf.score(self.__test_M(), self.__test_y())
+
+    def roc_curve(self):
+        score = self.clf.predict_proba(self.__test_X())
+        return communicate.plot_roc(self.__test_y(), score, show=False) 
+
 
 class Trial(object):
     def __init__(
@@ -157,7 +175,8 @@ class Trial(object):
                 clf_inst = self.clf(**self.clf_params)
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
-                runs_this_subset.append(Run(clf_inst, test_indices))
+                runs_this_subset.append(Run(self.M, self.y, clf_inst, 
+                                            test_indices))
             runs.append(runs_this_subset)    
         self.runs = runs
         return runs
@@ -170,13 +189,19 @@ class Trial(object):
         y = self.y
         ave_score = np.mean(
                 [np.mean(
-                    [run.clf.score(
-                        M[run.test_indices], y[run.test_indices])
-                     for run in subset])
+                    [run.score() for run in subset])
                  for subset in self.runs])
         self.__cached_ave_score = ave_score
         return ave_score
     
+    def median_run(self):
+        # Give or take
+        runs_with_score = [(run.score(), run) for run in self.runs]
+        runs_with_score.sort(key=lambda t: t[0])
+        return runs_with_score[len(runs_with_score) / 2][1]
+    def roc_curve(self):
+        return self.median_run().roc_curve()
+
 class Experiment(object):
     def __init__(
             self, 
@@ -184,13 +209,14 @@ class Experiment(object):
             y, 
             clfs={RandomForestClassifier: {}}, 
             subsets={SubsetNoSubset: {}}, 
-            cvs={NoCV: {}}):
+            cvs={NoCV: {}},
+            trials=None):
         self.M = M
         self.y = y
         self.clfs = clfs
         self.subsets = subsets
         self.cvs = cvs
-        self.trials = None
+        self.trials = trials
 
     def __repr__(self):
         print 'Experiment(clfs={}, subsets={}, cvs={})'.format(
@@ -203,24 +229,32 @@ class Experiment(object):
         
         for trial in trials:
             trial.run()
-            
+
+    def __copy(self, trials):
+        return Experiment(
+                self.M, 
+                self.y,
+                self.clfs,
+                self.subsets,
+                self.cvs,
+                trials)
+
     def __transpose_dict_of_lists(self, dol):
         # http://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
         return (dict(it.izip(dol, x)) for 
                 x in it.product(*dol.itervalues()))
 
     def slice_on_dimension(self, dimension, value, trials=None):
-        if trials is None:
-            trials = self.run()
-        return [trial for trial in trials if trial[dimension] == value]  
+        self.run()
+        return self.__copy([trial for trial in self.trials if 
+                            trial[dimension] == value])
 
-    def slice_by_best_score(self, dimension, trials=None):
-        if trials is None:
-            trials = self.run()
+    def slice_by_best_score(self, dimension):
+        self.run()
         categories = {}
         other_dims = list(dimensions)
         other_dims.remove(dimension)
-        for trial in trials:
+        for trial in self.trials:
             # http://stackoverflow.com/questions/5884066/hashing-a-python-dictionary
             key = repr([trial[dim] for dim in other_dims])
             try:
@@ -232,7 +266,7 @@ class Experiment(object):
             result.append(max(
                 categories[key], 
                 key=lambda trial: trial.average_score()))
-        return result
+        return self.__copy(result)
 
     def has_run(self):
         return self.trials is not None

@@ -4,6 +4,7 @@ from ..communicate import *
 from ..utils import is_sa
 import numpy as np
 
+import sklearn
 
 from collections import Counter
 import matplotlib.pyplot as plt
