@@ -5,7 +5,7 @@ import generate_helper as gh
 def select_by_dist_from(M, target, threshold, lat_col_name, lng_col_name):
     ret = []
     for idx, x in enumerate(M):        
-        if dist_less_than(target, GPS(x[lng_col_name], x[lat_col_name]),threshold):
+        if dist_less_than(target, GPS(x[lng_col_name], x[lat_col_name]), threshold):
             ret.append(idx)
     return ret
 
