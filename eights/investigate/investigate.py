@@ -136,7 +136,7 @@ from ..communicate.communicate import plot_on_timeline
 
 #simple non-permabulated rfs
 def simple_CV(M, labels, clf, clf_params={},
-              cv=cross_validation.KFold, cv_parms={}):
+             cv=cross_validation.KFold, cv_parms={}):
     """This is simple execution a clf in our module.  
     Parameters
     ----------

@@ -2,7 +2,6 @@ import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
 
-
 def where_all_are_true(M, lambdas, col_names, vals, generated_names):
     to_select = np.ones(M.size, dtype=bool)
     for lambd, col_name, val in zip(lambdas, col_names, vals):
