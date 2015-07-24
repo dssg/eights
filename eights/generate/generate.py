@@ -2,14 +2,6 @@ import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
 
-def select_by_dist_from(M, target, threshold, lat_col_name, lng_col_name):
-    ret = []
-    for idx, x in enumerate(M):        
-        if dist_less_than(target, GPS(x[lng_col_name], x[lat_col_name]), threshold):
-            ret.append(idx)
-    return ret
-
-
 def where_all_are_true(M, lambdas, col_names, vals, generated_names):
     to_select = np.ones(M.size, dtype=bool)
     for lambd, col_name, val in zip(lambdas, col_names, vals):
@@ -27,11 +19,16 @@ def where_val_eq(M, col_name, boundary):
 def where_val_lt(M, col_name, boundary):
     return M[col_name] < boundary
 
+def where_val_lt_TIME_EDITION(M, col_name, boundary):
+    return M[col_name] < boundary
+
 def where_val_gt(M, col_name, boundary):
     return M[col_name] > boundary
 
 def where_val_between(M, col_name, boundary):
     return np.logical_and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
+
+
 
 #def sweep_where_all_are_true(args, M):
 #   changing_args = [arg[2] for arg in args]
@@ -105,3 +102,8 @@ def normalize(col):
     
     """
     raise NotImplementedError    
+
+def distance_from_point(lat_origin, lng_origin, lat_col, lng_col):
+    """ Generates a column of how far each record is from the origin"""
+    raise NotImplementedError    
+
