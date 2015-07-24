@@ -15,8 +15,8 @@ from ..generate.generate import where_val_gt
 from ..generate.generate import where_val_between
 
 
-def row_not_within_region(M, col_name, boundar):
-    raise NotImplementedError
+#def row_not_within_region(M, col_name, boundar):
+#    raise NotImplementedError
 
     
     

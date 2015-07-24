@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 from ..perambulate import Experiment
+from communicate_helper import *
 
 
 def print_matrix_row_col(M, L_1, L_2,):
@@ -217,4 +218,71 @@ def plot_on_timeline(col):
     """
     raise NotImplementedError
 
+def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
+    """Describes the frequency of features appearing subsequently in each tree
+    in a random forest"""
+    # weight be depth is a vector. The 0th entry is the weight of being at
+    # depth 0; the 1st entry is the weight of being at depth 1, etc.
+    # If not provided, weights are linear with negative depth. If 
+    # the provided vector is not as long as the number of depths, then 
+    # remaining depths are weighted with 0
+
+
+    pairs_by_est = [feature_pairs_in_tree(est) for est in rf.estimators_]
+    pairs_by_depth = [list(it.chain(*pair_list)) for pair_list in 
+                      list(it.izip_longest(*pairs_by_est, fillvalue=[]))]
+    pairs_flat = list(it.chain(*pairs_by_depth))
+    depths_by_pair = {}
+    for depth, pairs in enumerate(pairs_by_depth):
+        for pair in pairs:
+            try:
+                depths_by_pair[pair] += [depth]
+            except KeyError:
+                depths_by_pair[pair] = [depth]
+    counts_by_pair=Counter(pairs_flat)
+    count_pairs_by_depth = [Counter(pairs) for pairs in pairs_by_depth]
+
+    depth_len = len(pairs_by_depth)
+    if weight_by_depth is None:
+        weight_by_depth = [(depth_len - float(depth)) / max_depth for depth in
+                           xrange(depth_len)]
+    weight_filler = it.repeat(0.0, depth_len - len(weight_by_depth))
+    weights = list(it.chain(weight_by_depth, weight_filler))
     
+    average_depth_by_pair = {pair: float(sum(depths)) / len(depths) for 
+                             pair, depths in depths_by_pair.iteritems()}
+
+    weighted = {pair: sum([weights[depth] for depth in depths])
+                for pair, depths in depths_by_pair.iteritems()}
+
+    if verbose:
+        print '=' * 80
+        print 'RF Subsequent Pair Analysis'
+        print '=' * 80
+        print
+        _feature_pair_report(
+                counts_by_pair.most_common(), 
+                'Overall Occurrences', 
+                'occurrences')
+        _feature_pair_report(
+                sorted([item for item in average_depth_by_pair.iteritems()], 
+                       key=lambda item: item[1]),
+                'Average depth',
+                'average depth',
+                'Max depth was {}'.format(depth_len - 1))
+        _feature_pair_report(
+                sorted([item for item in weighted.iteritems()], 
+                       key=lambda item: item[1]),
+                'Occurrences weighted by depth',
+                'sum weight',
+                'Weights for depth 0, 1, 2, ... were: {}'.format(weights))
+
+        for depth, pairs in enumerate(count_pairs_by_depth):
+            _feature_pair_report(
+                    pairs.most_common(), 
+                    'Occurrences at depth {}'.format(depth), 
+                    'occurrences')
+
+
+    return (counts_by_pair, count_pairs_by_depth, average_depth_by_pair, 
+            weighted)

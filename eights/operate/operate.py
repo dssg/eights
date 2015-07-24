@@ -1,3 +1,6 @@
+from operate_helper import *
+
+# operate is full of liiitle pipelines
 
 def run_classifier(M, y, clf_class, hyperparameters):
     # returns fitted estimator
@@ -5,3 +8,4 @@ def run_classifier(M, y, clf_class, hyperparameters):
 
 def run_std_classifiers(M_train, M_test, y_train, y_test, report_file):
     raise NotImplementedError    
+
