@@ -53,6 +53,20 @@ def convert_to_sa(M, c_name=None):
 
     raise ValueError('Can\'t cast to sa')
 
+__type_permissiveness_ranks = {'b': 0, 'M': 100, 'i': 200, 'f': 300, 'S': 400}
+def __type_permissiveness(dtype):
+    # TODO handle other types
+    return __type_permissiveness_ranks[dtype.kind] + dtype.itemsize
+
+def np_dtype_is_homogeneous(A):
+    """True iff dtype is nonstructured or every sub dtype is the same"""
+    # http://stackoverflow.com/questions/3787908/python-determine-if-all-items-of-a-list-are-the-same-item
+    if not is_sa(A):
+        return True
+    dtype = A.dtype
+    first_dtype = dtype[0]
+    return all(dtype[i] == first_dtype for i in xrange(len(dtype)))
+
 def cast_np_nd_to_sa(nd, dtype=None, names=None):
     """
     
@@ -91,6 +105,45 @@ def cast_np_nd_to_sa(nd, dtype=None, names=None):
     # if the user requests an incompatible type, we have to convert
     cols = (nd[:,i].astype(dtype[i]) for i in xrange(len(dtype))) 
     return np.array(it.izip(*cols), dtype=dtype)
+
+def cast_np_sa_to_nd(sa):
+    """
+    
+    Returns a view of a numpy structured array as a single-type 1 or
+    2-dimensional array. If the resulting nd array would be a column vector,
+    returns a 1-d array instead. If the resulting array would have a single
+    entry, returns a 0-d array instead
+    All elements are converted to the most permissive type. permissiveness
+    is determined first by finding the most permissive type in the ordering:
+    datetime64 < int < float < string
+    then by selecting the longest typelength among all columns with with that
+    type.
+    If the sa does not have a homogeneous datatype already, this may require
+    copying and type conversion rather than just casting. Consequently, this
+    operation should be avoided for heterogeneous arrays
+    Based on http://wiki.scipy.org/Cookbook/Recarray.
+    Parameters
+    ----------
+    sa : numpy.ndarray
+        The structured array to view
+    Returns
+    -------
+    np.ndarray
+    """
+    dtype = sa.dtype
+    if len(dtype) == 1:
+        if sa.size == 1:
+            return sa.view(dtype=dtype[0]).reshape(())
+        return sa.view(dtype=dtype[0]).reshape(len(sa))
+    if np_dtype_is_homogeneous(sa):
+        return sa.view(dtype=dtype[0]).reshape(len(sa), -1)
+    # If type isn't homogeneous, we have to convert
+    dtype_it = (dtype[i] for i in xrange(len(dtype)))
+    most_permissive = max(dtype_it, key=__type_permissiveness)
+    col_names = dtype.names
+    cols = (sa[col_name].astype(most_permissive) for col_name in col_names)
+    nd = np.column_stack(cols)
+    return nd
 
 def distance(lat_1, lon_1, lat_2, lon_2):
     from math import radians, cos, sin, asin, sqrt
@@ -137,11 +190,8 @@ def stack_rows(M1, M2):
 def sa_from_cols(cols):
     return nprf.merge_arrays(cols, usemask=False)    
 
-def append_columns(M, cols, names):
-    if isinstance(cols, np.ndarray):
-        cols = (cols,)
+def append_cols(M, cols, names):
     return nprf.append_fields(M, names, data=cols, usemask=False)
-
 
 def remove_cols(M, col_names):
     return nprf.drop_fields(M, col_names, usemask=False)

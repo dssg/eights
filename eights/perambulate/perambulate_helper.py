@@ -1,4 +1,7 @@
 import abc
+import copy
+import inspect
+import numpy as np
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import RandomForestClassifier
 
@@ -18,7 +21,7 @@ class _BaseSubsetIter(object):
 
 class SubsetNoSubset(_BaseSubsetIter):
     def __iter__(self):
-        yield np.arange(y.shape[0])
+        yield np.arange(self._y.shape[0])
 
     def __repr__(self):
         return 'SubsetNoSubset()'

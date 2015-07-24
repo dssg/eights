@@ -13,8 +13,8 @@ def run_std_classifiers(M_train, M_test, y_train, y_test, report_file):
 
 def load_and_run_rf_cv(file_loc, label_col=0):
     M = inv.open_csv(file_loc)
-    labels_name = M.names[label_col]
+    labels_name = M.dtype.names[label_col]
     labels = M[labels_name]
-    M = utils.remove_cols[labels_name]
+    M = utils.remove_cols(M, labels_name)
     return inv.simple_CV_clf(M, labels)
     

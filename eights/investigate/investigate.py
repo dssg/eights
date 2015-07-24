@@ -168,4 +168,4 @@ def simple_CV_clf(M, labels, clf=RandomForestClassifier, clf_params={},
         labels, 
         clfs={clf: clf_params},
         cvs={cv: cv_parms})
-    return exp.run()
+    return exp
