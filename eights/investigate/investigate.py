@@ -6,7 +6,6 @@ import sklearn
 from collections import Counter
 import matplotlib.pyplot as plt
 
-
 from sklearn import cross_validation
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KernelDensity

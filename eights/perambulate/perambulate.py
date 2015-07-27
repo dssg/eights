@@ -13,7 +13,6 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.cross_validation import KFold, StratifiedKFold
 from sklearn.cross_validation import _PartitionIterator
 
-from random import sample
 
 from .perambulate_helper import *
 import eights.utils as utils
@@ -121,6 +120,15 @@ class Experiment(object):
     def roc_auc(self):
         self.run()
         return {trial: trial.roc_auc() for trial in self.trials}
+
+    def make_report(self, report_file_name='report.pdf'):
+        from ..communicate import Report
+        self.run()
+        rep = Report(self, report_file_name)
+        rep.add_summary_graph('roc_auc')
+        rep.add_legend()
+        rep.to_pdf()
+        # TODO make this more flexible
 
 
 def simple_sliding_window_index(n, training_window_size, testing_window_size):

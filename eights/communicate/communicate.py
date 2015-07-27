@@ -1,9 +1,14 @@
+import os
+import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import boxplot 
 
+import pdfkit
+
 from sklearn.metrics import roc_curve
 from ..perambulate import Experiment
+from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 
 def generate_report(info):
@@ -312,12 +317,99 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
     return (counts_by_pair, count_pairs_by_depth, average_depth_by_pair, 
             weighted)
 
+def html_escape(s):
+    """Returns a string with all its html-averse characters html escaped"""
+    return cgi.escape(s).encode('ascii', 'xmlcharrefreplace')
+
+def np_to_html_table(sa, fout):
+    fout.write('<p>table of shape: ({},{})</p>'.format(
+        len(sa),
+        len(sa.dtype)))
+    fout.write('<p><table>\n')
+    header = '<tr>{}</tr>\n'.format(
+        ''.join(
+                [html_format(
+                    '<th>{}</th>',
+                    name) for 
+                 name in sa.dtype.names]))
+    fout.write(header)
+    data = '\n'.join(
+        ['<tr>{}</tr>'.format(
+            ''.join(
+                [html_format(
+                    '<td>{}</td>',
+                    cell) for
+                 cell in row])) for
+         row in sa])
+    fout.write(data)
+    fout.write('\n')
+    fout.write('</table></p>')
+
 class Report(object):
-    def __init__(self, exp):
-        self.__back_indices = {trial, i for i, trial in enumerate(exp.trials)}
+
+    def __init__(self, exp, report_path):
+        self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
         self.__objects = []
+        self.__exp = exp
+        self.__tmp_folder = 'eights_temp'
+        if os.path.exists(self.__tmp_folder):
+            shutil.rmtree(self.__tmp_folder)
+        os.mkdir(self.__tmp_folder)
+        self.__html_src_path = os.path.join(self.__tmp_folder, 'index.html')
+        self.__report_path = report_path
+
+    def to_pdf(self):
+        with open(self.__html_src_path, 'w') as html_out:
+            html_out.write(self.__get_header)
+            html_out.write('\n'.join(self.__objects))
+            html_out.write(self.__get_footer)
+        pdfkit.from_url(self.__html_src_path, self.__report_path)
+        return self.__report_path
+
+    def __get_header(self):
+        return '<html>\n<body>\n'
+
+    def __get_footer(self):
+        return '\n</body>\n</html>\n'
+
+    def add_heading(self, heading, level):
+        self.__objects.append('<h{:d}>'.format(level) +
+                html_escape(heading) +
+                '</h{:d}'.format(level))
+
+    def add_text(self, text):
+         sefl.__objects.append(
+                    '<p>' + 
+                    html_escape(text) +
+                    '</p>')
+
+    def add_table(self, M):
+        sio = StringIO.StringIO()
+        np_to_html_table(M, sio)
+        self.__objects.append(sio.getvalue())
 
     def add_summary_graph(self, measure):
-        #TODO get measures, map them to indices, make a figure
-        pass
+        results = [(trial, score, self.__back_indices[trial]) for 
+                   trial, score in getattr(self.__exp, measure)().iteritems()]
+        results_sorted = sorted(
+                results, 
+                key=lambda result: result[2])
+        y = [result[1] for result in results_sorted]
+        plt.figure()
+        plt.plot(y, '.')
+        for result in results:
+            plt.annotate('{}'.format(result[2]), xy=(result[2], result[1]),
+                         textcoords='offset points')
+        plt.ylabel(measure)
+        plt.xlabel('Ranking')
+        filename = 'fig_{}.png'.format(len(self.__objects))
+        path = os.path.join(self.__tmp_folder, filename)
+        plt.savefig(path)
+        self.__objects.append('<img src="{}">'.format(filename))
+
+    def add_legend(self):
+        list_of_tuple = [(i, trial) for i, trial in 
+                         enumerate(self.__exp.trials)]
+        table = cast_list_of_list_to_sa(list_of_tuple, names=('idx', 'trial'))
+        self.__add_table(table)
 
