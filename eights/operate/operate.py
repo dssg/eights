@@ -2,6 +2,7 @@ from operate_helper import *
 import eights.investigate as inv
 import eights.utils as utils
 
+
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -11,8 +12,30 @@ from sklearn.dummy import DummyClassifier
 from sklearn.cross_validation import StratifiedKFold
 
 
+def simple_clf(M, labels, clfs):
+    """function for running a single classifier
+    Parameters
+    ----------
+    M : structured array
+    Matrix  
+    
+    labels : np.ndarray
+    the correct labels
 
-# operate is full of liiitle pipelines
+    Returns
+    -------
+    exp : Experiment
+    Description
+
+    Example
+    -------
+
+    """
+    exp = Experiment(
+        M, 
+        labels, 
+        clfs=clfs)
+    return exp
 
 #this should be clfs
 def simple_clf_cv(M, labels, clf=RandomForestClassifier, clf_params={},
@@ -47,31 +70,6 @@ def simple_clf_cv(M, labels, clf=RandomForestClassifier, clf_params={},
         labels, 
         clfs={clf: clf_params},
         cvs={cv: cv_parms})
-    return exp
-
-def simple_clf(M, labels, clfs):
-    """function for running a single classifier
-    Parameters
-    ----------
-    M : structured array
-    Matrix  
-    
-    labels : np.ndarray
-    the correct labels
-
-    Returns
-    -------
-    exp : Experiment
-    Description
-
-    Example
-    -------
-
-    """
-    exp = Experiment(
-        M, 
-        labels, 
-        clfs=clfs)
     return exp
 
 def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'):
@@ -109,11 +107,9 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
         )
     exp.run_report(report_file)
     return exp
-    
-    
 
-def load_and_run_rf_cv(file_loc, label_col=0):
-    """
+def load_csv_simple_rf_cv(csv_loc, label_col=0):
+    """ load from csv, run random forest crossvalidated.
     Parameters
     ----------
     : type
@@ -126,11 +122,10 @@ def load_and_run_rf_cv(file_loc, label_col=0):
 
     Example
     -------
-
     """
-    M = inv.open_csv(file_loc)
+    M = inv.open_csv(csv_loc)
     labels_name = M.dtype.names[label_col]
     labels = M[labels_name]
     M = utils.remove_cols(M, labels_name)
-    return inv.simple_CV_clf(M, labels)
+    return simple_clf_cv(M, labels)
     
