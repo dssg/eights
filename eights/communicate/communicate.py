@@ -311,3 +311,13 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
 
     return (counts_by_pair, count_pairs_by_depth, average_depth_by_pair, 
             weighted)
+
+class Report(object):
+    def __init__(self, exp):
+        self.__back_indices = {trial, i for i, trial in enumerate(exp.trials)}
+        self.__objects = []
+
+    def add_summary_graph(self, measure):
+        #TODO get measures, map them to indices, make a figure
+        pass
+
