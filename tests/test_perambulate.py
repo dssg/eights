@@ -49,6 +49,17 @@ class TestPerambulate(unittest.TestCase):
         for trial in exp.slice_by_best_score(CLF_PARAMS):
             print trial, trial.average_score()
 
+    def test_report(self):
+        iris = datasets.load_iris()
+        y = iris.target
+        M = iris.data
+        clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 'max_depth': [1, 10]}, 
+                SVC: {'kernel': ['linear', 'rbf']}}        
+        subsets = {SubsetSweepTrainingSize: {'subset_size': [20, 40, 60, 80, 100]}}
+        cvs = {StratifiedKFold: {}}
+        exp = Experiment(M, y, clfs, subsets, cvs)
+        print exp.average_score()
+
 if __name__ == '__main__':
     unittest.main()
 	

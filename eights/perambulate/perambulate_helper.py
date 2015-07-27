@@ -4,6 +4,7 @@ import inspect
 import numpy as np
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_auc_score
 
 class _BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
@@ -141,14 +142,18 @@ class Run(object):
 
     def __test_y(self):
         return self.y[self.test_indices]
-        
+
+    def __pred_proba(self):
+        return self.clf.predict_proba(self.__test_X())
+
     def score(self):
         return self.clf.score(self.__test_M(), self.__test_y())
 
     def roc_curve(self):
-        score = self.clf.predict_proba(self.__test_X())
-        return communicate.plot_roc(self.__test_y(), score, show=False) 
+        return communicate.plot_roc(self.__test_y(), self.__pred_proba(), show=False) 
 
+    def roc_auc(self):
+        return roc_auc_score(self.__ytest_y(), self.__pred_proba())
 
 class Trial(object):
     def __init__(
@@ -241,3 +246,6 @@ class Trial(object):
 
     def roc_curve(self):
         return self.median_run().roc_curve()
+
+    def roc_auc(self):
+        return self.median_run().roc_auc()

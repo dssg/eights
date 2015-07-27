@@ -116,7 +116,11 @@ class Experiment(object):
 
     def average_score(self):
         self.run()
-        return [(trial, trial.average_score()) for trial in self.trials]
+        return {trial: trial.average_score() for trial in self.trials}
+
+    def roc_auc(self):
+        self.run()
+        return {trial: trial.roc_auc() for trial in self.trials}
 
 
 def simple_sliding_window_index(n, training_window_size, testing_window_size):
