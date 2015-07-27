@@ -305,8 +305,7 @@ def random_subset_of_rows_actual_distribution(M, y, number_to_select):
     #handle id's as well as names
     raise NotImplementedError
 
-#def leave_one_column_out
-#def leave_one_row_out
+
 
     
 

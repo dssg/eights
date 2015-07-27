@@ -38,8 +38,8 @@ def simple_clf(M, labels, clfs):
     return exp
 
 #this should be clfs
-def simple_clf_cv(M, labels, clf=RandomForestClassifier, clf_params={},
-                  cv=cross_validation.KFold, cv_parms={}):
+def simple_clf_cv(M, labels, clfs={RandomForestClassifier:{}},
+                  cvs={cross_validation.KFold:{}}):
     """This is simple execution a clf in our module.  
     Parameters
     ----------
@@ -68,8 +68,8 @@ def simple_clf_cv(M, labels, clf=RandomForestClassifier, clf_params={},
     exp = Experiment(
         M, 
         labels, 
-        clfs={clf: clf_params},
-        cvs={cv: cv_parms})
+        clfs=clfs,
+        cvs=cvs)
     return exp
 
 def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'):
