@@ -14,7 +14,42 @@ from sklearn.cross_validation import StratifiedKFold
 
 # operate is full of liiitle pipelines
 
-def run_classifier(M, labels, clfs):
+#this should be clfs
+def simple_clf_cv(M, labels, clf=RandomForestClassifier, clf_params={},
+                  cv=cross_validation.KFold, cv_parms={}):
+    """This is simple execution a clf in our module.  
+    Parameters
+    ----------
+    M : Structured array
+       The matrix you wish to use for training and testing 
+    labels : a one dimenional nd array
+       This these are the labels that are assigned to the rows in the matrix M.
+    clf : Sklearn Class object
+        This is the type of algorithim you would use. 
+    clf_params : a dictionary of parameters to assign to your clf
+        The appropriate paramterts to asign to the clf, empty dict if none.
+    cv : sklearn cv 
+        kfold if default
+    cv_parms : dict of paramters to apply to the cv
+        empty if default
+           
+    Returns
+    -------
+    temp : list
+       the list of trained models
+
+    Examples
+    --------
+    ...
+    """
+    exp = Experiment(
+        M, 
+        labels, 
+        clfs={clf: clf_params},
+        cvs={cv: cv_parms})
+    return exp
+
+def simple_clf(M, labels, clfs):
     """function for running a single classifier
     Parameters
     ----------
@@ -40,6 +75,22 @@ def run_classifier(M, labels, clfs):
     return exp
 
 def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'):
+    """ standard first past sanatity check on the classifiers
+    Parameters
+    ----------
+    M : type
+    Description 
+
+
+    Returns
+    -------
+    ? : type
+    Description
+
+    Example
+    -------
+
+    """
     if clfs is None:
         clfs = {AdaBoostClassifier: {'n_estimators': [20,50,100]}, 
                RandomForestClassifier: {'n_estimators': [10,30,50],'max_depth': [None,4,7,15],'n_jobs':[1]}, 
@@ -50,17 +101,33 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
               }        
     if cv == None:
         cv = {StratifiedKFold:{}}
-    
     exp = Experiment(
         M, 
         labels, 
         clfs=clfs,
         cvs = cvs
         )
+    exp.run_report(report_file)
+    return exp
     
-    raise NotImplementedError    
+    
 
 def load_and_run_rf_cv(file_loc, label_col=0):
+    """
+    Parameters
+    ----------
+    : type
+    Description 
+
+    Returns
+    -------
+    : type
+    Description
+
+    Example
+    -------
+
+    """
     M = inv.open_csv(file_loc)
     labels_name = M.dtype.names[label_col]
     labels = M[labels_name]

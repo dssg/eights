@@ -1,9 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.pylab import boxplot 
+
 from sklearn.metrics import roc_curve
 from ..perambulate import Experiment
 from communicate_helper import *
 
+def generate_report(info):
+    raise NotImplementedError
 
 def print_matrix_row_col(M, row_labels, col_labels):
     row_format ="{:>15}" * (len(col_labels) + 1)
@@ -46,8 +50,7 @@ def plot_simple_histogram(col, verbose=True):
 
 # all of the below take output from any func in perambulate or operate
 
-def generate_report(info):
-    raise NotImplementedError
+
 
 def plot_roc(labels, score, title='roc', verbose=True):
     fpr, tpr = roc_curve(labels, score)
@@ -61,6 +64,26 @@ def plot_roc(labels, score, title='roc', verbose=True):
     plt.title(title)
     if verbose:
         fig.show()
+    return fig
+
+def plot_box_plot(col, col_name, verbose=True):
+    """Makes a box plot for a feature
+    comment
+    
+    Parameters
+    ----------
+    col : np.array
+    
+    Returns
+    -------
+    matplotlib.figure.Figure
+    
+    """
+
+    fig = boxplot(col)
+    #add col_name to graphn
+    if verbose:
+        show()
     return fig
 
 def plot_prec_recall(labels, score, verbose=True):

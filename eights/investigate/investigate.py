@@ -35,7 +35,7 @@ def open_csv(file_loc):
        
     """
     f = open_csv_as_structured_array(file_loc)
-    return set_structured_array_datetime_as_day(f,file_loc)
+    return set_structured_array_datetime_as_day(f, file_loc)
 
 def open_JSON():
     """single line description
@@ -56,7 +56,27 @@ def open_JSON():
        
     """
     raise NotImplementedError
-
+    
+def open_PostgreSQL():
+    """single line description
+    Parameters
+    ----------
+    temp : type
+       Description 
+    
+    Attributes
+    ----------
+    temp : type
+       Description 
+       
+    Returns
+    -------
+    temp : type
+       Description
+       
+    """
+    raise NotImplementedError
+    
 def open_SQL():
     """works with an sql database
     Parameters
@@ -71,6 +91,7 @@ def open_SQL():
        
     """
     raise NotImplementedError
+
 
 #descriptive statistics
 def describe_cols(M):
@@ -114,58 +135,14 @@ def print_crosstab(L_1, L_2, verbose=True):
 
 
 #Plots of desrcptive statsitics
-def plot_box_plot(col, verbose=True):
-    """Makes a box plot for a feature
-    comment
-    
-    Parameters
-    ----------
-    col : np.array
-    
-    Returns
-    -------
-    matplotlib.figure.Figure
-    
-    """
-    raise NotImplementedError
-
 from ..communicate.communicate import plot_correlation_matrix
 from ..communicate.communicate import plot_correlation_scatter_plot
 from ..communicate.communicate import plot_kernel_density
 from ..communicate.communicate import plot_on_map
 from ..communicate.communicate import plot_on_timeline
+from ..communicate.communicate import plot_box_plot
+
 
 #simple non-permabulated rfs
-def simple_CV_clf(M, labels, clf=RandomForestClassifier, clf_params={},
-                  cv=cross_validation.KFold, cv_parms={}):
-    """This is simple execution a clf in our module.  
-    Parameters
-    ----------
-    M : Structured array
-       The matrix you wish to use for training and testing 
-    labels : a one dimenional nd array
-       This these are the labels that are assigned to the rows in the matrix M.
-    clf : Sklearn Class object
-        This is the type of algorithim you would use. 
-    clf_params : a dictionary of parameters to assign to your clf
-        The appropriate paramterts to asign to the clf, empty dict if none.
-    cv : sklearn cv 
-        kfold if default
-    cv_parms : dict of paramters to apply to the cv
-        empty if default
-           
-    Returns
-    -------
-    temp : list
-       the list of trained models
-
-    Examples
-    --------
-    ...
-    """
-    exp = Experiment(
-        M, 
-        labels, 
-        clfs={clf: clf_params},
-        cvs={cv: cv_parms})
-    return exp
+from ..operate.operate import simple_clf
+from ..operate.operate import simple_clf_cv
