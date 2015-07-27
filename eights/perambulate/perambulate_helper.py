@@ -2,6 +2,8 @@ import abc
 import copy
 import inspect
 import numpy as np
+from collections import Counter
+from random import sample
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score

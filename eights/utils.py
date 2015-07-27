@@ -130,12 +130,15 @@ def cast_np_sa_to_nd(sa):
     -------
     np.ndarray
     """
+    if not is_sa(sa):
+        return sa
     dtype = sa.dtype
     if len(dtype) == 1:
         if sa.size == 1:
             return sa.view(dtype=dtype[0]).reshape(())
         return sa.view(dtype=dtype[0]).reshape(len(sa))
     if np_dtype_is_homogeneous(sa):
+        import pdb; pdb.set_trace()
         return sa.view(dtype=dtype[0]).reshape(len(sa), -1)
     # If type isn't homogeneous, we have to convert
     dtype_it = (dtype[i] for i in xrange(len(dtype)))
