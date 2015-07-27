@@ -1,4 +1,5 @@
 import unittest
+import utils_for_tests
 from sklearn.svm import SVC 
 
 from sklearn import datasets
@@ -50,15 +51,18 @@ class TestPerambulate(unittest.TestCase):
             print trial, trial.average_score()
 
     def test_report(self):
-        iris = datasets.load_iris()
-        y = iris.target
-        M = iris.data
+#        iris = datasets.load_iris()
+#        y = iris.target
+#        M = iris.data
+        M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
         clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 'max_depth': [1, 10]}, 
-                SVC: {'kernel': ['linear', 'rbf']}}        
+                SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
         subsets = {SubsetSweepTrainingSize: {'subset_size': [20, 40, 60, 80, 100]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
-        print exp.average_score()
+        for trial, score in exp.roc_auc().iteritems():
+            print trial
+            print score
 
 if __name__ == '__main__':
     unittest.main()

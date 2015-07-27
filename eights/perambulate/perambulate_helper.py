@@ -2,6 +2,7 @@ import abc
 import copy
 import inspect
 import numpy as np
+import itertools as it
 from collections import Counter
 from random import sample
 from sklearn.cross_validation import _PartitionIterator
@@ -146,7 +147,7 @@ class Run(object):
         return self.y[self.test_indices]
 
     def __pred_proba(self):
-        return self.clf.predict_proba(self.__test_X())
+        return self.clf.predict_proba(self.__test_M())[:,0]
 
     def score(self):
         return self.clf.score(self.__test_M(), self.__test_y())
@@ -155,7 +156,7 @@ class Run(object):
         return communicate.plot_roc(self.__test_y(), self.__pred_proba(), show=False) 
 
     def roc_auc(self):
-        return roc_auc_score(self.__ytest_y(), self.__pred_proba())
+        return roc_auc_score(self.__test_y(), self.__pred_proba())
 
 class Trial(object):
     def __init__(
@@ -184,17 +185,22 @@ class Trial(object):
                                CV: self.cv,
                                CV_PARAMS: self.cv_params}
         self.__cached_ave_score = None
-
-    def __repr__(self):
-        return ('Trial(clf={}, clf_params={}, subset={}, '
-                'subset_params={}, cv={}, cv_params={})').format(
+        self.repr = ('Trial(clf={}, clf_params={}, subset={}, '
+                     'subset_params={}, cv={}, cv_params={})').format(
                         self.clf,
                         self.clf_params,
                         self.subset,
                         self.subset_params,
                         self.cv,
                         self.cv_params)
+        self.hash = hash(self.repr)
 
+
+    def __hash__(self):
+        return self.hash
+
+    def __repr__(self):
+        return self.repr
     def __getitem__(self, arg):
         return self.__by_dimension[arg]
 
@@ -242,7 +248,8 @@ class Trial(object):
     
     def median_run(self):
         # Give or take
-        runs_with_score = [(run.score(), run) for run in self.runs]
+        #runs_with_score = [(run.score(), run) for run in self.runs]
+        runs_with_score = [(run.score(), run) for run in it.chain(*self.runs)]
         runs_with_score.sort(key=lambda t: t[0])
         return runs_with_score[len(runs_with_score) / 2][1]
 
