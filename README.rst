@@ -30,9 +30,12 @@ Python packages
 - `Python 2.7 <https://www.python.org/>`_
 - `Numpy <http://www.numpy.org/>`_
 - `scikit-learn <http://scikit-learn.org/stable/>`_
+- `pdfkit <https://github.com/pdfkit/pdfkit>`_
 
 Other packages
 --------------
+
+- `wkhtmltopdf <http://wkhtmltopdf.org/>`_
  
 Optional
 ========

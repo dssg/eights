@@ -2,6 +2,7 @@ import inspect
 import json
 import copy
 import abc
+import datetime
 import itertools as it
 import numpy as np
 
@@ -125,9 +126,16 @@ class Experiment(object):
         from ..communicate import Report
         self.run()
         rep = Report(self, report_file_name)
-        rep.add_summary_graph('roc_auc')
+        rep.add_heading('Eights Report {}'.format(datetime.datetime.now()), 1)
+        rep.add_heading('Roc AUCs', 2)
+        rep.add_summary_graph_roc_auc()
+        rep.add_heading('Average Scores', 2)
+        rep.add_summary_graph_average_score()
+        rep.add_heading('ROC for best trial', 2)
+        rep.add_graph_for_best_roc()
+        rep.add_heading('Legend', 2)
         rep.add_legend()
-        rep.to_pdf()
+        return rep.to_pdf()
         # TODO make this more flexible
 
 

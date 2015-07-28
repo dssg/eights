@@ -1,5 +1,7 @@
 import os
 import shutil
+import StringIO
+import cgi
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import boxplot 
@@ -58,7 +60,7 @@ def plot_simple_histogram(col, verbose=True):
 
 
 def plot_roc(labels, score, title='roc', verbose=True):
-    fpr, tpr = roc_curve(labels, score)
+    fpr, tpr, _ = roc_curve(labels, score)
     n_entries = fpr.shape[0] 
     X = (np.arange(n_entries) + 1) / float(n_entries)
     fig = plt.figure()
@@ -321,10 +323,17 @@ def html_escape(s):
     """Returns a string with all its html-averse characters html escaped"""
     return cgi.escape(s).encode('ascii', 'xmlcharrefreplace')
 
-def np_to_html_table(sa, fout):
-    fout.write('<p>table of shape: ({},{})</p>'.format(
-        len(sa),
-        len(sa.dtype)))
+def html_format(fmt, *args, **kwargs):
+    clean_args = [html_escape(str(arg)) for arg in args]
+    clean_kwargs = {key: html_escape(str(kwargs[key])) for 
+                    key in kwargs}
+    return fmt.format(*clean_args, **clean_kwargs)
+
+def np_to_html_table(sa, fout, show_shape=False):
+    if show_shape:
+        fout.write('<p>table of shape: ({},{})</p>'.format(
+            len(sa),
+            len(sa.dtype)))
     fout.write('<p><table>\n')
     header = '<tr>{}</tr>\n'.format(
         ''.join(
@@ -360,56 +369,99 @@ class Report(object):
 
     def to_pdf(self):
         with open(self.__html_src_path, 'w') as html_out:
-            html_out.write(self.__get_header)
+            html_out.write(self.__get_header())
             html_out.write('\n'.join(self.__objects))
-            html_out.write(self.__get_footer)
+            html_out.write(self.__get_footer())
         pdfkit.from_url(self.__html_src_path, self.__report_path)
         return self.__report_path
 
     def __get_header(self):
-        return '<html>\n<body>\n'
+        return ('<!DOCTYPE html>\n'
+                '<html>\n'
+                '<head>\n'
+                '<style>\n'
+                'table td, th {\n'
+                '    border: 1px solid black;\n'
+                '}\n'
+                'table {\n'
+                '    border-collapse: collapse;\n'
+                '}\n'
+                'tr:nth-child(even) {\n'
+                '    background: #CCC\n'
+                '}\n'
+                'tr:nth-child(odd) {\n'
+                '    background: white\n'
+                '}\n'
+                '</style>\n'
+                '</head>\n'
+                '<body>\n')
 
     def __get_footer(self):
         return '\n</body>\n</html>\n'
 
     def add_heading(self, heading, level):
-        self.__objects.append('<h{:d}>'.format(level) +
-                html_escape(heading) +
-                '</h{:d}'.format(level))
+        self.__objects.append(html_format(
+            '<h{}>{}</h{}>',
+            level,
+            heading,
+            level))
 
     def add_text(self, text):
-         sefl.__objects.append(
-                    '<p>' + 
-                    html_escape(text) +
-                    '</p>')
+         self.__objects.append(html_format(
+                    '<p>{}</p>',
+                    text))
 
     def add_table(self, M):
         sio = StringIO.StringIO()
         np_to_html_table(M, sio)
         self.__objects.append(sio.getvalue())
 
+    def __add_fig(self, fig):
+        filename = 'fig_{}.png'.format(len(self.__objects))
+        path = os.path.join(self.__tmp_folder, filename)
+        fig.savefig(path)
+        self.__objects.append('<img src="{}">'.format(filename))
+
     def add_summary_graph(self, measure):
         results = [(trial, score, self.__back_indices[trial]) for 
                    trial, score in getattr(self.__exp, measure)().iteritems()]
         results_sorted = sorted(
                 results, 
-                key=lambda result: result[2])
+                key=lambda result: result[1],
+                reverse=True)
         y = [result[1] for result in results_sorted]
-        plt.figure()
-        plt.plot(y, '.')
-        for result in results:
-            plt.annotate('{}'.format(result[2]), xy=(result[2], result[1]),
+        x = xrange(len(results))
+        fig = plt.figure()
+        plt.bar(x, y)
+        for rank, result in enumerate(results_sorted):
+            plt.annotate('{}'.format(result[2]), xy=(rank, result[1]),
                          textcoords='offset points')
         plt.ylabel(measure)
         plt.xlabel('Ranking')
-        filename = 'fig_{}.png'.format(len(self.__objects))
-        path = os.path.join(self.__tmp_folder, filename)
-        plt.savefig(path)
-        self.__objects.append('<img src="{}">'.format(filename))
+        self.__add_fig(fig)
+
+    def add_summary_graph_roc_auc(self):
+        self.add_summary_graph('roc_auc')
+
+    def add_summary_graph_average_score(self):
+        self.add_summary_graph('average_score')
+
+    def add_graph_for_best(self, func_name):
+        best_trial = max(
+            self.__exp.trials, 
+            key=lambda trial: trial.average_score())
+        fig = getattr(best_trial, func_name)()
+        self.__add_fig(fig)
+        self.add_text('Best trial is trial {} ({})]'.format(
+            self.__back_indices[best_trial],
+            best_trial))
+
+    def add_graph_for_best_roc(self):
+        self.add_graph_for_best('roc_curve')
 
     def add_legend(self):
-        list_of_tuple = [(i, trial) for i, trial in 
+        list_of_tuple = [(str(i), str(trial)) for i, trial in 
                          enumerate(self.__exp.trials)]
-        table = cast_list_of_list_to_sa(list_of_tuple, names=('idx', 'trial'))
-        self.__add_table(table)
+        table = cast_list_of_list_to_sa(list_of_tuple, names=('Id', 'Trial'))
+        self.add_table(table)
 

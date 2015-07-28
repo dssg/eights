@@ -52,11 +52,15 @@ class TestPerambulate(unittest.TestCase):
 
     def test_report(self):
         M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
-        clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 'max_depth': [1, 10]}, 
+        clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 
+                                         'max_depth': [1, 10]}, 
                 SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
-        subsets = {SubsetSweepTrainingSize: {'subset_size': [20, 40, 60, 80, 100]}}
+#        clfs = {RandomForestClassifier: {'n_estimators': [10, 100, 1000]}}
+        subsets = {SubsetSweepTrainingSize: {'subset_size': 
+                                             [20, 40, 60, 80, 100]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
+        #exp = Experiment(M, y, clfs=clfs, cvs=cvs)
         print exp.make_report()
 
 if __name__ == '__main__':

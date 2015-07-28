@@ -153,7 +153,8 @@ class Run(object):
         return self.clf.score(self.__test_M(), self.__test_y())
 
     def roc_curve(self):
-        return communicate.plot_roc(self.__test_y(), self.__pred_proba(), show=False) 
+        from ..communicate import plot_roc
+        return plot_roc(self.__test_y(), self.__pred_proba(), verbose=False) 
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
