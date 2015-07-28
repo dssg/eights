@@ -423,6 +423,8 @@ class Report(object):
         self.__objects.append(sio.getvalue())
 
     def __add_fig(self, fig):
+        # So we don't get pages with nothing but one figure on them
+        fig.set_figheight(5.0)
         filename = 'fig_{}.png'.format(str(uuid.uuid4()))
         path = os.path.join(self.__tmp_folder, filename)
         fig.savefig(path)
@@ -439,9 +441,12 @@ class Report(object):
         x = xrange(len(results))
         fig = plt.figure()
         plt.bar(x, y)
-        for rank, result in enumerate(results_sorted):
-            plt.annotate('{}'.format(result[2]), xy=(rank, result[1]),
-                         textcoords='offset points')
+        maxy = max(y)
+        colors = ('r', 'g')
+        for color, (rank, result) in zip(it.cycle(colors), 
+                                           enumerate(results_sorted)):
+            plt.text(rank, result[1], '{}'.format(result[2]), 
+                     color=color)
         plt.ylabel(measure)
         plt.xlabel('Ranking')
         self.__add_fig(fig)
