@@ -362,11 +362,17 @@ class Report(object):
         self.__objects = []
         self.__exp = exp
         self.__tmp_folder = 'eights_temp'
-        if os.path.exists(self.__tmp_folder):
-            shutil.rmtree(self.__tmp_folder)
-        os.mkdir(self.__tmp_folder)
-        self.__html_src_path = os.path.join(self.__tmp_folder, 'index.html')
+        if not os.path.exists(self.__tmp_folder):
+            os.mkdir(self.__tmp_folder)
+            #shutil.rmtree(self.__tmp_folder)
+        self.__html_src_path = os.path.join(self.__tmp_folder, 
+                                            '{}.html'.format(uuid.uuid4()))
         self.__report_path = report_path
+
+    def __add__(self, other):
+        # TODO add subreports together
+        raise NotImplementedError
+        
 
     def to_pdf(self):
         with open(self.__html_src_path, 'w') as html_out:

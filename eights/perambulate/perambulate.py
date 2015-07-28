@@ -65,6 +65,18 @@ class Experiment(object):
         return self.__copy([trial for trial in self.trials if 
                             trial[dimension] == value])
 
+    def iterate_over_dimension(self, dimension):
+        by_dim = {}
+        for trial in self.trials:
+            val_of_dim = trial[dimension]
+            try:
+                by_dim[val_of_dim].append(trial)
+            except KeyError:
+                by_dim[val_of_dim] = [trial]
+        for val_of_dim, trials_this_dim in by_dim.iteritems():
+            yield (val_of_dim, self.__copy(trials_this_dim))
+            
+
     def slice_by_best_score(self, dimension):
         self.run()
         categories = {}
@@ -122,7 +134,11 @@ class Experiment(object):
         self.run()
         return {trial: trial.roc_auc() for trial in self.trials}
 
-    def make_report(self, report_file_name='report.pdf'):
+    def make_report(
+        self, 
+        report_file_name='report.pdf',
+        dimension=None):
+        # TODO select dimension and make subreports
         from ..communicate import Report
         self.run()
         rep = Report(self, report_file_name)
