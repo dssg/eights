@@ -2,6 +2,7 @@ import os
 import shutil
 import StringIO
 import cgi
+import uuid
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import boxplot 
@@ -376,6 +377,8 @@ class Report(object):
         return self.__report_path
 
     def __get_header(self):
+        # Thanks to http://stackoverflow.com/questions/13516534/how-to-avoid-page-break-inside-table-row-for-wkhtmltopdf
+        # For not page breaking in the middle of tables
         return ('<!DOCTYPE html>\n'
                 '<html>\n'
                 '<head>\n'
@@ -392,6 +395,9 @@ class Report(object):
                 'tr:nth-child(odd) {\n'
                 '    background: white\n'
                 '}\n'
+                'table, tr, td, th, tbody, thead, tfoot {\n'
+                '    page-break-inside: avoid !important;\n'
+                '}\n' 
                 '</style>\n'
                 '</head>\n'
                 '<body>\n')
@@ -417,7 +423,7 @@ class Report(object):
         self.__objects.append(sio.getvalue())
 
     def __add_fig(self, fig):
-        filename = 'fig_{}.png'.format(len(self.__objects))
+        filename = 'fig_{}.png'.format(str(uuid.uuid4()))
         path = os.path.join(self.__tmp_folder, filename)
         fig.savefig(path)
         self.__objects.append('<img src="{}">'.format(filename))
@@ -463,5 +469,11 @@ class Report(object):
         list_of_tuple = [(str(i), str(trial)) for i, trial in 
                          enumerate(self.__exp.trials)]
         table = cast_list_of_list_to_sa(list_of_tuple, names=('Id', 'Trial'))
-        self.add_table(table)
+        # display 10 at a time to give pdfkit an easier time with page breaks
+        start_row = 0
+        n_trials = len(list_of_tuple)
+        while start_row < n_trials:
+            self.add_table(table[start_row:start_row+9])
+            start_row += 9 
+
 
