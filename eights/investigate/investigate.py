@@ -146,3 +146,29 @@ from ..communicate.communicate import plot_box_plot
 #simple non-permabulated rfs
 from ..operate.operate import simple_clf
 from ..operate.operate import simple_clf_cv
+
+#this works but need the sa's to be good...
+#data = [[(1,2),(1,2),(1,4)],[(1,2),(3,1)],[(1,2)]]
+#
+#def turn_list_of_list_of_items_to_SA_by_over_Lap(lol_items):
+#    adict  = {}
+#    feature_index = 0
+#    bigram_index = []
+#    l = [item for l_items in lol_items for item in l_items]
+#    num_unique_items = len(set(l))
+#    M = np.zeros(shape=(len(lol_items), num_unique_items))    
+#    feature_index = 0
+#    for row, l_items in enumerate(lol_items):
+#        for item in l_items:
+#            try:
+#                M[row, adict[item]] += 1
+#                adict[item] += 1 #
+#            except KeyError:
+#                M[row, feature_index] += 1
+#                feature_index += 1
+#                bigram_index.append(item)
+#                adict[item] = 1
+#    return M
+#
+#M = turn_list_of_list_of_items_to_SA_by_over_Lap(data)     
+#
