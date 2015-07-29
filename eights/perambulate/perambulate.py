@@ -141,16 +141,27 @@ class Experiment(object):
         # TODO select dimension and make subreports
         from ..communicate import Report
         self.run()
+        if dimension is None:
+            dim_iter = [(None, self)]
+        else:
+            dim_iter = self.iterate_over_dimension(dimension)
         rep = Report(self, report_file_name)
         rep.add_heading('Eights Report {}'.format(datetime.datetime.now()), 1)
-        rep.add_heading('Roc AUCs', 3)
-        rep.add_summary_graph_roc_auc()
-        rep.add_heading('Average Scores', 3)
-        rep.add_summary_graph_average_score()
-        rep.add_heading('ROC for best trial', 3)
-        rep.add_graph_for_best_roc()
-        rep.add_heading('Legend', 3)
-        rep.add_legend()
+        for val_of_dim, sub_exp in dim_iter:
+            sub_rep = Report(sub_exp)
+            if val_of_dim is not None:
+                sub_rep.add_heading('Subreport for {} = {}'.format(
+                    dimension_descr[dimension],
+                    val_of_dim), 1)
+            sub_rep.add_heading('Roc AUCs', 3)
+            sub_rep.add_summary_graph_roc_auc()
+            sub_rep.add_heading('Average Scores', 3)
+            sub_rep.add_summary_graph_average_score()
+            sub_rep.add_heading('ROC for best trial', 3)
+            sub_rep.add_graph_for_best_roc()
+            sub_rep.add_heading('Legend', 3)
+            sub_rep.add_legend()
+            rep.add_subreport(sub_rep)
         return rep.to_pdf()
         # TODO make this more flexible
 

@@ -3,6 +3,7 @@ import shutil
 import StringIO
 import cgi
 import uuid
+import abc
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import boxplot 
@@ -357,22 +358,19 @@ def np_to_html_table(sa, fout, show_shape=False):
 
 class Report(object):
 
-    def __init__(self, exp, report_path):
+    class ReportObject(object):
+        __metaclass__ = abc.ABCMeta
+
+    def __init__(self, exp, report_path='report.pdf'):
         self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
         self.__objects = []
         self.__exp = exp
         self.__tmp_folder = 'eights_temp'
         if not os.path.exists(self.__tmp_folder):
             os.mkdir(self.__tmp_folder)
-            #shutil.rmtree(self.__tmp_folder)
         self.__html_src_path = os.path.join(self.__tmp_folder, 
                                             '{}.html'.format(uuid.uuid4()))
         self.__report_path = report_path
-
-    def __add__(self, other):
-        # TODO add subreports together
-        raise NotImplementedError
-        
 
     def to_pdf(self):
         with open(self.__html_src_path, 'w') as html_out:
@@ -407,6 +405,9 @@ class Report(object):
                 '</style>\n'
                 '</head>\n'
                 '<body>\n')
+
+    def add_subreport(self, subreport):    
+        self.__objects += subreport.__objects
 
     def __get_footer(self):
         return '\n</body>\n</html>\n'

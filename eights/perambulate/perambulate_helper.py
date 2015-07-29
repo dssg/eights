@@ -123,6 +123,12 @@ class FlexibleStatifiedCV(_PartitionIterator):
 
 CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS = range(6)
 dimensions = (CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS)
+dimension_descr = {CLF: 'classifier',
+                   CLF_PARAMS: 'classifier parameters',
+                   SUBSET: 'subset type',
+                   SUBSET_PARAMS: 'subset parameters',
+                   CV: 'cross-validation method',
+                   CV_PARAMS: 'cross-validation parameters'}
     
 class Run(object):
     def __init__(
