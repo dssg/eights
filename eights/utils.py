@@ -131,6 +131,8 @@ def cast_np_sa_to_nd(sa):
     -------
     np.ndarray
     """
+    if not is_sa(sa):
+        return sa
     dtype = sa.dtype
     if len(dtype) == 1:
         if sa.size == 1:

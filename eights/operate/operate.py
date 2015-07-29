@@ -1,7 +1,3 @@
-from operate_helper import *
-import eights.investigate as inv
-import eights.utils as utils
-
 
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -9,8 +5,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.dummy import DummyClassifier
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.cross_validation import StratifiedKFold, KFold
 
+from ..utils import remove_cols
+from ..investigate.investigate import open_csv
+from .operate_helper import *
 
 def simple_clf(M, labels, clfs):
     """function for running a single classifier
@@ -39,7 +38,7 @@ def simple_clf(M, labels, clfs):
 
 #this should be clfs
 def simple_clf_cv(M, labels, clfs={RandomForestClassifier:{}},
-                  cvs={cross_validation.KFold:{}}):
+                  cvs={KFold:{}}):
     """This is simple execution a clf in our module.  
     Parameters
     ----------
@@ -93,8 +92,8 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
         clfs = {AdaBoostClassifier: {'n_estimators': [20,50,100]}, 
                RandomForestClassifier: {'n_estimators': [10,30,50],'max_depth': [None,4,7,15],'n_jobs':[1]}, 
                LogisticRegression:{'C': [1.0,2.0,0.5,0.25],'penalty': ['l1','l2']}, 
-               DecisionTreeClassifier {'max_depth': [None,4,7,15,25]},
-               SVC:{'kernel': ['linear','rbf']}
+               DecisionTreeClassifier: {'max_depth': [None,4,7,15,25]},
+               SVC:{'kernel': ['linear','rbf']},
                DummyClassifier:{'strategy': ['stratified','most_frequent','uniform']}
               }        
     if cv == None:

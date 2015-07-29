@@ -2,8 +2,12 @@ import abc
 import copy
 import inspect
 import numpy as np
+import itertools as it
+from collections import Counter
+from random import sample
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_auc_score
 
 class _BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
@@ -119,6 +123,12 @@ class FlexibleStatifiedCV(_PartitionIterator):
 
 CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS = range(6)
 dimensions = (CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS)
+dimension_descr = {CLF: 'classifier',
+                   CLF_PARAMS: 'classifier parameters',
+                   SUBSET: 'subset type',
+                   SUBSET_PARAMS: 'subset parameters',
+                   CV: 'cross-validation method',
+                   CV_PARAMS: 'cross-validation parameters'}
     
 class Run(object):
     def __init__(
@@ -141,14 +151,19 @@ class Run(object):
 
     def __test_y(self):
         return self.y[self.test_indices]
-        
+
+    def __pred_proba(self):
+        return self.clf.predict_proba(self.__test_M())[:,0]
+
     def score(self):
         return self.clf.score(self.__test_M(), self.__test_y())
 
     def roc_curve(self):
-        score = self.clf.predict_proba(self.__test_X())
-        return communicate.plot_roc(self.__test_y(), score, show=False) 
+        from ..communicate import plot_roc
+        return plot_roc(self.__test_y(), self.__pred_proba(), verbose=False) 
 
+    def roc_auc(self):
+        return roc_auc_score(self.__test_y(), self.__pred_proba())
 
 class Trial(object):
     def __init__(
@@ -177,17 +192,22 @@ class Trial(object):
                                CV: self.cv,
                                CV_PARAMS: self.cv_params}
         self.__cached_ave_score = None
-
-    def __repr__(self):
-        return ('Trial(clf={}, clf_params={}, subset={}, '
-                'subset_params={}, cv={}, cv_params={})').format(
+        self.repr = ('Trial(clf={}, clf_params={}, subset={}, '
+                     'subset_params={}, cv={}, cv_params={})').format(
                         self.clf,
                         self.clf_params,
                         self.subset,
                         self.subset_params,
                         self.cv,
                         self.cv_params)
+        self.hash = hash(self.repr)
 
+
+    def __hash__(self):
+        return self.hash
+
+    def __repr__(self):
+        return self.repr
     def __getitem__(self, arg):
         return self.__by_dimension[arg]
 
@@ -235,9 +255,13 @@ class Trial(object):
     
     def median_run(self):
         # Give or take
-        runs_with_score = [(run.score(), run) for run in self.runs]
+        #runs_with_score = [(run.score(), run) for run in self.runs]
+        runs_with_score = [(run.score(), run) for run in it.chain(*self.runs)]
         runs_with_score.sort(key=lambda t: t[0])
         return runs_with_score[len(runs_with_score) / 2][1]
 
     def roc_curve(self):
         return self.median_run().roc_curve()
+
+    def roc_auc(self):
+        return self.median_run().roc_auc()

@@ -1,9 +1,18 @@
+import os
+import shutil
+import StringIO
+import cgi
+import uuid
+import abc
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import boxplot 
 
+import pdfkit
+
 from sklearn.metrics import roc_curve
 from ..perambulate import Experiment
+from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 
 def generate_report(info):
@@ -53,7 +62,7 @@ def plot_simple_histogram(col, verbose=True):
 
 
 def plot_roc(labels, score, title='roc', verbose=True):
-    fpr, tpr = roc_curve(labels, score)
+    fpr, tpr, _ = roc_curve(labels, score)
     n_entries = fpr.shape[0] 
     X = (np.arange(n_entries) + 1) / float(n_entries)
     fig = plt.figure()
@@ -311,3 +320,172 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
 
     return (counts_by_pair, count_pairs_by_depth, average_depth_by_pair, 
             weighted)
+
+def html_escape(s):
+    """Returns a string with all its html-averse characters html escaped"""
+    return cgi.escape(s).encode('ascii', 'xmlcharrefreplace')
+
+def html_format(fmt, *args, **kwargs):
+    clean_args = [html_escape(str(arg)) for arg in args]
+    clean_kwargs = {key: html_escape(str(kwargs[key])) for 
+                    key in kwargs}
+    return fmt.format(*clean_args, **clean_kwargs)
+
+def np_to_html_table(sa, fout, show_shape=False):
+    if show_shape:
+        fout.write('<p>table of shape: ({},{})</p>'.format(
+            len(sa),
+            len(sa.dtype)))
+    fout.write('<p><table>\n')
+    header = '<tr>{}</tr>\n'.format(
+        ''.join(
+                [html_format(
+                    '<th>{}</th>',
+                    name) for 
+                 name in sa.dtype.names]))
+    fout.write(header)
+    data = '\n'.join(
+        ['<tr>{}</tr>'.format(
+            ''.join(
+                [html_format(
+                    '<td>{}</td>',
+                    cell) for
+                 cell in row])) for
+         row in sa])
+    fout.write(data)
+    fout.write('\n')
+    fout.write('</table></p>')
+
+class Report(object):
+
+    class ReportObject(object):
+        __metaclass__ = abc.ABCMeta
+
+    def __init__(self, exp, report_path='report.pdf'):
+        self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
+        self.__objects = []
+        self.__exp = exp
+        self.__tmp_folder = 'eights_temp'
+        if not os.path.exists(self.__tmp_folder):
+            os.mkdir(self.__tmp_folder)
+        self.__html_src_path = os.path.join(self.__tmp_folder, 
+                                            '{}.html'.format(uuid.uuid4()))
+        self.__report_path = report_path
+
+    def to_pdf(self):
+        with open(self.__html_src_path, 'w') as html_out:
+            html_out.write(self.__get_header())
+            html_out.write('\n'.join(self.__objects))
+            html_out.write(self.__get_footer())
+        pdfkit.from_url(self.__html_src_path, self.__report_path)
+        return self.__report_path
+
+    def __get_header(self):
+        # Thanks to http://stackoverflow.com/questions/13516534/how-to-avoid-page-break-inside-table-row-for-wkhtmltopdf
+        # For not page breaking in the middle of tables
+        return ('<!DOCTYPE html>\n'
+                '<html>\n'
+                '<head>\n'
+                '<style>\n'
+                'table td, th {\n'
+                '    border: 1px solid black;\n'
+                '}\n'
+                'table {\n'
+                '    border-collapse: collapse;\n'
+                '}\n'
+                'tr:nth-child(even) {\n'
+                '    background: #CCC\n'
+                '}\n'
+                'tr:nth-child(odd) {\n'
+                '    background: white\n'
+                '}\n'
+                'table, tr, td, th, tbody, thead, tfoot {\n'
+                '    page-break-inside: avoid !important;\n'
+                '}\n' 
+                '</style>\n'
+                '</head>\n'
+                '<body>\n')
+
+    def add_subreport(self, subreport):    
+        self.__objects += subreport.__objects
+
+    def __get_footer(self):
+        return '\n</body>\n</html>\n'
+
+    def add_heading(self, heading, level):
+        self.__objects.append(html_format(
+            '<h{}>{}</h{}>',
+            level,
+            heading,
+            level))
+
+    def add_text(self, text):
+         self.__objects.append(html_format(
+                    '<p>{}</p>',
+                    text))
+
+    def add_table(self, M):
+        sio = StringIO.StringIO()
+        np_to_html_table(M, sio)
+        self.__objects.append(sio.getvalue())
+
+    def __add_fig(self, fig):
+        # So we don't get pages with nothing but one figure on them
+        fig.set_figheight(5.0)
+        filename = 'fig_{}.png'.format(str(uuid.uuid4()))
+        path = os.path.join(self.__tmp_folder, filename)
+        fig.savefig(path)
+        self.__objects.append('<img src="{}">'.format(filename))
+
+    def add_summary_graph(self, measure):
+        results = [(trial, score, self.__back_indices[trial]) for 
+                   trial, score in getattr(self.__exp, measure)().iteritems()]
+        results_sorted = sorted(
+                results, 
+                key=lambda result: result[1],
+                reverse=True)
+        y = [result[1] for result in results_sorted]
+        x = xrange(len(results))
+        fig = plt.figure()
+        plt.bar(x, y)
+        maxy = max(y)
+        colors = ('r', 'g')
+        for color, (rank, result) in zip(it.cycle(colors), 
+                                           enumerate(results_sorted)):
+            plt.text(rank, result[1], '{}'.format(result[2]), 
+                     color=color)
+        plt.ylabel(measure)
+        plt.xlabel('Ranking')
+        self.__add_fig(fig)
+
+    def add_summary_graph_roc_auc(self):
+        self.add_summary_graph('roc_auc')
+
+    def add_summary_graph_average_score(self):
+        self.add_summary_graph('average_score')
+
+    def add_graph_for_best(self, func_name):
+        best_trial = max(
+            self.__exp.trials, 
+            key=lambda trial: trial.average_score())
+        fig = getattr(best_trial, func_name)()
+        self.__add_fig(fig)
+        self.add_text('Best trial is trial {} ({})]'.format(
+            self.__back_indices[best_trial],
+            best_trial))
+
+    def add_graph_for_best_roc(self):
+        self.add_graph_for_best('roc_curve')
+
+    def add_legend(self):
+        list_of_tuple = [(str(i), str(trial)) for i, trial in 
+                         enumerate(self.__exp.trials)]
+        table = cast_list_of_list_to_sa(list_of_tuple, names=('Id', 'Trial'))
+        # display 10 at a time to give pdfkit an easier time with page breaks
+        start_row = 0
+        n_trials = len(list_of_tuple)
+        while start_row < n_trials:
+            self.add_table(table[start_row:start_row+9])
+            start_row += 9 
+
+
