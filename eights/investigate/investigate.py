@@ -1,7 +1,4 @@
-from investigate_helper import *
 import itertools as it
-from ..communicate import *
-from ..utils import is_sa
 import numpy as np
 
 import sklearn
@@ -9,11 +6,14 @@ import sklearn
 from collections import Counter
 import matplotlib.pyplot as plt
 
-
 from sklearn import cross_validation
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KernelDensity
 from sklearn.grid_search import GridSearchCV
+
+from .investigate_helper import *
+from ..communicate import *
+from ..utils import is_sa
 
 #open files 
 def open_csv(file_loc):

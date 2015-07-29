@@ -2,6 +2,7 @@ import inspect
 import json
 import copy
 import abc
+import datetime
 import itertools as it
 import numpy as np
 
@@ -13,7 +14,6 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.cross_validation import KFold, StratifiedKFold
 from sklearn.cross_validation import _PartitionIterator
 
-from random import sample
 
 from .perambulate_helper import *
 import eights.utils as utils
@@ -64,6 +64,18 @@ class Experiment(object):
         self.run()
         return self.__copy([trial for trial in self.trials if 
                             trial[dimension] == value])
+
+    def iterate_over_dimension(self, dimension):
+        by_dim = {}
+        for trial in self.trials:
+            val_of_dim = trial[dimension]
+            try:
+                by_dim[val_of_dim].append(trial)
+            except KeyError:
+                by_dim[val_of_dim] = [trial]
+        for val_of_dim, trials_this_dim in by_dim.iteritems():
+            yield (val_of_dim, self.__copy(trials_this_dim))
+            
 
     def slice_by_best_score(self, dimension):
         self.run()
@@ -116,7 +128,42 @@ class Experiment(object):
 
     def average_score(self):
         self.run()
-        return [(trial, trial.average_score()) for trial in self.trials]
+        return {trial: trial.average_score() for trial in self.trials}
+
+    def roc_auc(self):
+        self.run()
+        return {trial: trial.roc_auc() for trial in self.trials}
+
+    def make_report(
+        self, 
+        report_file_name='report.pdf',
+        dimension=None):
+        # TODO select dimension and make subreports
+        from ..communicate import Report
+        self.run()
+        if dimension is None:
+            dim_iter = [(None, self)]
+        else:
+            dim_iter = self.iterate_over_dimension(dimension)
+        rep = Report(self, report_file_name)
+        rep.add_heading('Eights Report {}'.format(datetime.datetime.now()), 1)
+        for val_of_dim, sub_exp in dim_iter:
+            sub_rep = Report(sub_exp)
+            if val_of_dim is not None:
+                sub_rep.add_heading('Subreport for {} = {}'.format(
+                    dimension_descr[dimension],
+                    val_of_dim), 1)
+            sub_rep.add_heading('Roc AUCs', 3)
+            sub_rep.add_summary_graph_roc_auc()
+            sub_rep.add_heading('Average Scores', 3)
+            sub_rep.add_summary_graph_average_score()
+            sub_rep.add_heading('ROC for best trial', 3)
+            sub_rep.add_graph_for_best_roc()
+            sub_rep.add_heading('Legend', 3)
+            sub_rep.add_legend()
+            rep.add_subreport(sub_rep)
+        return rep.to_pdf()
+        # TODO make this more flexible
 
 
 def simple_sliding_window_index(n, training_window_size, testing_window_size):
