@@ -17,8 +17,9 @@ def str_to_time(date_text):
     except ValueError:
         return np.datetime64('NaT')    
 
+def invert_dictionary(aDict):
+    return {v: k for k, v in aDict.items()}
 
-#
 def cast_list_of_list_to_sa(lol, dtype=None, names=None):
     nd = np.array(lol)
     return cast_np_nd_to_sa(nd, dtype=dtype, names=names)

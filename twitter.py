@@ -4,27 +4,22 @@ import csv
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import cross_validation
 
-
 def open_simple_csv_as_list(file_loc):
     with open(file_loc, 'rb') as f:
         reader = csv.reader(f)
-        data= list(reader)
-    return data
-   
+        data = list(reader)
+    return data 
 
-def make_grams(tweets, gram):
-    r = []
-    for txt in tweets:   
-        t =[]     
-        for idx in range(len(txt)-gram):
-            t_2=[]
-            for x in range(gram):
-                t_2.append(txt[idx+x])
-            t.append(tuple(t_2))
-        r.append(t)
-    return r
+def make_grams(tweet, gram):
+    t =[]     
+    for idx in range(len(tweet)-gram):
+        t_2=[]
+        for x in range(gram):
+            t_2.append(tweet[idx+x])
+        t.append(tuple(t_2))
+    return t
 
-def turn_list_of_list_of_items_to_SA_by_over_Lap(lol_items):
+def turn_list_of_list_of_items_to_SA_by_overlap(lol_items):
     adict  = {}
     feature_index = 0
     bigram_index = []
@@ -43,25 +38,21 @@ def turn_list_of_list_of_items_to_SA_by_over_Lap(lol_items):
                 bigram_index.append(item)
                 adict[item] = 1
     return M
-    
-data = open_simple_csv_as_list('./Tweets-DataFixed.csv')
-labels = [x[3] for x in data]    
-tweets  = [x[1].split() for x in data]
-bigrams = make_grams(tweets,2)  
-data = [[(1,2),(1,2),(1,4)],[(1,2),(3,1)],[(1,2)]]    
-M = turn_list_of_list_of_items_to_SA_by_over_Lap(bigrams)     
 
-import pdb; pdb.set_trace()         
+def strip_out_labels(data,key):
+    return [x[key] for x in data]
 
 def reverse_dict(adict, value):
     for x in adict.items():
         if x[1] == value:
             return x[0]
     return None
-
-print reverse_dict(adict,15)
-
-import pdb; pdb.set_trace()
+    
+data = open_simple_csv_as_list('./Tweets-DataFixed.csv')
+labels = strip_out_labels(data, 3)    
+tweets  = [x[1].split() for x in data]
+bigrams = [make_grams(tweet, 2) for tweet in tweets] 
+M = turn_list_of_list_of_items_to_SA_by_over_Lap(bigrams)     
 
 skf = cross_validation.StratifiedKFold(labels, n_folds=5)
 clf = RandomForestClassifier()

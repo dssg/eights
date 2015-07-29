@@ -6,6 +6,7 @@ something.txt
 .DS_Store
 # C extensions
 *.so
+Tweets-DataFixed.csv
 
 # Distribution / packaging
 .Python
