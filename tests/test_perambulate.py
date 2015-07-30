@@ -13,7 +13,7 @@ class TestPerambulate(unittest.TestCase):
         y = iris.target
         M = iris.data
         clfs = {RandomForestClassifier: {}}
-        subsets = {SubsetSweepTrainingSize: {'subset_size': 
+        subsets = {SubsetRandomRowsActualDistribution: {'subset_size': 
                                              [20, 40, 60, 80, 100]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
@@ -26,7 +26,7 @@ class TestPerambulate(unittest.TestCase):
         M = iris.data
         clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 'max_depth': [1, 10]}, 
                 SVC: {'kernel': ['linear', 'rbf']}}        
-        subsets = {SubsetSweepTrainingSize: {'subset_size': [20, 40, 60, 80, 100]}}
+        subsets = {SubsetRandomRowsActualDistribution: {'subset_size': [20, 40, 60, 80, 100]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
         for trial in exp.slice_on_dimension(CLF, RandomForestClassifier):
@@ -41,7 +41,7 @@ class TestPerambulate(unittest.TestCase):
         M = iris.data
         clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 'max_depth': [1, 10]}, 
                 SVC: {'kernel': ['linear', 'rbf']}}        
-        subsets = {SubsetSweepTrainingSize: {'subset_size': [20, 40, 60, 80, 100]}}
+        subsets = {SubsetRandomRowsActualDistribution: {'subset_size': [20, 40, 60, 80, 100]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
         for trial in exp.run():
@@ -57,13 +57,26 @@ class TestPerambulate(unittest.TestCase):
         exp = Experiment(M, y, clfs=clfs, cvs=cvs)
         exp.make_report()
 
+    def test_subsetting(self):
+        M, y = utils_for_tests.generate_test_matrix(1000, 5, 2)
+        subsets = {SubsetRandomRowsEvenDistribution: {'subset_size': [20]},
+                   SubsetRandomRowsActualDistribution: {'subset_size': [20]},
+                   SubsetSweepNumRows: {'num_rows': [[10, 20, 30]]},
+                   SubsetSweepVaryStratification: {'proportions_positive': [[.5, .75, .9]],
+                                                   'subset_size': [10]}}
+        exp = Experiment(M, y, subsets=subsets)
+        exp.run()
+        for trial in exp.trials:
+            print trial
+            for run in trial.runs:
+                print run
 
     def test_report_complex(self):
         M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
         clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 
                                          'max_depth': [1, 10]}, 
                 SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
-        subsets = {SubsetSweepTrainingSize: {'subset_size': 
+        subsets = {SubsetRandomRowsActualDistribution: {'subset_size': 
                                              [20, 40, 60, 80, 100]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs, subsets, cvs)
