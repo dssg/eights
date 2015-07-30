@@ -57,6 +57,14 @@ class TestPerambulate(unittest.TestCase):
         exp = Experiment(M, y, clfs=clfs, cvs=cvs)
         exp.make_report()
 
+    def test_make_csv(self):
+        M, y = utils_for_tests.generate_test_matrix(1000, 5, 2)
+        clfs = {RandomForestClassifier: {'n_estimators': [10, 100, 1000]}}
+        subsets = {SubsetSweepNumRows: {'num_rows': [[100, 200, 300]]}}
+        cvs = {StratifiedKFold: {}}
+        exp = Experiment(M, y, clfs=clfs, subsets=subsets, cvs=cvs)
+        exp.make_csv()
+
     def test_subsetting(self):
         M, y = utils_for_tests.generate_test_matrix(1000, 5, 2)
         subsets = {SubsetRandomRowsEvenDistribution: {'subset_size': [20]},

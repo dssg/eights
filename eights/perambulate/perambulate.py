@@ -5,6 +5,7 @@ import abc
 import datetime
 import itertools as it
 import numpy as np
+import csv
 
 from collections import Counter
 
@@ -134,11 +135,15 @@ class Experiment(object):
         self.run()
         return {trial: trial.roc_auc() for trial in self.trials}
 
+    @staticmethod
+    def csv_header():
+        return Trial.csv_header()
+
     def make_report(
         self, 
         report_file_name='report.pdf',
         dimension=None):
-        # TODO select dimension and make subreports
+        # TODO make this more flexible
         from ..communicate import Report
         self.run()
         if dimension is None:
@@ -165,7 +170,14 @@ class Experiment(object):
             sub_rep.add_legend()
             rep.add_subreport(sub_rep)
         return rep.to_pdf()
-        # TODO make this more flexible
+
+    def make_csv(self, file_name='report.csv'):
+        self.run()
+        with open(file_name, 'w') as fout:
+            writer = csv.writer(fout)
+            writer.writerow(self.csv_header())
+            for trial in self.trials:
+                writer.writerows(trial.csv_rows())
 
 
 def simple_sliding_window_index(n, training_window_size, testing_window_size):

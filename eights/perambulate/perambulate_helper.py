@@ -222,6 +222,13 @@ class Run(object):
     def __pred_proba(self):
         return self.clf.predict_proba(self.__test_M())[:,0]
 
+    @staticmethod
+    def csv_header():
+        return ['subset_note', 'cv_note', 'score', 'roc_auc']
+
+    def csv_row(self):
+        return [self.subset_note, self.cv_note, self.score(), self.roc_auc()]
+
     def score(self):
         return self.clf.score(self.__test_M(), self.__test_y())
 
@@ -233,7 +240,6 @@ class Run(object):
         from ..communicate import plot_prec_recall
         return plot_prec_recall(self.__test_y(), self.__pred_proba(), 
                                 verbose=False)
-
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
@@ -319,16 +325,24 @@ class Trial(object):
         self.runs = runs
         return runs
 
+    @staticmethod
+    def csv_header():
+        return ['clf', 'clf_params', 'subset', 'subset_params', 'cv',
+                'cv_params'] + Run.csv_header()
+
+    def csv_rows(self):
+        return [[repr(self.clf), repr(self.clf_params), repr(self.subset),
+                 repr(self.subset_params), repr(self.cv), 
+                 repr(self.cv_params)] + run.csv_row() for run in 
+                self.runs_flattened()]
+
     def average_score(self):
         if self.__cached_ave_score is not None:
             return self.__cached_ave_score
         self.run()
         M = self.M
         y = self.y
-        ave_score = np.mean(
-                [np.mean(
-                    [run.score() for run in subset])
-                 for subset in self.runs])
+        ave_score = np.mean([run.score() for run in self.runs_flattened()])
         self.__cached_ave_score = ave_score
         return ave_score
     
@@ -338,6 +352,9 @@ class Trial(object):
         runs_with_score = [(run.score(), run) for run in it.chain(*self.runs)]
         runs_with_score.sort(key=lambda t: t[0])
         return runs_with_score[len(runs_with_score) / 2][1]
+
+    def runs_flattened(self):
+        return [run for run in it.chain(*self.runs)]
 
     # TODO These should all be average across runs rather than picking the 
     # median
