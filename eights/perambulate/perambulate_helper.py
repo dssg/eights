@@ -160,7 +160,13 @@ class Run(object):
 
     def roc_curve(self):
         from ..communicate import plot_roc
-        return plot_roc(self.__test_y(), self.__pred_proba(), verbose=False) 
+        return plot_roc(self.__test_y(), self.__pred_proba(), verbose=False)
+
+    def prec_recall_curve(self):
+        from ..communicate import plot_prec_recall
+        return plot_prec_recall(self.__test_y(), self.__pred_proba(), 
+                                verbose=False)
+
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
@@ -260,8 +266,14 @@ class Trial(object):
         runs_with_score.sort(key=lambda t: t[0])
         return runs_with_score[len(runs_with_score) / 2][1]
 
+    # TODO These should all be average across runs rather than picking the 
+    # median
+
     def roc_curve(self):
         return self.median_run().roc_curve()
 
     def roc_auc(self):
         return self.median_run().roc_auc()
+
+    def prec_recall_curve(self):
+        return self.median_run().prec_recall_curve()
