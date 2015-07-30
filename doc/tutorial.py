@@ -31,23 +31,23 @@ def is_this_word_in(a_text, word):
 
 M = where_all_are_true(
     M, 
-    [(where_val_eq, 'open_col', NULL),
-     (where_val_eq, 'click', NULL ])
+    [(val_eq, 'open_col', NULL),
+     (val_eq, 'click', NULL ])
      "n_click,n_open"
      )
           
 M = where_all_are_true(
     M, 
     [(is_this_word_in, 'email_text', 'unsubscribe'),
-     (where_val_eq, 'click', NULL ])
+     (val_eq, 'click', NULL ])
      "1_click,n_open"
      )
 
 #Trucate
-M1 = remove_rows_where_true(
+M1 = remove_rows_=
     M, 
     [(is_this_word_in, 'email_text', 'unsubscribe'),
-     (where_val_eq, 'click', NULL ])
+     (val_eq, 'click', NULL ])
      "1_click,n_open"
      )
 
@@ -75,8 +75,8 @@ exp.report()
 
 
 M = add_these(
-   [[(where_val_eq, 'open_col', NULL),(where_val_eq, 'click', NULL ]),"n_click,n_open"],
-   [[(where_val_eq, 'open_col', NULL),(where_val_eq, 'click', NULL ]),"n_click,n_open"]
+   [[(val_eq, 'open_col', NULL),(val_eq, 'click', NULL ]),"n_click,n_open"],
+   [[(val_eq, 'open_col', NULL),(val_eq, 'click', NULL ]),"n_click,n_open"]
    )
 
 

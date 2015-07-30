@@ -14,16 +14,6 @@ M = cast_np_nd_to_sa(M)
 #Pretend .1 is wrong so set all values of .1 in M[3] as .2
 # make a new column where its a test if col,val, (3,.2), (2,1.4) is true.
 
-where_all_are_true(
-    M,
-    [where_val_eq,where_val_eq,where_val_eq],
-    ['f0','f1','f2'],
-    [2,3,4],
-    'row1'
-)
-
-print 'that'
-
 
 import pdb; pdb.set_trace()
 

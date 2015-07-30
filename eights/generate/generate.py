@@ -14,24 +14,24 @@ def where_all_are_true(M, lambdas, col_names, vals, generated_names):
 
 #where_all_are_true(
 #    M, 
-#    [(where_val_eq, 'f1', 4),
-#     (where_val_between, 'f7', (1.2, 2.5)]))
+#    [(val_eq, 'f1', 4),
+#     (val_between, 'f7', (1.2, 2.5)]))
 
 
 
-def where_val_eq(M, col_name, boundary):
+def val_eq(M, col_name, boundary):
     return M[col_name] == boundary
 
-def where_val_lt(M, col_name, boundary):
+def val_lt(M, col_name, boundary):
     return M[col_name] < boundary
 
-def where_val_lt_TIME_EDITION(M, col_name, boundary):
+def val_lt_TIME_EDITION(M, col_name, boundary):
     return M[col_name] < boundary
 
-def where_val_gt(M, col_name, boundary):
+def val_gt(M, col_name, boundary):
     return M[col_name] > boundary
 
-def where_val_between(M, col_name, boundary):
+def val_between(M, col_name, boundary):
     return np.logical_and(boundary[0] <= M[col_name], M[col_name] <= boundary[1])
 
 
