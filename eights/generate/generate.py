@@ -2,6 +2,10 @@ import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
 
+def combined_field_where_all_are_true():
+    #avg, min, max 
+    return
+
 def where_all_are_true(M, lambdas, col_names, vals, generated_names):
     to_select = np.ones(M.size, dtype=bool)
     for lambd, col_name, val in zip(lambdas, col_names, vals):
@@ -12,6 +16,8 @@ def where_all_are_true(M, lambdas, col_names, vals, generated_names):
 #    M, 
 #    [(where_val_eq, 'f1', 4),
 #     (where_val_between, 'f7', (1.2, 2.5)]))
+
+
 
 def where_val_eq(M, col_name, boundary):
     return M[col_name] == boundary

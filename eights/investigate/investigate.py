@@ -91,8 +91,10 @@ def open_SQL():
        
     """
     raise NotImplementedError
-
-
+def query_sql():
+    raise NotImplementedError
+def query_postgreSQL():
+    raise NotImplementedError
 #descriptive statistics
 def describe_cols(M):
     """takes a SA or list of Np.rayas and returns the summary statistcs
