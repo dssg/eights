@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
+from ..utils import append_cols
 
 def combined_field_where_all_are_true():
     #avg, min, max 
@@ -10,7 +11,7 @@ def where_all_are_true(M, lambdas, col_names, vals, generated_names):
     to_select = np.ones(M.size, dtype=bool)
     for lambd, col_name, val in zip(lambdas, col_names, vals):
         to_select = np.logical_and(to_select, lambd(M, col_name, val))
-    return gh.append_columns(M, to_select, generated_names)
+    return append_cols(M, to_select, generated_names)
 
 #where_all_are_true(
 #    M, 
