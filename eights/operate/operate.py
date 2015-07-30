@@ -94,7 +94,7 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
                RandomForestClassifier: {'n_estimators': [10,30,50],'max_depth': [None,4,7,15],'n_jobs':[1]}, 
                LogisticRegression:{'C': [1.0,2.0,0.5,0.25],'penalty': ['l1','l2']}, 
                DecisionTreeClassifier: {'max_depth': [None,4,7,15,25]},
-               SVC:{'kernel': ['linear','rbf']},
+               SVC:{'kernel': ['linear','rbf'], 'probability': [True]},
                DummyClassifier:{'strategy': ['stratified','most_frequent','uniform']}
               }        
     if cvs == None:

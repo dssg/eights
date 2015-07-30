@@ -29,7 +29,6 @@ if plot:
     inv.plot_box_plot(M['f0'])    
 
 
-
 ####################Decontaminate#######################
 
 
@@ -46,6 +45,12 @@ M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3
     #[(gen.val_eq, 'f0', 4),(, 'f1', (2.7, 3.1))]) 
 
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
+def is_outlier(M, col_name, boundary):
+    std = np.std(M[col_name])
+    mean = np.mean(M[col_name])
+    return (np.logical_or( (mean-3*std)>M[col_name], (mean+3*std)<M[col_name]) )
+    
+M = gen.where_all_are_true(M, [gen.val_eq, gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
 
 
 #new eval function
@@ -57,20 +62,23 @@ M = gen.where_all_are_true(M, [rounds_to_val], ['f0'],[5], 'rounds to 5')
 #making a useless row
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(35,50),(27, 31)], 'Useless Cols')
 
-
+import pdb; pdb.set_trace()
 
 ####################Truncate#######################
 import eights.truncate  as tr
 #remove Useless row
 M = tr.fewer_then_n_nonzero_in_col(M,1)
 
+
 #remove class 2
 M = gen.append_cols(M, labels, 'labels')
 M = tr.remove_rows_where(M, tr.val_eq, 'labels', 2)
+labels=M['labels']
+M = tr.remove_cols(M,'labels')
+
 ####################Operate/Permabulate#######################
 
 import eights.operate as op
-import pdb; pdb.set_trace()
 exp = op.run_std_classifiers(M,labels)
 
 
