@@ -31,7 +31,7 @@ from ..generate.generate import val_eq
 from ..generate.generate import val_lt
 from ..generate.generate import val_gt
 from ..generate.generate import val_between
-
+from ..generate.generate import is_outlier
 #def row_not_within_region(M, col_name, boundar):
 #    raise NotImplementedError
 

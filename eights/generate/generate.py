@@ -18,7 +18,11 @@ def where_all_are_true(M, lambdas, col_names, vals, generated_names):
 #    [(val_eq, 'f1', 4),
 #     (val_between, 'f7', (1.2, 2.5)]))
 
-
+def is_outlier(M, col_name, boundary):
+    std = np.std(M[col_name])
+    mean = np.mean(M[col_name])
+    return (np.logical_or( (mean-3*std)>M[col_name], (mean+3*std)<M[col_name]) )
+    
 
 def val_eq(M, col_name, boundary):
     return M[col_name] == boundary
