@@ -8,12 +8,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import boxplot 
 
+
+from sklearn.grid_search import GridSearchCV
+from sklearn.neighbors.kde import KernelDensity
 import pdfkit
 
 from sklearn.metrics import roc_curve
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
-from ..utils import cast_list_of_list_to_sa
+from ..utils import cast_list_of_list_to_sa, is_sa, cast_np_sa_to_nd
 from communicate_helper import *
 
 def generate_report(info):
@@ -86,7 +89,7 @@ def plot_roc(labels, score, title='ROC', verbose=True):
         fig.show()
     return fig
 
-def plot_box_plot(col, col_name, verbose=True):
+def plot_box_plot(col, col_name=False, verbose=True):
     """Makes a box plot for a feature
     comment
     
@@ -103,7 +106,7 @@ def plot_box_plot(col, col_name, verbose=True):
     fig = boxplot(col)
     #add col_name to graphn
     if verbose:
-        show()
+        plt.show()
     return fig
 
 def get_top_features(clf, n):
@@ -129,7 +132,7 @@ def plot_correlation_matrix(M, verbose=True):
     # TODO work on structured arrays or not
     # TODO ticks are col names
     if is_sa(M):
-        names = m.dtype.names
+        names = M.dtype.names
         M = cast_np_sa_to_nd(M)
     else: 
         if is_nd(M):
@@ -213,7 +216,7 @@ def plot_correlation_scatter_plot(M, verbose=True):
     return fig
 
 def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
-
+    #address pass entire matrix
     x_grid = np.linspace(min(col), max(col), 1000)
 
     grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation

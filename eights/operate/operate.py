@@ -10,6 +10,7 @@ from sklearn.cross_validation import StratifiedKFold, KFold
 from ..utils import remove_cols
 from ..investigate.investigate import open_csv
 from .operate_helper import *
+from ..perambulate import Experiment
 
 def simple_clf(M, labels, clfs):
     """function for running a single classifier
@@ -96,15 +97,15 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
                SVC:{'kernel': ['linear','rbf']},
                DummyClassifier:{'strategy': ['stratified','most_frequent','uniform']}
               }        
-    if cv == None:
-        cv = {StratifiedKFold:{}}
+    if cvs == None:
+        cvs = {StratifiedKFold:{}}
     exp = Experiment(
         M, 
         labels, 
         clfs=clfs,
         cvs = cvs
         )
-    exp.run_report(report_file)
+    exp.make_report(report_file)
     return exp
 
 def load_csv_simple_rf_cv(csv_loc, label_col=0):
