@@ -17,7 +17,7 @@ class _BaseSubsetIter(object):
     
     @abc.abstractmethod
     def __iter__(self):
-        yield np.array([], dtype=int)
+        yield (np.array([], dtype=int), '')
 
     @abc.abstractmethod
     def __repr__(self):
@@ -25,15 +25,15 @@ class _BaseSubsetIter(object):
 
 class SubsetNoSubset(_BaseSubsetIter):
     def __iter__(self):
-        yield np.arange(self._y.shape[0])
+        yield (np.arange(self._y.shape[0]), '')
 
     def __repr__(self):
         return 'SubsetNoSubset()'
 
-class SubsetSweepTrainingSize(_BaseSubsetIter):
+class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         
     def __init__(self, y, subset_size, n_subsets=3):
-        super(SubsetSweepTrainingSize, self).__init__(y)
+        super(SubsetRandomRowsActualDistribution, self).__init__(y)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
 
@@ -47,15 +47,84 @@ class SubsetSweepTrainingSize(_BaseSubsetIter):
         n_choices = {key: int(proportions[key] * subset_size) for 
                      key in proportions}
         indices = {key: np.where(y == key)[0] for key in count}
-        for _ in xrange(n_subsets):
+        for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield all_indices
+            yield (all_indices, 'sample_num={}'.format(i))
 
     def __repr__(self):
-        return 'SubsetSweepTrainingSize(subset_size={}, n_subsets={})'.format(
+        return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
                 self.__subset_size,
                 self.__n_subsets)
+
+class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
+        
+    def __init__(self, y, subset_size, n_subsets=3):
+        super(SubsetRandomRowsEvenDistribution, self).__init__(y)
+        self.__subset_size = subset_size
+        self.__n_subsets = n_subsets
+
+    def __iter__(self):
+        y = self._y
+        subset_size = self.__subset_size
+        n_subsets = self.__n_subsets
+        count = Counter(y)
+        n_categories = len(count)
+        proportions = {key: 1.0 / n_categories for key in count}
+        n_choices = {key: int(proportions[key] * subset_size) for 
+                     key in proportions}
+        indices = {key: np.where(y == key)[0] for key in count}
+        for i in xrange(n_subsets):
+            samples = {key: sample(indices[key], n_choices[key]) for key in count}
+            all_indices = np.sort(np.concatenate(samples.values()))
+            yield (all_indices, 'sample_num={}'.format(i))
+
+    def __repr__(self):
+        return 'SubsetRandomRowsEvenDistribution(subset_size={}, n_subsets={})'.format(
+                self.__subset_size,
+                self.__n_subsets)
+
+class SubsetSweepNumRows(_BaseSubsetIter):
+        
+    def __init__(self, y, num_rows):
+        super(SubsetSweepNumRows, self).__init__(y)
+        self.__num_rows = num_rows
+
+    def __iter__(self):
+        y = self._y
+        num_rows = self.__num_rows
+        for rows in num_rows:
+            all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
+            yield (all_indices, 'rows={}'.format(rows))
+
+    def __repr__(self):
+        return 'SubsetSweepNumRows(num_rows={})'.format(
+                self.__num_rows)
+
+class SubsetSweepVaryStratification(_BaseSubsetIter):
+        
+    def __init__(self, y, proportions_positive, subset_size):
+        super(SubsetSweepVaryStratification, self).__init__(y)
+        self.__proportions_positive = proportions_positive
+        self.__subset_size = subset_size
+
+    def __iter__(self):
+        y = self._y
+        subset_size = self.__subset_size
+        positive_cases = np.where(y)[0]
+        negative_cases = np.where(np.logical_not(y))[0]
+        for prop_pos in self.__proportions_positive:
+            positive_sample = sample(positive_cases, int(subset_size * prop_pos))
+            negative_sample = sample(negative_cases, int(subset_size * (1 - prop_pos)))
+            # If one of these sets is empty, concatentating them casts to float, so we have
+            # to cast it back (hence the astype)
+            all_indices = np.sort(np.concatenate([positive_sample, negative_sample])).astype(int)
+            yield (all_indices, 'prop_positive={}'.format(prop_pos))
+
+    def __repr__(self):
+        return 'SubsetSweepVaryStratification(proportions_positive={}, subset_size={})'.format(
+                self.__proportions_positive,
+                self.__subset_size)
 
 class SubsetSweepExcludeColumns(_BaseSubsetIter):
     """
@@ -93,15 +162,7 @@ class SubsetSweepLeaveOneColOut(_BaseSubsetIter):
     #needs to be tested
     pass
 
-class SubsetSweepVaryStratification(_BaseSubsetIter):
-    # TODO
-    #returns list of list eachone missing a value in order.  
-    #needs to be tested
-    pass
 
-
-# Left here so we know which sweeps to do
-#NO_SUBSET, LEAVE_ONE_COL_OUT, SWEEP_TRAINING_SIZE = range(3)
 
 class NoCV(_PartitionIterator):
     """Cross validator that just returns the entire set as the training set
@@ -136,15 +197,21 @@ class Run(object):
         M,
         y,
         clf,
-        test_indices):
+        train_indices,
+        test_indices,
+        subset_note,
+        cv_note):
         self.M = M
         self.y = y
         self.clf = clf
         self.test_indices = test_indices
+        self.train_indices = train_indices
+        self.subset_note = subset_note
+        self.cv_note = cv_note
 
     def __repr__(self):
-        return 'Run(clf={})'.format(
-                self.clf)
+        return 'Run(clf={}, subset_note={}, cv_note={})'.format(
+                self.clf, self.subset_note, self.cv_note)
 
     def __test_M(self):
         return self.M[self.test_indices]
@@ -160,7 +227,13 @@ class Run(object):
 
     def roc_curve(self):
         from ..communicate import plot_roc
-        return plot_roc(self.__test_y(), self.__pred_proba(), verbose=False) 
+        return plot_roc(self.__test_y(), self.__pred_proba(), verbose=False)
+
+    def prec_recall_curve(self):
+        from ..communicate import plot_prec_recall
+        return plot_prec_recall(self.__test_y(), self.__pred_proba(), 
+                                verbose=False)
+
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
@@ -218,7 +291,7 @@ class Trial(object):
         if self.has_run():
             return self.runs
         runs = []
-        for subset in self.subset(self.y, **self.subset_params):
+        for subset, subset_note in self.subset(self.y, **self.subset_params):
             runs_this_subset = []
             y_sub = self.y[subset]
             M_sub = self.M[subset]
@@ -231,11 +304,17 @@ class Trial(object):
                 cv_kwargs['y'] = y_sub
             cv_inst = cv_cls(**cv_kwargs)
             for train, test in cv_inst:
+                if hasattr(cv_inst, 'cv_note'):
+                    cv_note = cv_inst.cv_note()
+                else:
+                    cv_note = ''
                 clf_inst = self.clf(**self.clf_params)
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
+                train_indices = subset[train]
                 runs_this_subset.append(Run(self.M, self.y, clf_inst, 
-                                            test_indices))
+                                            train_indices, test_indices,
+                                            subset_note, cv_note))
             runs.append(runs_this_subset)    
         self.runs = runs
         return runs
@@ -260,8 +339,14 @@ class Trial(object):
         runs_with_score.sort(key=lambda t: t[0])
         return runs_with_score[len(runs_with_score) / 2][1]
 
+    # TODO These should all be average across runs rather than picking the 
+    # median
+
     def roc_curve(self):
         return self.median_run().roc_curve()
 
     def roc_auc(self):
         return self.median_run().roc_auc()
+
+    def prec_recall_curve(self):
+        return self.median_run().prec_recall_curve()

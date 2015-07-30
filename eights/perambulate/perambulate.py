@@ -159,6 +159,8 @@ class Experiment(object):
             sub_rep.add_summary_graph_average_score()
             sub_rep.add_heading('ROC for best trial', 3)
             sub_rep.add_graph_for_best_roc()
+            sub_rep.add_heading('Prec recall for best trial', 3)
+            sub_rep.add_graph_for_best_prec_recall()
             sub_rep.add_heading('Legend', 3)
             sub_rep.add_legend()
             rep.add_subreport(sub_rep)

@@ -14,6 +14,7 @@ from sklearn.neighbors.kde import KernelDensity
 import pdfkit
 
 from sklearn.metrics import roc_curve
+from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
 from ..utils import cast_list_of_list_to_sa, is_sa, cast_np_sa_to_nd
 from communicate_helper import *
@@ -63,8 +64,18 @@ def plot_simple_histogram(col, verbose=True):
 # all of the below take output from any func in perambulate or operate
 
 
+def plot_prec_recall(labels, score, title='Prec/Recall', verbose=True):
+    prec, recall, _ = precision_recall_curve(labels, score)
+    fig = plt.figure()
+    plt.plot(recall, prec)
+    plt.xlabel('Precision')
+    plt.ylabel('Recall')
+    plt.title(title)
+    if verbose:
+        fig.show()
+    return fig
 
-def plot_roc(labels, score, title='roc', verbose=True):
+def plot_roc(labels, score, title='ROC', verbose=True):
     fpr, tpr, _ = roc_curve(labels, score)
     n_entries = fpr.shape[0] 
     X = (np.arange(n_entries) + 1) / float(n_entries)
@@ -97,9 +108,6 @@ def plot_box_plot(col, col_name=False, verbose=True):
     if verbose:
         plt.show()
     return fig
-
-def plot_prec_recall(labels, score, verbose=True):
-    raise NotImplementedError
 
 def get_top_features(clf, n):
     raise NotImplementedError
@@ -479,6 +487,9 @@ class Report(object):
 
     def add_graph_for_best_roc(self):
         self.add_graph_for_best('roc_curve')
+
+    def add_graph_for_best_prec_recall(self):
+        self.add_graph_for_best('prec_recall_curve')
 
     def add_legend(self):
         list_of_tuple = [(str(i), str(trial)) for i, trial in 
