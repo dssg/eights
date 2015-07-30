@@ -174,3 +174,6 @@ from ..operate.operate import simple_clf_cv
 #
 #M = turn_list_of_list_of_items_to_SA_by_over_Lap(data)     
 #
+
+def connect_sql(con_str):
+    return SQLConnection(con_str)

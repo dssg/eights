@@ -7,6 +7,9 @@ from eights.investigate.investigate import plot_correlation_matrix
 from eights.investigate.investigate import plot_correlation_scatter_plot
 from eights.investigate.investigate import convert_to_sa
 from eights.investigate.investigate import plot_kernel_density
+from eights.investigate.investigate import connect_sql
+
+import utils_for_tests as utils
 
 class TestInvestigate(unittest.TestCase):
     def test_open_csv(self):
@@ -52,6 +55,11 @@ class TestInvestigate(unittest.TestCase):
         #ax[0, 0].fill(X_plot[:, 0], np.exp(log_dens), fc='#AAAAFF')
         #ax[0, 0].text(-3.5, 0.31, "Gaussian Kernel Density")
         #plt.show()xz
+
+    def test_connect_sql(self):
+        conn_str = 'sqlite:///{}'.format(utils.path_of_data('small.db'))
+        conn = connect_sql(conn_str)
+        print conn.execute('SELECT * FROM employees')
         
 if __name__ == '__main__':
     unittest.main()
