@@ -12,7 +12,6 @@ labels = iris.target
 
 
 
-
 ####################investigate#######################
 import eights.investigate as  inv
 
@@ -21,13 +20,12 @@ M = inv.cast_np_nd_to_sa(M)
 
 for x in inv.describe_cols(M): print x
 
-plot = False
+plot = True
 if plot:
     inv.plot_correlation_scatter_plot(M) #this is stange
     inv.plot_correlation_matrix(M)
     inv.plot_kernel_density(M['f0'])
     inv.plot_box_plot(M['f0'])    
-
 
 ####################Decontaminate#######################
 
@@ -45,12 +43,7 @@ M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3
     #[(gen.val_eq, 'f0', 4),(, 'f1', (2.7, 3.1))]) 
 
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
-def is_outlier(M, col_name, boundary):
-    std = np.std(M[col_name])
-    mean = np.mean(M[col_name])
-    return (np.logical_or( (mean-3*std)>M[col_name], (mean+3*std)<M[col_name]) )
-    
-M = gen.where_all_are_true(M, [gen.val_eq, gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
+
 
 
 #new eval function
@@ -80,7 +73,7 @@ M = tr.remove_cols(M,'labels')
 
 import eights.operate as op
 exp = op.run_std_classifiers(M,labels)
-
+exp.make_csv()
 
 
 
