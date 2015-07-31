@@ -8,6 +8,8 @@ from random import sample
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_recall_curve
 
 class _BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
@@ -220,14 +222,21 @@ class Run(object):
         return self.y[self.test_indices]
 
     def __pred_proba(self):
-        return self.clf.predict_proba(self.__test_M())[:,0]
+        return self.clf.predict_proba(self.__test_M())[:,1]
+
+    def __predict(self):
+        return self.clf.predict(self.__test_M())
 
     @staticmethod
     def csv_header():
-        return ['subset_note', 'cv_note', 'score', 'roc_auc']
+        return ['subset_note', 'cv_note', 'f1_score', 'prec@1%',
+                'prec@2%', 'prec@5%', 'prec@10%', 'prec@20%']
 
     def csv_row(self):
-        return [self.subset_note, self.cv_note, self.score(), self.roc_auc()]
+        return ([self.subset_note, self.cv_note, 
+                self.f1_score()] + 
+                self.precision_at_thresholds([.01, .02, .05, .10,
+                                              .20]).tolist())
 
     def score(self):
         return self.clf.score(self.__test_M(), self.__test_y())
@@ -247,6 +256,40 @@ class Run(object):
         top_cols = ind[np.argsort(feat_imp[ind])][::-1]
         top_vals = feat_imp[top_cols]
         return [top_cols, top_vals]
+
+    def f1_score(self):
+        return f1_score(self.__test_y(), self.__predict())
+
+    def precision_at_thresholds(self, query_thresholds):
+        """
+        Parameters
+        query_thresholds : float
+            0 <= thresh <= 1
+        """
+        y_true = self.__test_y()
+        y_score = self.__pred_proba()
+        prec, _, thresh = precision_recall_curve(
+                y_true, 
+                y_score)
+
+        # Adopted from Rayid's code
+        precision_curve = prec[:-1]
+        pct_above_per_thresh = []
+        number_scored = len(y_score)
+        for value in thresh:
+            num_above_thresh = len(y_score[y_score>=value])
+            pct_above_thresh = num_above_thresh / float(number_scored)
+            pct_above_per_thresh.append(pct_above_thresh)
+        pct_above_per_thresh = np.array(pct_above_per_thresh)
+        # Add point at 0% above thresh, 1, precision
+        pct_above_per_thresh = np.append(pct_above_per_thresh, 0)
+        precision_curve = np.append(precision_curve, 1)
+
+        # TODO something better than linear interpolation
+        return np.interp(
+                query_thresholds, 
+                pct_above_per_thresh[::-1],
+                precision_curve[::-1])
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
