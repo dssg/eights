@@ -7,6 +7,10 @@ something.txt
 # C extensions
 *.so
 Tweets-DataFixed.csv
+report.csv
+report.pdf
+eights_temp/
+
 
 # Distribution / packaging
 .Python
