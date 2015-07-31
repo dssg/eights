@@ -315,6 +315,18 @@ all_clf_params = sorted(
                                         
 all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
 
+all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
+                            'proportions_positive', 'cols_to_exclude'])
+
+all_subset_params_backindex = {param: i for i, param in 
+                               enumerate(all_subset_params)}
+
+# TODO others?
+all_cv_params = sorted(['n_folds', 'indices', 'shuffle', 'random_state'])
+                        
+all_cv_params_backindex = {param: i for i, param in 
+                           enumerate(all_cv_params)}
+
 class Trial(object):
     def __init__(
         self, 
@@ -398,8 +410,10 @@ class Trial(object):
 
     @staticmethod
     def csv_header():
-        return ['clf'] + all_clf_params +  ['subset', 'subset_params', 'cv',
-                'cv_params'] + Run.csv_header()
+        return (['clf'] + ['clf_' + name for name in all_clf_params] +  
+                ['subset'] + ['subset_' + name for name in all_subset_params] +
+                ['cv'] + ['cv_' + name for name in all_cv_params] +
+                Run.csv_header())
 
     def __clf_param_list(self):
         param_vals = [''] * len(all_clf_params)
@@ -407,11 +421,23 @@ class Trial(object):
             param_vals[all_clf_params_backindex[name]] = str(val)
         return param_vals
 
+    def __subset_param_list(self):
+        param_vals = [''] * len(all_subset_params)
+        for name, val in self.subset_params.iteritems():
+            param_vals[all_subset_params_backindex[name]] = str(val)
+        return param_vals
+
+    def __cv_param_list(self):
+        param_vals = [''] * len(all_cv_params)
+        for name, val in self.cv_params.iteritems():
+            param_vals[all_cv_params_backindex[name]] = str(val)
+        return param_vals
+
     def csv_rows(self):
-        return [[repr(self.clf)] + self.__clf_param_list() + [repr(self.subset),
-                 repr(self.subset_params), repr(self.cv), 
-                 repr(self.cv_params)] + run.csv_row() for run in 
-                self.runs_flattened()]
+        return [[str(self.clf)] + self.__clf_param_list() + 
+                [str(self.subset)] + self.__subset_param_list() + 
+                [str(self.cv)] + self.__cv_param_list() + 
+                 run.csv_row() for run in self.runs_flattened()]
 
     def average_score(self):
         if self.__cached_ave_score is not None:

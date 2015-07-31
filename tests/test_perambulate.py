@@ -64,7 +64,7 @@ class TestPerambulate(unittest.TestCase):
                                          'max_depth': [5, 25]},
                 SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
         subsets = {SubsetSweepNumRows: {'num_rows': [[100, 200, 300]]}}
-        cvs = {StratifiedKFold: {}}
+        cvs = {StratifiedKFold: {'n_folds': [2, 3]}}
         exp = Experiment(M, y, clfs=clfs, subsets=subsets, cvs=cvs)
         exp.make_csv()
 
