@@ -32,7 +32,7 @@ class _BaseSubsetIter(object):
 
 class SubsetNoSubset(_BaseSubsetIter):
     def __iter__(self):
-        yield (np.arange(self._y.shape[0]), '')
+        yield (np.arange(self._y.shape[0]), {})
 
     def __repr__(self):
         return 'SubsetNoSubset()'
@@ -57,7 +57,7 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, 'sample_num={}'.format(i))
+            yield (all_indices, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
@@ -84,7 +84,7 @@ class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, 'sample_num={}'.format(i))
+            yield (all_indices, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsEvenDistribution(subset_size={}, n_subsets={})'.format(
@@ -102,7 +102,7 @@ class SubsetSweepNumRows(_BaseSubsetIter):
         num_rows = self.__num_rows
         for rows in num_rows:
             all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
-            yield (all_indices, 'rows={}'.format(rows))
+            yield (all_indices, {'rows': rows})
 
     def __repr__(self):
         return 'SubsetSweepNumRows(num_rows={})'.format(
@@ -198,6 +198,18 @@ dimension_descr = {CLF: 'classifier',
                    CV: 'cross-validation method',
                    CV_PARAMS: 'cross-validation parameters'}
     
+all_subset_notes = sorted(['sample_num', 'rows', 'prop_positive', 
+                           'excluded_col',])
+
+all_subset_notes_backindex = {name: i for i, name in 
+                              enumerate(all_subset_notes)}
+
+all_cv_notes = sorted(['training_start', 'training_end', 'testing_start', 
+                        'testing_end', 'fold']) 
+
+all_cv_notes_backindex = {name: i for i, name in 
+                              enumerate(all_cv_notes)}
+
 class Run(object):
     def __init__(
         self,
@@ -234,12 +246,27 @@ class Run(object):
 
     @staticmethod
     def csv_header():
-        return ['subset_note', 'cv_note', 'f1_score', 'prec@1%',
-                'prec@2%', 'prec@5%', 'prec@10%', 'prec@20%']
+        return (['subset_note_' + name for name in all_subset_notes] + 
+                ['cv_note_' + name for name in all_cv_notes] + 
+                ['f1_score', 'prec@1%', 'prec@2%', 'prec@5%', 
+                 'prec@10%', 'prec@20%'])
+
+    def __subset_note_list(self):
+        notes = [''] * len(all_subset_notes)
+        for name, val in self.subset_note.iteritems():
+            notes[all_subset_notes_backindex[name]] = str(val)
+        return notes
+
+    def __cv_note_list(self):
+        notes = [''] * len(all_cv_notes)
+        for name, val in self.cv_note.iteritems():
+            notes[all_cv_notes_backindex[name]] = str(val)
+        return notes
 
     def csv_row(self):
-        return ([self.subset_note, self.cv_note, 
-                self.f1_score()] + 
+        return (self.__subset_note_list() +
+                self.__cv_note_list() + 
+                [self.f1_score()] + 
                 self.precision_at_thresholds([.01, .02, .05, .10,
                                               .20]).tolist())
 
@@ -392,11 +419,11 @@ class Trial(object):
             if 'y' in expected_cv_kwargs:
                 cv_kwargs['y'] = y_sub
             cv_inst = cv_cls(**cv_kwargs)
-            for train, test in cv_inst:
+            for fold_idx, (train, test) in enumerate(cv_inst):
                 if hasattr(cv_inst, 'cv_note'):
                     cv_note = cv_inst.cv_note()
                 else:
-                    cv_note = ''
+                    cv_note = {'fold': fold_idx}
                 clf_inst = self.clf(**self.clf_params)
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
