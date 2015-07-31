@@ -240,6 +240,13 @@ class Run(object):
         from ..communicate import plot_prec_recall
         return plot_prec_recall(self.__test_y(), self.__pred_proba(), 
                                 verbose=False)
+   
+    def sorted_top_feat_importance(self, n):
+        feat_imp = self.clf.feature_importances_
+        ind = np.argpartition(feat_imp, -n)[-n:]
+        top_cols = ind[np.argsort(feat_imp[ind])][::-1]
+        top_vals = feat_imp[top_cols]
+        return [top_cols, top_vals]
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
