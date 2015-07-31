@@ -60,7 +60,9 @@ class TestPerambulate(unittest.TestCase):
     def test_make_csv(self):
         #M, y = utils_for_tests.generate_test_matrix(1000, 5, 2)
         M, y = utils_for_tests.generate_correlated_test_matrix(10000)
-        clfs = {RandomForestClassifier: {'n_estimators': [10, 100, 1000]}}
+        clfs = {RandomForestClassifier: {'n_estimators': [10, 100, 1000], 
+                                         'max_depth': [5, 25]},
+                SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
         subsets = {SubsetSweepNumRows: {'num_rows': [[100, 200, 300]]}}
         cvs = {StratifiedKFold: {}}
         exp = Experiment(M, y, clfs=clfs, subsets=subsets, cvs=cvs)

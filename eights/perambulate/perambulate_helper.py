@@ -6,7 +6,12 @@ import itertools as it
 from collections import Counter
 from random import sample
 from sklearn.cross_validation import _PartitionIterator
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.dummy import DummyClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_recall_curve
@@ -294,6 +299,22 @@ class Run(object):
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
 
+
+# TODO other clfs
+all_clf_params = sorted(
+        list(
+            frozenset(
+                it.chain(
+                    *[clf().get_params().keys() for clf in 
+                      (AdaBoostClassifier,
+                       RandomForestClassifier,
+                       LogisticRegression,
+                       DecisionTreeClassifier,
+                       SVC,
+                       DummyClassifier)]))))
+                                        
+all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
+
 class Trial(object):
     def __init__(
         self, 
@@ -377,11 +398,17 @@ class Trial(object):
 
     @staticmethod
     def csv_header():
-        return ['clf', 'clf_params', 'subset', 'subset_params', 'cv',
+        return ['clf'] + all_clf_params +  ['subset', 'subset_params', 'cv',
                 'cv_params'] + Run.csv_header()
 
+    def __clf_param_list(self):
+        param_vals = [''] * len(all_clf_params)
+        for name, val in self.clf_params.iteritems():
+            param_vals[all_clf_params_backindex[name]] = str(val)
+        return param_vals
+
     def csv_rows(self):
-        return [[repr(self.clf), repr(self.clf_params), repr(self.subset),
+        return [[repr(self.clf)] + self.__clf_param_list() + [repr(self.subset),
                  repr(self.subset_params), repr(self.cv), 
                  repr(self.cv_params)] + run.csv_row() for run in 
                 self.runs_flattened()]
