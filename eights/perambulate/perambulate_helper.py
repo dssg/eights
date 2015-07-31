@@ -6,7 +6,12 @@ import itertools as it
 from collections import Counter
 from random import sample
 from sklearn.cross_validation import _PartitionIterator
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.dummy import DummyClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_recall_curve
@@ -27,7 +32,7 @@ class _BaseSubsetIter(object):
 
 class SubsetNoSubset(_BaseSubsetIter):
     def __iter__(self):
-        yield (np.arange(self._y.shape[0]), '')
+        yield (np.arange(self._y.shape[0]), {})
 
     def __repr__(self):
         return 'SubsetNoSubset()'
@@ -52,7 +57,7 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, 'sample_num={}'.format(i))
+            yield (all_indices, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
@@ -79,7 +84,7 @@ class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, 'sample_num={}'.format(i))
+            yield (all_indices, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsEvenDistribution(subset_size={}, n_subsets={})'.format(
@@ -97,7 +102,7 @@ class SubsetSweepNumRows(_BaseSubsetIter):
         num_rows = self.__num_rows
         for rows in num_rows:
             all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
-            yield (all_indices, 'rows={}'.format(rows))
+            yield (all_indices, {'rows': rows})
 
     def __repr__(self):
         return 'SubsetSweepNumRows(num_rows={})'.format(
@@ -193,6 +198,18 @@ dimension_descr = {CLF: 'classifier',
                    CV: 'cross-validation method',
                    CV_PARAMS: 'cross-validation parameters'}
     
+all_subset_notes = sorted(['sample_num', 'rows', 'prop_positive', 
+                           'excluded_col',])
+
+all_subset_notes_backindex = {name: i for i, name in 
+                              enumerate(all_subset_notes)}
+
+all_cv_notes = sorted(['training_start', 'training_end', 'testing_start', 
+                        'testing_end', 'fold']) 
+
+all_cv_notes_backindex = {name: i for i, name in 
+                              enumerate(all_cv_notes)}
+
 class Run(object):
     def __init__(
         self,
@@ -229,12 +246,27 @@ class Run(object):
 
     @staticmethod
     def csv_header():
-        return ['subset_note', 'cv_note', 'f1_score', 'prec@1%',
-                'prec@2%', 'prec@5%', 'prec@10%', 'prec@20%']
+        return (['subset_note_' + name for name in all_subset_notes] + 
+                ['cv_note_' + name for name in all_cv_notes] + 
+                ['f1_score', 'prec@1%', 'prec@2%', 'prec@5%', 
+                 'prec@10%', 'prec@20%'])
+
+    def __subset_note_list(self):
+        notes = [''] * len(all_subset_notes)
+        for name, val in self.subset_note.iteritems():
+            notes[all_subset_notes_backindex[name]] = str(val)
+        return notes
+
+    def __cv_note_list(self):
+        notes = [''] * len(all_cv_notes)
+        for name, val in self.cv_note.iteritems():
+            notes[all_cv_notes_backindex[name]] = str(val)
+        return notes
 
     def csv_row(self):
-        return ([self.subset_note, self.cv_note, 
-                self.f1_score()] + 
+        return (self.__subset_note_list() +
+                self.__cv_note_list() + 
+                [self.f1_score()] + 
                 self.precision_at_thresholds([.01, .02, .05, .10,
                                               .20]).tolist())
 
@@ -293,6 +325,34 @@ class Run(object):
 
     def roc_auc(self):
         return roc_auc_score(self.__test_y(), self.__pred_proba())
+
+
+# TODO other clfs
+all_clf_params = sorted(
+        list(
+            frozenset(
+                it.chain(
+                    *[clf().get_params().keys() for clf in 
+                      (AdaBoostClassifier,
+                       RandomForestClassifier,
+                       LogisticRegression,
+                       DecisionTreeClassifier,
+                       SVC,
+                       DummyClassifier)]))))
+                                        
+all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
+
+all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
+                            'proportions_positive', 'cols_to_exclude'])
+
+all_subset_params_backindex = {param: i for i, param in 
+                               enumerate(all_subset_params)}
+
+# TODO others?
+all_cv_params = sorted(['n_folds', 'indices', 'shuffle', 'random_state'])
+                        
+all_cv_params_backindex = {param: i for i, param in 
+                           enumerate(all_cv_params)}
 
 class Trial(object):
     def __init__(
@@ -359,11 +419,11 @@ class Trial(object):
             if 'y' in expected_cv_kwargs:
                 cv_kwargs['y'] = y_sub
             cv_inst = cv_cls(**cv_kwargs)
-            for train, test in cv_inst:
+            for fold_idx, (train, test) in enumerate(cv_inst):
                 if hasattr(cv_inst, 'cv_note'):
                     cv_note = cv_inst.cv_note()
                 else:
-                    cv_note = ''
+                    cv_note = {'fold': fold_idx}
                 clf_inst = self.clf(**self.clf_params)
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
@@ -377,14 +437,34 @@ class Trial(object):
 
     @staticmethod
     def csv_header():
-        return ['clf', 'clf_params', 'subset', 'subset_params', 'cv',
-                'cv_params'] + Run.csv_header()
+        return (['clf'] + ['clf_' + name for name in all_clf_params] +  
+                ['subset'] + ['subset_' + name for name in all_subset_params] +
+                ['cv'] + ['cv_' + name for name in all_cv_params] +
+                Run.csv_header())
+
+    def __clf_param_list(self):
+        param_vals = [''] * len(all_clf_params)
+        for name, val in self.clf_params.iteritems():
+            param_vals[all_clf_params_backindex[name]] = str(val)
+        return param_vals
+
+    def __subset_param_list(self):
+        param_vals = [''] * len(all_subset_params)
+        for name, val in self.subset_params.iteritems():
+            param_vals[all_subset_params_backindex[name]] = str(val)
+        return param_vals
+
+    def __cv_param_list(self):
+        param_vals = [''] * len(all_cv_params)
+        for name, val in self.cv_params.iteritems():
+            param_vals[all_cv_params_backindex[name]] = str(val)
+        return param_vals
 
     def csv_rows(self):
-        return [[repr(self.clf), repr(self.clf_params), repr(self.subset),
-                 repr(self.subset_params), repr(self.cv), 
-                 repr(self.cv_params)] + run.csv_row() for run in 
-                self.runs_flattened()]
+        return [[str(self.clf)] + self.__clf_param_list() + 
+                [str(self.subset)] + self.__subset_param_list() + 
+                [str(self.cv)] + self.__cv_param_list() + 
+                 run.csv_row() for run in self.runs_flattened()]
 
     def average_score(self):
         if self.__cached_ave_score is not None:
