@@ -59,3 +59,6 @@ Example
 Next Steps
 ----------
 
+my_* are included in the .gitignore.  We recommend a standard such as my_exeperiment, my_storage for local folders.
+
+
