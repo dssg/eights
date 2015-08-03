@@ -82,6 +82,17 @@ class TestPerambulate(unittest.TestCase):
             for run in trial.runs:
                 print run
 
+    def test_sliding_windows(self):
+        M = np.array([(0, 2003),
+                      (1, 1997),
+                      (2, 1998),
+                      (3, 2003),
+                      (4, 2002),
+                      (5, 2000),
+                      (6, 2000),
+                      (7, 2001),
+                      (8, 1997)], dtype=[('id', int), ('year', int)])
+
     def test_report_complex(self):
         M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
         clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 

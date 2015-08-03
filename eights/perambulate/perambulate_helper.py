@@ -170,7 +170,7 @@ class SubsetSweepLeaveOneColOut(_BaseSubsetIter):
     pass
 
 
-
+# TODO By and large, we shouldn't be using SKLearn's internal classes.
 class NoCV(_PartitionIterator):
     """Cross validator that just returns the entire set as the training set
     to begin with
@@ -182,6 +182,98 @@ class NoCV(_PartitionIterator):
     """
     def _iter_test_indices(self):
         yield np.array([], dtype=int)
+
+class SlidingWindowIdx(_PartitionIterator):
+
+    def __init__(self, n, train_start, train_windows_size, test_start, 
+                 test_win_size, inc_value, expanding_train=False):
+       uper(SlidingWindowIdx, self).__init__(n)
+       self.__n = n
+       self.__train_start = train_start
+       self.__train_window_size = train_window_size
+       self.__train_end = train_start + train_window_size - 1
+       self.__test_start = test_start
+       self.__test_win_size = test_win_size
+       self.__test_end = test_start + test_win_size - 1
+       self.__inc_value = inc_value
+       self.__expanding_train = expanding_train
+
+    def cv_note(self):
+        return {'training_start': self.__train_start,
+                'training_end': self.__train_end,
+                'testing_start': self.__test_start,
+                'testing_end': self.__test_end}
+                
+    def _iter_test_indices(self):
+        inc_value = self.__inc_value
+        while self.__test_end < self.__n:
+            yield np.arange(self.__test_start, self.__test_end + 1)
+            if not self.__expanding_train:
+                self.__train_start += inc_value
+            self.__train_end += inc_value
+            self.__test_start += inc_value
+            self.__test_end += inc_value
+
+    def __iter__(self):
+        # _PartitionIterator assumes we're training on everything we're not
+        # testing. We have to patch it's __iter__ so that isn't the case
+        for train_index, test_index in super(
+            SlidingWindowIdx, self).__iter__():
+            yield (np.arange(self.__train_start, self.__train_end + 1), 
+                   test_index)
+
+class SlidingWindowValue(_PartitionIterator):
+    def __init__(self, y, train_start, train_windows_size, test_start, 
+                 test_win_size, inc_value, expanding_train=False):
+       n = y.shape[0] 
+       self.__y = y
+       super(SlidingWindowIdx, self).__init__(n)
+       self.__n = n
+       self.__train_start = train_start
+       self.__train_window_size = train_window_size
+       self.__train_end = train_start + train_window_size - 1
+       self.__test_start = test_start
+       self.__test_win_size = test_win_size
+       self.__test_end = test_start + test_win_size - 1
+       self.__inc_value = inc_value
+       self.__expanding_train = expanding_train
+
+    def cv_note(self):
+        return {'training_start': self.__train_start,
+                'training_end': self.__train_end,
+                'testing_start': self.__test_start,
+                'testing_end': self.__test_end}
+                
+    def _iter_test_indices(self):
+        inc_value = self.__inc_value
+        y = self.__y
+        self.__test_mask = np.logical_and(
+            y >= self.__test_start,
+            y <= self.__test_end)
+        self.__train_mask = np.logical_and(
+            y >= self.__train_start,
+            y <= self.__train_end)
+        while np.any(self.__test_mask)
+            yield self.__test_mask.nonzero()[0]
+            if not self.__expanding_train:
+                self.__train_start += inc_value
+            self.__train_end += inc_value
+            self.__test_start += inc_value
+            self.__test_end += inc_value
+            self.__test_mask = np.logical_and(
+                y >= self.__test_start,
+                y <= self.__test_end)
+            self.__train_mask = np.logical_and(
+                y >= self.__train_start,
+                y <= self.__train_end)
+
+    def __iter__(self):
+        # _PartitionIterator assumes we're training on everything we're not
+        # testing. We have to patch it's __iter__ so that isn't the case
+        for train_index, test_index in super(
+            SlidingWindowValue, self).__iter__():
+            yield (self.__train_mask.nonzero()[0], test_index)
+
 
 class FlexibleStatifiedCV(_PartitionIterator):
     pass
