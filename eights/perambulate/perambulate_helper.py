@@ -24,11 +24,11 @@ class _BaseSubsetIter(object):
     
     @abc.abstractmethod
     def __iter__(self):
-        yield (np.array([], dtype=int), '')
+        yield (np.array([], dtype=int), {})
 
     @abc.abstractmethod
     def __repr__(self):
-        return ''
+        return 'BaseSubsetIter()'
 
 class SubsetNoSubset(_BaseSubsetIter):
     def __iter__(self):
@@ -185,7 +185,7 @@ class NoCV(_PartitionIterator):
 
 class SlidingWindowIdx(_PartitionIterator):
 
-    def __init__(self, n, train_start, train_windows_size, test_start, 
+    def __init__(self, n, train_start, train_window_size, test_start, 
                  test_window_size, inc_value, expanding_train=False):
        super(SlidingWindowIdx, self).__init__(n)
        self.__n = n
@@ -201,7 +201,7 @@ class SlidingWindowIdx(_PartitionIterator):
     def cv_note(self):
         return {'train_start': self.__train_start,
                 'train_end': self.__train_end,
-                'testistart': self.__test_start,
+                'test_start': self.__test_start,
                 'test_end': self.__test_end}
                 
     def _iter_test_indices(self):
@@ -222,21 +222,23 @@ class SlidingWindowIdx(_PartitionIterator):
             yield (np.arange(self.__train_start, self.__train_end + 1), 
                    test_index)
 
+# TODO should take col name, not col idx
 class SlidingWindowValue(_PartitionIterator):
-    def __init__(self, y, train_start, train_window_size, test_start, 
+    def __init__(self, M, col_idx, train_start, train_window_size, test_start, 
                  test_window_size, inc_value, expanding_train=False):
-       n = y.shape[0] 
-       self.__y = y
-       super(SlidingWindowValue, self).__init__(n)
-       self.__n = n
-       self.__train_start = train_start
-       self.__train_window_size = train_window_size
-       self.__train_end = train_start + train_window_size - 1
-       self.__test_start = test_start
-       self.__test_window_size = test_window_size
-       self.__test_end = test_start + test_window_size - 1
-       self.__inc_value = inc_value
-       self.__expanding_train = expanding_train
+        y = M[:,col_idx]
+        n = y.shape[0] 
+        super(SlidingWindowValue, self).__init__(n)
+        self.__y = y
+        self.__n = n
+        self.__train_start = train_start
+        self.__train_window_size = train_window_size
+        self.__train_end = train_start + train_window_size - 1
+        self.__test_start = test_start
+        self.__test_window_size = test_window_size
+        self.__test_end = test_start + test_window_size - 1
+        self.__inc_value = inc_value
+        self.__expanding_train = expanding_train
 
     def cv_note(self):
         return {'train_start': self.__train_start,
@@ -274,12 +276,6 @@ class SlidingWindowValue(_PartitionIterator):
             SlidingWindowValue, self).__iter__():
             yield (self.__train_mask.nonzero()[0], test_index)
 
-
-class FlexibleStatifiedCV(_PartitionIterator):
-    pass
-    # TODO
-    # To allow specification of the distribution of both the training and
-    # test sets (e.g. train on 50/50, test on 90/10
 
 CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS = range(6)
 dimensions = (CLF, CLF_PARAMS, SUBSET, SUBSET_PARAMS, CV, CV_PARAMS)
@@ -444,7 +440,8 @@ all_subset_params_backindex = {param: i for i, param in
 all_cv_params = sorted(['n_folds', 'indices', 'shuffle', 'random_state',
                         'train_start', 'train_window_size',
                         'test_start', 'test_window_size', 
-                        'inc_value', 'expanding_train'])
+                        'inc_value', 'expanding_train', 'col_name',
+                        'col_idx'])
                         
 all_cv_params_backindex = {param: i for i, param in 
                            enumerate(all_cv_params)}
@@ -513,6 +510,8 @@ class Trial(object):
                 cv_kwargs['n'] = y_sub.shape[0]
             if 'y' in expected_cv_kwargs:
                 cv_kwargs['y'] = y_sub
+            if 'M' in expected_cv_kwargs:
+                cv_kwargs['M'] = M_sub
             cv_inst = cv_cls(**cv_kwargs)
             for fold_idx, (train, test) in enumerate(cv_inst):
                 if hasattr(cv_inst, 'cv_note'):

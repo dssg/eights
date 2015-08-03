@@ -19,9 +19,6 @@ from ..perambulate import Experiment
 from ..utils import cast_list_of_list_to_sa, is_sa, cast_np_sa_to_nd
 from communicate_helper import *
 
-def generate_report(info):
-    raise NotImplementedError
-
 def print_matrix_row_col(M, row_labels, col_labels):
     row_format ="{:>15}" * (len(col_labels) + 1)
     print row_format.format("", *col_labels)
