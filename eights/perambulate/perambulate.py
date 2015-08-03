@@ -181,36 +181,12 @@ class Experiment(object):
 
 
 
-def window_index(M, train_start, train_win_size, test_start, test_win_size, inc_value, expanding_train=False):
-    n = M.shape[0]
-    train_end = train_start + train_win_size - 1
-    test_end = test_start + test_win_size - 1
-    while test_end < n:
-        yield (np.arange(train_start, train_end + 1), np.arange(test_start, test_end + 1))
-        if not expanding_train:
-            train_start += inc_value
-        train_end += inc_value
-        test_start += inc_value
-        test_end += inc_value   
-    
-def window_time(M, train_start, train_size, test_start, test_size, inc_value, expanding_train=False):
-    raise NotImplementedError
-
 def random_subset_of_columns(M, number_to_select):
     num_col = len(M.dtypes.names)
     remove_these_columns = np.random.choice(num_col, number_to_select, replace=False)
     names = [col_names[i] for i in remove_these_columns]
     return names
     
-def random_subset_of_rows_even_distribution(M, labels, total_number_to_select):
-    #np.rand(x, y)
-    #handle id's as well as names
-    raise NotImplementedError
-
-def random_subset_of_rows_actual_distribution(M, labels, total_number_to_select):
-    #np.rand(x, y)
-    #handle id's as well as names
-    raise NotImplementedError
 
 
 

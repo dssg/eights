@@ -91,7 +91,19 @@ class TestPerambulate(unittest.TestCase):
                       (5, 2000),
                       (6, 2000),
                       (7, 2001),
-                      (8, 1997)], dtype=[('id', int), ('year', int)])
+                      (8, 1997),
+                      (9, 2005), 
+                      (10, 2005)], dtype=[('id', int), ('year', int)])
+        y = np.array([True, False, True, False, True, False, True, False,
+                      True, False])
+        cvs = {SlidingWindowIdx: {'train_start': [0], 'train_window_size': [2], 
+                                  'test_start': [2], 'test_window_size': [2],
+                                  'inc_value': [2]},
+               SlidingWindowValue: {'train_start': [1997], 'train_window_size': [2],
+                                    'test_start': [1999], 'test_window_size': [2],
+                                    'inc_value': [2]}}
+        exp = Experiment(M, y, cvs=cvs)
+        exp.make_csv()
 
     def test_report_complex(self):
         M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
