@@ -36,7 +36,7 @@ class Experiment(object):
         self.trials = trials
 
     def __repr__(self):
-        print 'Experiment(clfs={}, subsets={}, cvs={})'.format(
+        return 'Experiment(clfs={}, subsets={}, cvs={})'.format(
                 self.clfs, 
                 self.subsets, 
                 self.cvs)
