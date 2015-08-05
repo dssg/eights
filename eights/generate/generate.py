@@ -3,9 +3,6 @@ from sklearn import cross_validation
 import generate_helper as gh
 from ..utils import append_cols
 
-def combined_field_where_all_are_true():
-    #avg, min, max 
-    return
 
 def where_all_are_true(M, lambdas, col_names, vals, generated_names):
     to_select = np.ones(M.size, dtype=bool)
@@ -117,4 +114,16 @@ def normalize(col):
 def distance_from_point(lat_origin, lng_origin, lat_col, lng_col):
     """ Generates a column of how far each record is from the origin"""
     raise NotImplementedError    
+
+@np.vectorize
+def combine_sum(*args):
+    return sum(args)
+
+@np.vectorize
+def combine_mean(*args):
+    return np.mean(args)
+
+def combine_cols(M, lambd, col_names, generated_name):
+    new_col = lambd(*[M[name] for name in col_names])
+    return append_cols(M, new_col, generated_name)
 
