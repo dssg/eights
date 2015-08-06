@@ -337,7 +337,9 @@ class Run(object):
         return (['subset_note_' + name for name in all_subset_notes] + 
                 ['cv_note_' + name for name in all_cv_notes] + 
                 ['f1_score', 'prec@1%', 'prec@2%', 'prec@5%', 
-                 'prec@10%', 'prec@20%'])
+                 'prec@10%', 'prec@20%'] + 
+                ['feature_ranked_{}'.format(i) for i in xrange(10)] +
+                ['feature_score_{}'.format(i) for i in xrange(10)])
 
     def __subset_note_list(self):
         notes = [''] * len(all_subset_notes)
@@ -351,12 +353,21 @@ class Run(object):
             notes[all_cv_notes_backindex[name]] = str(val)
         return notes
 
+    def __feat_import(self):
+        col_idxs, scores = self.sorted_top_feat_importance(10)
+        return list(
+                it.chain(it.chain(
+                    col_idxs, 
+                    it.repeat('', 10 - len(col_idxs)),
+                    scores)))
+
     def csv_row(self):
         return (self.__subset_note_list() +
                 self.__cv_note_list() + 
                 [self.f1_score()] + 
                 self.precision_at_thresholds([.01, .02, .05, .10,
-                                              .20]).tolist())
+                                              .20]).tolist() +
+                self.__feat_import())
 
     def score(self):
         return self.clf.score(self.__test_M(), self.__test_y())
@@ -371,7 +382,10 @@ class Run(object):
                                 verbose=False)
    
     def sorted_top_feat_importance(self, n):
+        if not hasattr(self.clf, 'feature_importances_'):
+            return [[], []]
         feat_imp = self.clf.feature_importances_
+        n = min(n, len(feat_imp))
         ind = np.argpartition(feat_imp, -n)[-n:]
         top_cols = ind[np.argsort(feat_imp[ind])][::-1]
         top_vals = feat_imp[top_cols]
