@@ -15,9 +15,14 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.cross_validation import KFold, StratifiedKFold
 from sklearn.cross_validation import _PartitionIterator
 
+from joblib import Parallel, delayed
+from multiprocessing import cpu_count
 
 from .perambulate_helper import *
 import eights.utils as utils
+
+def _run_trial(trial):
+    return trial.run()
 
 class Experiment(object):
     def __init__(
@@ -40,12 +45,12 @@ class Experiment(object):
                 self.clfs, 
                 self.subsets, 
                 self.cvs)
+
         
     def __run_all_trials(self, trials):
-        # TODO some multiprocess thing
-        
-        for trial in trials:
-            trial.run()
+        # TODO parallelize on Runs too
+        return Parallel(n_jobs=cpu_count())(delayed(_run_trial)(t) 
+                                            for t in trials)
 
     def __copy(self, trials):
         return Experiment(
@@ -123,7 +128,7 @@ class Experiment(object):
                                     cv=cv,
                                     cv_params=cv_params)
                                 trials.append(trial)
-        self.__run_all_trials(trials)
+        trials = self.__run_all_trials(trials)
         self.trials = trials
         return trials
 

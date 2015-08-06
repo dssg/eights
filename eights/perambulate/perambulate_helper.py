@@ -541,7 +541,7 @@ class Trial(object):
                                             subset_note, cv_note))
             runs.append(runs_this_subset)    
         self.runs = runs
-        return runs
+        return self
 
     @staticmethod
     def csv_header():
