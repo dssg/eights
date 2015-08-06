@@ -58,8 +58,8 @@ class TestPerambulate(unittest.TestCase):
         exp.make_report()
 
     def test_make_csv(self):
-        #M, y = utils_for_tests.generate_test_matrix(1000, 5, 2)
-        M, y = utils_for_tests.generate_correlated_test_matrix(10000)
+        M, y = utils_for_tests.generate_test_matrix(1000, 15, 2)
+        #M, y = utils_for_tests.generate_correlated_test_matrix(10000)
         clfs = {RandomForestClassifier: {'n_estimators': [10, 100, 1000], 
                                          'max_depth': [5, 25]},
                 SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
