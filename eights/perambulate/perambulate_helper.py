@@ -45,7 +45,6 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         super(SubsetRandomRowsActualDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
-        self.__col_names = col
 
     def __iter__(self):
         y = self._y
@@ -306,6 +305,7 @@ class Run(object):
         self,
         M,
         y,
+        col_names,
         clf,
         train_indices,
         test_indices,
@@ -329,7 +329,7 @@ class Run(object):
                 self.clf, self.subset_note, self.cv_note)
 
     def __test_M(self):
-        return self.M[self.test_indices, self.sub_col_inds]
+        return self.M[np.ix_(self.test_indices, self.sub_col_inds)]
 
     def __test_y(self):
         return self.y[self.test_indices]
@@ -519,10 +519,11 @@ class Trial(object):
     def has_run(self):
         return self.runs is not None
 
+    @staticmethod
     def __indices_of_sublist(full_list, sublist):
         set_sublist = frozenset(sublist)
-        [i for i, full_list_item in enumerate(full_list) if
-         full_list_item in set_sublist]
+        return [i for i, full_list_item in enumerate(full_list) if
+                full_list_item in set_sublist]
 
     def run(self):
         if self.has_run():
@@ -536,8 +537,9 @@ class Trial(object):
             y_sub = self.y[subset]
             sub_col_inds = self.__indices_of_sublist(
                 self.col_names, 
-                sub_col_names)]
-            M_sub = self.M[subset, sub_col_inds]
+                sub_col_names)
+            # np.ix_ from http://stackoverflow.com/questions/30176268/error-when-indexing-with-2-dimensions-in-numpy
+            M_sub = self.M[np.ix_(subset, sub_col_inds)]
             cv_cls = self.cv
             cv_kwargs = copy.deepcopy(self.cv_params)
             expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
@@ -557,10 +559,17 @@ class Trial(object):
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
                 train_indices = subset[train]
-                runs_this_subset.append(Run(self.M, self.y, col_names, clf_inst, 
-                                            train_indices, test_indices,
-                                            sub_col_names, sub_col_inds,
-                                            subset_note, cv_note))
+                runs_this_subset.append(Run(
+                    self.M, 
+                    self.y, 
+                    self.col_names, 
+                    clf_inst, 
+                    train_indices, 
+                    test_indices,
+                    sub_col_names, 
+                    sub_col_inds,
+                    subset_note, 
+                    cv_note))
             runs.append(runs_this_subset)    
         self.runs = runs
         return self
