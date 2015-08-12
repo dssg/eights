@@ -135,6 +135,7 @@ class SubsetSweepVaryStratification(_BaseSubsetIter):
                 self.__proportions_positive,
                 self.__subset_size)
 
+
 class SubsetSweepExcludeColumns(_BaseSubsetIter):
     """
     
@@ -226,9 +227,9 @@ class SlidingWindowIdx(_PartitionIterator):
 
 # TODO should take col name, not col idx
 class SlidingWindowValue(_PartitionIterator):
-    def __init__(self, M, col_idx, train_start, train_window_size, test_start, 
+    def __init__(self, M, col_names, col_name, train_start, train_window_size, test_start, 
                  test_window_size, inc_value, expanding_train=False):
-        y = M[:,col_idx]
+        y = M[:,col_names.index(col_name)]
         n = y.shape[0] 
         super(SlidingWindowValue, self).__init__(n)
         self.__y = y
@@ -288,8 +289,9 @@ dimension_descr = {CLF: 'classifier',
                    CV: 'cross-validation method',
                    CV_PARAMS: 'cross-validation parameters'}
     
+# TODO these really, really need to be dynamically generated based on the experiment
 all_subset_notes = sorted(['sample_num', 'rows', 'prop_positive', 
-                           'excluded_col',])
+                           'excluded_col', 'grade'])
 
 all_subset_notes_backindex = {name: i for i, name in 
                               enumerate(all_subset_notes)}
@@ -452,8 +454,10 @@ all_clf_params = sorted(
                                         
 all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
 
+#TODO these really need to be dynamically generated based on the experiment
 all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
-                            'proportions_positive', 'cols_to_exclude'])
+                            'proportions_positive', 'cols_to_exclude',
+                            'grades'])
 
 all_subset_params_backindex = {param: i for i, param in 
                                enumerate(all_subset_params)}
@@ -549,6 +553,8 @@ class Trial(object):
                 cv_kwargs['y'] = y_sub
             if 'M' in expected_cv_kwargs:
                 cv_kwargs['M'] = M_sub
+            if 'col_names' in expected_cv_kwargs:
+                cv_kwargs['col_names'] = sub_col_names
             cv_inst = cv_cls(**cv_kwargs)
             for fold_idx, (train, test) in enumerate(cv_inst):
                 if hasattr(cv_inst, 'cv_note'):
