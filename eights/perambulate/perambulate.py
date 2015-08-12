@@ -50,8 +50,8 @@ class Experiment(object):
         
     def __run_all_trials(self, trials):
         # TODO parallelize on Runs too
-        # return Parallel(n_jobs=cpu_count())(delayed(_run_trial)(t) 
-        #                                    for t in trials)
+        #return Parallel(n_jobs=cpu_count())(delayed(_run_trial)(t) 
+        #                                   for t in trials)
         return [_run_trial(t) for t in trials]
 
     def __copy(self, trials):
