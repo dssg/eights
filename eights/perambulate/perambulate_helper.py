@@ -19,12 +19,14 @@ from sklearn.metrics import precision_recall_curve
 class _BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, y):
+    def __init__(self, y, col_names):
         self._y = y
+        self._col_names = col_names
     
     @abc.abstractmethod
     def __iter__(self):
-        yield (np.array([], dtype=int), {})
+        # Indices, columns, notes
+        yield (np.array([], dtype=int), [], {})
 
     @abc.abstractmethod
     def __repr__(self):
@@ -32,17 +34,18 @@ class _BaseSubsetIter(object):
 
 class SubsetNoSubset(_BaseSubsetIter):
     def __iter__(self):
-        yield (np.arange(self._y.shape[0]), {})
+        yield (np.arange(self._y.shape[0]), self._col_names, {})
 
     def __repr__(self):
         return 'SubsetNoSubset()'
 
 class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         
-    def __init__(self, y, subset_size, n_subsets=3):
-        super(SubsetRandomRowsActualDistribution, self).__init__(y)
+    def __init__(self, y, col_names, subset_size, n_subsets=3):
+        super(SubsetRandomRowsActualDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
+        self.__col_names = col
 
     def __iter__(self):
         y = self._y
@@ -57,7 +60,7 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, {'sample_num': i})
+            yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
@@ -66,8 +69,8 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
 
 class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
         
-    def __init__(self, y, subset_size, n_subsets=3):
-        super(SubsetRandomRowsEvenDistribution, self).__init__(y)
+    def __init__(self, y, col_names, subset_size, n_subsets=3):
+        super(SubsetRandomRowsEvenDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
 
@@ -84,7 +87,7 @@ class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, {'sample_num': i})
+            yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsEvenDistribution(subset_size={}, n_subsets={})'.format(
@@ -93,8 +96,8 @@ class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
 
 class SubsetSweepNumRows(_BaseSubsetIter):
         
-    def __init__(self, y, num_rows):
-        super(SubsetSweepNumRows, self).__init__(y)
+    def __init__(self, y, col_names, num_rows):
+        super(SubsetSweepNumRows, self).__init__(y, col_names)
         self.__num_rows = num_rows
 
     def __iter__(self):
@@ -102,7 +105,7 @@ class SubsetSweepNumRows(_BaseSubsetIter):
         num_rows = self.__num_rows
         for rows in num_rows:
             all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
-            yield (all_indices, {'rows': rows})
+            yield (all_indices, self._col_names, {'rows': rows})
 
     def __repr__(self):
         return 'SubsetSweepNumRows(num_rows={})'.format(
@@ -110,8 +113,8 @@ class SubsetSweepNumRows(_BaseSubsetIter):
 
 class SubsetSweepVaryStratification(_BaseSubsetIter):
         
-    def __init__(self, y, proportions_positive, subset_size):
-        super(SubsetSweepVaryStratification, self).__init__(y)
+    def __init__(self, y, col_names, proportions_positive, subset_size):
+        super(SubsetSweepVaryStratification, self).__init__(y, col_names)
         self.__proportions_positive = proportions_positive
         self.__subset_size = subset_size
 
@@ -126,7 +129,7 @@ class SubsetSweepVaryStratification(_BaseSubsetIter):
             # If one of these sets is empty, concatentating them casts to float, so we have
             # to cast it back (hence the astype)
             all_indices = np.sort(np.concatenate([positive_sample, negative_sample])).astype(int)
-            yield (all_indices, 'prop_positive={}'.format(prop_pos))
+            yield (all_indices, self._col_names, 'prop_positive={}'.format(prop_pos))
 
     def __repr__(self):
         return 'SubsetSweepVaryStratification(proportions_positive={}, subset_size={})'.format(
@@ -306,10 +309,15 @@ class Run(object):
         clf,
         train_indices,
         test_indices,
+        sub_col_names,
+        sub_col_inds,
         subset_note,
         cv_note):
         self.M = M
         self.y = y
+        self.col_names = col_names
+        self.sub_col_names = sub_col_names
+        self.sub_col_inds = sub_col_inds
         self.clf = clf
         self.test_indices = test_indices
         self.train_indices = train_indices
@@ -321,7 +329,7 @@ class Run(object):
                 self.clf, self.subset_note, self.cv_note)
 
     def __test_M(self):
-        return self.M[self.test_indices]
+        return self.M[self.test_indices, self.sub_col_inds]
 
     def __test_y(self):
         return self.y[self.test_indices]
@@ -465,6 +473,7 @@ class Trial(object):
         self, 
         M,
         y,
+        col_names,
         clf=RandomForestClassifier,
         clf_params={},
         subset=SubsetNoSubset,
@@ -473,6 +482,7 @@ class Trial(object):
         cv_params={}):
         self.M = M
         self.y = y
+        self.col_names = col_names 
         self.runs = None
         self.clf = clf
         self.clf_params = clf_params
@@ -509,14 +519,25 @@ class Trial(object):
     def has_run(self):
         return self.runs is not None
 
+    def __indices_of_sublist(full_list, sublist):
+        set_sublist = frozenset(sublist)
+        [i for i, full_list_item in enumerate(full_list) if
+         full_list_item in set_sublist]
+
     def run(self):
         if self.has_run():
             return self.runs
         runs = []
-        for subset, subset_note in self.subset(self.y, **self.subset_params):
+        for subset, sub_col_names, subset_note in self.subset(
+                self.y, 
+                self.col_names, 
+                **self.subset_params):
             runs_this_subset = []
             y_sub = self.y[subset]
-            M_sub = self.M[subset]
+            sub_col_inds = self.__indices_of_sublist(
+                self.col_names, 
+                sub_col_names)]
+            M_sub = self.M[subset, sub_col_inds]
             cv_cls = self.cv
             cv_kwargs = copy.deepcopy(self.cv_params)
             expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
@@ -536,8 +557,9 @@ class Trial(object):
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
                 train_indices = subset[train]
-                runs_this_subset.append(Run(self.M, self.y, clf_inst, 
+                runs_this_subset.append(Run(self.M, self.y, col_names, clf_inst, 
                                             train_indices, test_indices,
+                                            sub_col_names, sub_col_inds,
                                             subset_note, cv_note))
             runs.append(runs_this_subset)    
         self.runs = runs

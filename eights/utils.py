@@ -11,6 +11,8 @@ def validate_time(date_text):
         return True
     except ValueError:
         return False
+
+
 def str_to_time(date_text):
     try:
         return np.datetime64(date_text)

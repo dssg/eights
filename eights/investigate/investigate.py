@@ -16,7 +16,7 @@ from ..communicate import *
 from ..utils import is_sa
 
 #open files 
-def open_csv(file_loc):
+def open_csv(file_loc, delimiter=','):
     """single line description
     Parameters
     ----------
@@ -34,8 +34,8 @@ def open_csv(file_loc):
        Description
        
     """
-    f = open_csv_as_structured_array(file_loc)
-    return set_structured_array_datetime_as_day(f, file_loc)
+    f = open_csv_as_structured_array(file_loc, delimiter)
+    return set_structured_array_datetime_as_day(f, file_loc, delimiter)
 
 def open_JSON():
     """single line description

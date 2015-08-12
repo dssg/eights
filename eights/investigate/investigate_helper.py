@@ -10,8 +10,8 @@ def open_simple_csv_as_list(file_loc):
         data= list(reader)
     return data
     
-def open_csv_as_structured_array(file_loc):
-    return np.genfromtxt(file_loc, dtype=None, names=True, delimiter=',')
+def open_csv_as_structured_array(file_loc, delimiter=','):
+    return np.genfromtxt(file_loc, dtype=None, names=True, delimiter=delimiter)
 
 def convert_fixed_width_list_to_CSV_list(data, list_of_widths):
     #assumes you loaded a fixed with thing into a list of list csv.
@@ -23,7 +23,7 @@ def convert_fixed_width_list_to_CSV_list(data, list_of_widths):
         out.append(struct.unpack(s, x[0]))
     return out
 
-def set_structured_array_datetime_as_day(first_pass,file_loc):
+def set_structured_array_datetime_as_day(first_pass,file_loc, delimiter=','):
     date_cols = []
     int_cols = []
     new_dtype = []
@@ -32,7 +32,9 @@ def set_structured_array_datetime_as_day(first_pass,file_loc):
             col = first_pass[col_name]
             if np.any(validate_time(col)):
                 date_cols.append(i)
-                col_dtype = 'M8[D]'
+		# TODO better inference
+                # col_dtype = 'M8[D]'
+                col_dtype = np.datetime64(col[0]).dtype
         elif 'i' in col_dtype:
             int_cols.append(i)
         new_dtype.append((col_name, col_dtype))
@@ -40,7 +42,7 @@ def set_structured_array_datetime_as_day(first_pass,file_loc):
     converter = {i: str_to_time for i in date_cols}        
     missing_values = {i: '' for i in int_cols}
     filling_values = {i: -999 for i in int_cols}
-    return np.genfromtxt(file_loc, dtype=new_dtype, names=True, delimiter=',',
+    return np.genfromtxt(file_loc, dtype=new_dtype, names=True, delimiter=delimiter,
                          converters=converter, missing_values=missing_values,
                          filling_values=filling_values)
 
