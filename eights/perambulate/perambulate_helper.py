@@ -16,7 +16,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_recall_curve
 
-class _BaseSubsetIter(object):
+class BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, y, col_names):
@@ -32,14 +32,14 @@ class _BaseSubsetIter(object):
     def __repr__(self):
         return 'BaseSubsetIter()'
 
-class SubsetNoSubset(_BaseSubsetIter):
+class SubsetNoSubset(BaseSubsetIter):
     def __iter__(self):
         yield (np.arange(self._y.shape[0]), self._col_names, {})
 
     def __repr__(self):
         return 'SubsetNoSubset()'
 
-class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
+class SubsetRandomRowsActualDistribution(BaseSubsetIter):
         
     def __init__(self, y, col_names, subset_size, n_subsets=3):
         super(SubsetRandomRowsActualDistribution, self).__init__(y, col_names)
@@ -66,7 +66,7 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
                 self.__subset_size,
                 self.__n_subsets)
 
-class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
+class SubsetRandomRowsEvenDistribution(BaseSubsetIter):
         
     def __init__(self, y, col_names, subset_size, n_subsets=3):
         super(SubsetRandomRowsEvenDistribution, self).__init__(y, col_names)
@@ -93,7 +93,7 @@ class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
                 self.__subset_size,
                 self.__n_subsets)
 
-class SubsetSweepNumRows(_BaseSubsetIter):
+class SubsetSweepNumRows(BaseSubsetIter):
         
     def __init__(self, y, col_names, num_rows):
         super(SubsetSweepNumRows, self).__init__(y, col_names)
@@ -110,7 +110,7 @@ class SubsetSweepNumRows(_BaseSubsetIter):
         return 'SubsetSweepNumRows(num_rows={})'.format(
                 self.__num_rows)
 
-class SubsetSweepVaryStratification(_BaseSubsetIter):
+class SubsetSweepVaryStratification(BaseSubsetIter):
         
     def __init__(self, y, col_names, proportions_positive, subset_size):
         super(SubsetSweepVaryStratification, self).__init__(y, col_names)
@@ -136,7 +136,7 @@ class SubsetSweepVaryStratification(_BaseSubsetIter):
                 self.__subset_size)
 
 
-class SubsetSweepExcludeColumns(_BaseSubsetIter):
+class SubsetSweepExcludeColumns(BaseSubsetIter):
     """
     
     Analyze feature importance when each of a specified set of columns are
@@ -166,7 +166,7 @@ class SubsetSweepExcludeColumns(_BaseSubsetIter):
     def __init__(self, M, cols_to_exclude=None):
         raise NotImplementedError
 
-class SubsetSweepLeaveOneColOut(_BaseSubsetIter):
+class SubsetSweepLeaveOneColOut(BaseSubsetIter):
     # TODO
     #returns list of list eachone missing a value in order.  
     #needs to be tested
@@ -225,7 +225,6 @@ class SlidingWindowIdx(_PartitionIterator):
             yield (np.arange(self.__train_start, self.__train_end + 1), 
                    test_index)
 
-# TODO should take col name, not col idx
 class SlidingWindowValue(_PartitionIterator):
     def __init__(self, M, col_names, col_name, train_start, train_window_size, test_start, 
                  test_window_size, inc_value, expanding_train=False):
@@ -337,7 +336,7 @@ class Run(object):
         return self.y[self.test_indices]
 
     def __pred_proba(self):
-        return self.clf.predict_proba(self.__test_M())[:,1]
+        return self.clf.predict_proba(self.__test_M())[:,-1]
 
     def __predict(self):
         return self.clf.predict(self.__test_M())
@@ -364,11 +363,11 @@ class Run(object):
         return notes
 
     def __feat_import(self):
-        col_idxs, scores = self.sorted_top_feat_importance(10)
+        col_names, scores = self.sorted_top_feat_importance(10)
         return list(
                 it.chain(it.chain(
-                    col_idxs, 
-                    it.repeat('', 10 - len(col_idxs)),
+                    col_names, 
+                    it.repeat('', 10 - len(col_names)),
                     scores)))
 
     def csv_row(self):
@@ -399,7 +398,8 @@ class Run(object):
         ind = np.argpartition(feat_imp, -n)[-n:]
         top_cols = ind[np.argsort(feat_imp[ind])][::-1]
         top_vals = feat_imp[top_cols]
-        return [top_cols, top_vals]
+        col_names = [self.sub_col_names[idx] for idx in top_cols]
+        return [col_names, top_vals]
 
     def f1_score(self):
         return f1_score(self.__test_y(), self.__predict())
@@ -462,12 +462,11 @@ all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows',
 all_subset_params_backindex = {param: i for i, param in 
                                enumerate(all_subset_params)}
 
-# TODO others?
 all_cv_params = sorted(['n_folds', 'indices', 'shuffle', 'random_state',
                         'train_start', 'train_window_size',
                         'test_start', 'test_window_size', 
                         'inc_value', 'expanding_train', 'col_name',
-                        'col_idx'])
+                        'col_name'])
                         
 all_cv_params_backindex = {param: i for i, param in 
                            enumerate(all_cv_params)}
