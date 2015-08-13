@@ -1,8 +1,10 @@
 import unittest
 from eights.communicate.communicate import feature_pairs_in_tree
 from eights.communicate.communicate import feature_pairs_in_rf
+from sklearn import datasets
+from sklearn.ensemble import RandomForestClassifier
 
-class TestCommunicate(unittest.testcase):
+class TestCommunicate(unittest.TestCase):
     def test_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
@@ -16,7 +18,9 @@ class TestCommunicate(unittest.testcase):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
         rf.fit(iris.data, iris.target)
-        result = feature_pairs_in_rf(rf, [1, 0.5])
+        result = feature_pairs_in_rf(rf, [1, 0.5], verbose=False)
+        result = feature_pairs_in_rf(rf, verbose=True)
+        
         # TODO make sure these results are actually correct
 #        ctrl = {'Depth 3->4': 
 #                Counter({(0, 3): 3, (1, 2): 2, (2, 3): 2, (0, 1): 1, 
@@ -42,3 +46,6 @@ class TestCommunicate(unittest.testcase):
 #                Counter({(0, 3): 1, (2, 3): 1, (0, 2): 1})}
 #        self.assertEqual(result, ctrl)
          # TODO Alter to deal w/ new output format
+
+if __name__ == '__main__':
+    unittest.main()

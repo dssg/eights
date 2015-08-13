@@ -18,6 +18,8 @@ from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
 from ..utils import cast_list_of_list_to_sa, is_sa, cast_np_sa_to_nd
 from communicate_helper import *
+from communicate_helper import _feature_pair_report
+
 
 def print_matrix_row_col(M, row_labels, col_labels):
     row_format ="{:>15}" * (len(col_labels) + 1)
@@ -286,7 +288,7 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
 
     depth_len = len(pairs_by_depth)
     if weight_by_depth is None:
-        weight_by_depth = [(depth_len - float(depth)) / max_depth for depth in
+        weight_by_depth = [(depth_len - float(depth)) / depth_len for depth in
                            xrange(depth_len)]
     weight_filler = it.repeat(0.0, depth_len - len(weight_by_depth))
     weights = list(it.chain(weight_by_depth, weight_filler))
