@@ -290,7 +290,7 @@ dimension_descr = {CLF: 'classifier',
     
 # TODO these really, really need to be dynamically generated based on the experiment
 all_subset_notes = sorted(['sample_num', 'rows', 'prop_positive', 
-                           'excluded_col', 'grade'])
+                           'excluded_col', 'max_grade'])
 
 all_subset_notes_backindex = {name: i for i, name in 
                               enumerate(all_subset_notes)}
@@ -457,7 +457,7 @@ all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
 #TODO these really need to be dynamically generated based on the experiment
 all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
                             'proportions_positive', 'cols_to_exclude',
-                            'grades'])
+                            'max_grades'])
 
 all_subset_params_backindex = {param: i for i, param in 
                                enumerate(all_subset_params)}
