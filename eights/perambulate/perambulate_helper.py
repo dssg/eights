@@ -345,7 +345,7 @@ class Run(object):
     def csv_header():
         return (['subset_note_' + name for name in all_subset_notes] + 
                 ['cv_note_' + name for name in all_cv_notes] + 
-                ['f1_score', 'prec@1%', 'prec@2%', 'prec@5%', 
+                ['f1_score', 'roc_auc', 'prec@1%', 'prec@2%', 'prec@5%', 
                  'prec@10%', 'prec@20%'] + 
                 ['feature_ranked_{}'.format(i) for i in xrange(10)] +
                 ['feature_score_{}'.format(i) for i in xrange(10)])
@@ -374,6 +374,7 @@ class Run(object):
         return (self.__subset_note_list() +
                 self.__cv_note_list() + 
                 [self.f1_score()] + 
+                [self.roc_auc()] +
                 self.precision_at_thresholds([.01, .02, .05, .10,
                                               .20]).tolist() +
                 self.__feat_import())
@@ -436,7 +437,11 @@ class Run(object):
                 precision_curve[::-1])
 
     def roc_auc(self):
-        return roc_auc_score(self.__test_y(), self.__pred_proba())
+        try:
+            return roc_auc_score(self.__test_y(), self.__pred_proba())
+        # If there was only one class
+        except ValueError:
+            return 0
 
 
 # TODO other clfs
