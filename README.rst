@@ -1,3 +1,4 @@
+```
 ============================================
       _       _     _       
      (_)     | |   | |      
@@ -9,6 +10,7 @@
         |___/
 
 ============================================
+```
 
 ------------
 Introduction
@@ -21,6 +23,8 @@ interface of often used workflows.
 ------------
 Installation
 ------------
+
+`pip install git+git://github.com/eights/eights.git`
 
 Required
 ========
