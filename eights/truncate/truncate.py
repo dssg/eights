@@ -8,6 +8,7 @@ def fewer_then_n_nonzero_in_col(M, boundary):
     num_rows =M.shape[0]
     l = [sum(M[n]==0) for n in col_names]
     remove_these_columns = np.where(np.array(l)>=(num_rows-boundary))
+    import pdb; pdb.set_trace()
     names = [col_names[i] for i in remove_these_columns]
     return remove_cols(M, names)
 

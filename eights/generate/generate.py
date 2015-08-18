@@ -6,6 +6,8 @@ from uuid import uuid4
 
 
 def where_all_are_true(M, arguments, generated_name=None):
+    if generated_name is None:
+        generated_name = str(uuid4())
     to_select = np.ones(M.size, dtype=bool)
     for arg_set in arguments:
         lambd, col_name, vals = (arg_set['func'], arg_set['col_name'],
