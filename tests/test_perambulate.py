@@ -143,7 +143,7 @@ class TestPerambulate(unittest.TestCase):
                   'probability': [True]}]        
         subsets = [{'subset': SubsetRandomRowsActualDistribution, 
                     'subset_size': [20, 40, 60, 80, 100]}]
-        cvs = [{'clf': StratifiedKFold}]
+        cvs = [{'cv': StratifiedKFold}]
         exp = Experiment(M, y, clfs, subsets, cvs)
         exp.make_report(dimension=CLF)
 
