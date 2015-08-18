@@ -16,31 +16,33 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import precision_recall_curve
 
-class _BaseSubsetIter(object):
+class BaseSubsetIter(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, y):
+    def __init__(self, y, col_names):
         self._y = y
+        self._col_names = col_names
     
     @abc.abstractmethod
     def __iter__(self):
-        yield (np.array([], dtype=int), {})
+        # Indices, columns, notes
+        yield (np.array([], dtype=int), [], {})
 
     @abc.abstractmethod
     def __repr__(self):
         return 'BaseSubsetIter()'
 
-class SubsetNoSubset(_BaseSubsetIter):
+class SubsetNoSubset(BaseSubsetIter):
     def __iter__(self):
-        yield (np.arange(self._y.shape[0]), {})
+        yield (np.arange(self._y.shape[0]), self._col_names, {})
 
     def __repr__(self):
         return 'SubsetNoSubset()'
 
-class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
+class SubsetRandomRowsActualDistribution(BaseSubsetIter):
         
-    def __init__(self, y, subset_size, n_subsets=3):
-        super(SubsetRandomRowsActualDistribution, self).__init__(y)
+    def __init__(self, y, col_names, subset_size, n_subsets=3):
+        super(SubsetRandomRowsActualDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
 
@@ -57,17 +59,17 @@ class SubsetRandomRowsActualDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, {'sample_num': i})
+            yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
                 self.__subset_size,
                 self.__n_subsets)
 
-class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
+class SubsetRandomRowsEvenDistribution(BaseSubsetIter):
         
-    def __init__(self, y, subset_size, n_subsets=3):
-        super(SubsetRandomRowsEvenDistribution, self).__init__(y)
+    def __init__(self, y, col_names, subset_size, n_subsets=3):
+        super(SubsetRandomRowsEvenDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
 
@@ -84,17 +86,17 @@ class SubsetRandomRowsEvenDistribution(_BaseSubsetIter):
         for i in xrange(n_subsets):
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
             all_indices = np.sort(np.concatenate(samples.values()))
-            yield (all_indices, {'sample_num': i})
+            yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
         return 'SubsetRandomRowsEvenDistribution(subset_size={}, n_subsets={})'.format(
                 self.__subset_size,
                 self.__n_subsets)
 
-class SubsetSweepNumRows(_BaseSubsetIter):
+class SubsetSweepNumRows(BaseSubsetIter):
         
-    def __init__(self, y, num_rows):
-        super(SubsetSweepNumRows, self).__init__(y)
+    def __init__(self, y, col_names, num_rows):
+        super(SubsetSweepNumRows, self).__init__(y, col_names)
         self.__num_rows = num_rows
 
     def __iter__(self):
@@ -102,16 +104,16 @@ class SubsetSweepNumRows(_BaseSubsetIter):
         num_rows = self.__num_rows
         for rows in num_rows:
             all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
-            yield (all_indices, {'rows': rows})
+            yield (all_indices, self._col_names, {'rows': rows})
 
     def __repr__(self):
         return 'SubsetSweepNumRows(num_rows={})'.format(
                 self.__num_rows)
 
-class SubsetSweepVaryStratification(_BaseSubsetIter):
+class SubsetSweepVaryStratification(BaseSubsetIter):
         
-    def __init__(self, y, proportions_positive, subset_size):
-        super(SubsetSweepVaryStratification, self).__init__(y)
+    def __init__(self, y, col_names, proportions_positive, subset_size):
+        super(SubsetSweepVaryStratification, self).__init__(y, col_names)
         self.__proportions_positive = proportions_positive
         self.__subset_size = subset_size
 
@@ -126,14 +128,15 @@ class SubsetSweepVaryStratification(_BaseSubsetIter):
             # If one of these sets is empty, concatentating them casts to float, so we have
             # to cast it back (hence the astype)
             all_indices = np.sort(np.concatenate([positive_sample, negative_sample])).astype(int)
-            yield (all_indices, 'prop_positive={}'.format(prop_pos))
+            yield (all_indices, self._col_names, 'prop_positive={}'.format(prop_pos))
 
     def __repr__(self):
         return 'SubsetSweepVaryStratification(proportions_positive={}, subset_size={})'.format(
                 self.__proportions_positive,
                 self.__subset_size)
 
-class SubsetSweepExcludeColumns(_BaseSubsetIter):
+
+class SubsetSweepExcludeColumns(BaseSubsetIter):
     """
     
     Analyze feature importance when each of a specified set of columns are
@@ -163,7 +166,7 @@ class SubsetSweepExcludeColumns(_BaseSubsetIter):
     def __init__(self, M, cols_to_exclude=None):
         raise NotImplementedError
 
-class SubsetSweepLeaveOneColOut(_BaseSubsetIter):
+class SubsetSweepLeaveOneColOut(BaseSubsetIter):
     # TODO
     #returns list of list eachone missing a value in order.  
     #needs to be tested
@@ -222,11 +225,10 @@ class SlidingWindowIdx(_PartitionIterator):
             yield (np.arange(self.__train_start, self.__train_end + 1), 
                    test_index)
 
-# TODO should take col name, not col idx
 class SlidingWindowValue(_PartitionIterator):
-    def __init__(self, M, col_idx, train_start, train_window_size, test_start, 
+    def __init__(self, M, col_names, col_name, train_start, train_window_size, test_start, 
                  test_window_size, inc_value, expanding_train=False):
-        y = M[:,col_idx]
+        y = M[:,col_names.index(col_name)]
         n = y.shape[0] 
         super(SlidingWindowValue, self).__init__(n)
         self.__y = y
@@ -286,8 +288,9 @@ dimension_descr = {CLF: 'classifier',
                    CV: 'cross-validation method',
                    CV_PARAMS: 'cross-validation parameters'}
     
+# TODO these really, really need to be dynamically generated based on the experiment
 all_subset_notes = sorted(['sample_num', 'rows', 'prop_positive', 
-                           'excluded_col',])
+                           'excluded_col', 'max_grade'])
 
 all_subset_notes_backindex = {name: i for i, name in 
                               enumerate(all_subset_notes)}
@@ -303,13 +306,19 @@ class Run(object):
         self,
         M,
         y,
+        col_names,
         clf,
         train_indices,
         test_indices,
+        sub_col_names,
+        sub_col_inds,
         subset_note,
         cv_note):
         self.M = M
         self.y = y
+        self.col_names = col_names
+        self.sub_col_names = sub_col_names
+        self.sub_col_inds = sub_col_inds
         self.clf = clf
         self.test_indices = test_indices
         self.train_indices = train_indices
@@ -321,13 +330,13 @@ class Run(object):
                 self.clf, self.subset_note, self.cv_note)
 
     def __test_M(self):
-        return self.M[self.test_indices]
+        return self.M[np.ix_(self.test_indices, self.sub_col_inds)]
 
     def __test_y(self):
         return self.y[self.test_indices]
 
     def __pred_proba(self):
-        return self.clf.predict_proba(self.__test_M())[:,1]
+        return self.clf.predict_proba(self.__test_M())[:,-1]
 
     def __predict(self):
         return self.clf.predict(self.__test_M())
@@ -336,7 +345,7 @@ class Run(object):
     def csv_header():
         return (['subset_note_' + name for name in all_subset_notes] + 
                 ['cv_note_' + name for name in all_cv_notes] + 
-                ['f1_score', 'prec@1%', 'prec@2%', 'prec@5%', 
+                ['f1_score', 'roc_auc', 'prec@1%', 'prec@2%', 'prec@5%', 
                  'prec@10%', 'prec@20%'] + 
                 ['feature_ranked_{}'.format(i) for i in xrange(10)] +
                 ['feature_score_{}'.format(i) for i in xrange(10)])
@@ -354,17 +363,18 @@ class Run(object):
         return notes
 
     def __feat_import(self):
-        col_idxs, scores = self.sorted_top_feat_importance(10)
+        col_names, scores = self.sorted_top_feat_importance(10)
         return list(
                 it.chain(it.chain(
-                    col_idxs, 
-                    it.repeat('', 10 - len(col_idxs)),
+                    col_names, 
+                    it.repeat('', 10 - len(col_names)),
                     scores)))
 
     def csv_row(self):
         return (self.__subset_note_list() +
                 self.__cv_note_list() + 
                 [self.f1_score()] + 
+                [self.roc_auc()] +
                 self.precision_at_thresholds([.01, .02, .05, .10,
                                               .20]).tolist() +
                 self.__feat_import())
@@ -389,7 +399,8 @@ class Run(object):
         ind = np.argpartition(feat_imp, -n)[-n:]
         top_cols = ind[np.argsort(feat_imp[ind])][::-1]
         top_vals = feat_imp[top_cols]
-        return [top_cols, top_vals]
+        col_names = [self.sub_col_names[idx] for idx in top_cols]
+        return [col_names, top_vals]
 
     def f1_score(self):
         return f1_score(self.__test_y(), self.__predict())
@@ -426,7 +437,11 @@ class Run(object):
                 precision_curve[::-1])
 
     def roc_auc(self):
-        return roc_auc_score(self.__test_y(), self.__pred_proba())
+        try:
+            return roc_auc_score(self.__test_y(), self.__pred_proba())
+        # If there was only one class
+        except ValueError:
+            return 0
 
 
 # TODO other clfs
@@ -444,18 +459,19 @@ all_clf_params = sorted(
                                         
 all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
 
+#TODO these really need to be dynamically generated based on the experiment
 all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
-                            'proportions_positive', 'cols_to_exclude'])
+                            'proportions_positive', 'cols_to_exclude',
+                            'max_grades'])
 
 all_subset_params_backindex = {param: i for i, param in 
                                enumerate(all_subset_params)}
 
-# TODO others?
 all_cv_params = sorted(['n_folds', 'indices', 'shuffle', 'random_state',
                         'train_start', 'train_window_size',
                         'test_start', 'test_window_size', 
                         'inc_value', 'expanding_train', 'col_name',
-                        'col_idx'])
+                        'col_name'])
                         
 all_cv_params_backindex = {param: i for i, param in 
                            enumerate(all_cv_params)}
@@ -465,6 +481,7 @@ class Trial(object):
         self, 
         M,
         y,
+        col_names,
         clf=RandomForestClassifier,
         clf_params={},
         subset=SubsetNoSubset,
@@ -473,6 +490,7 @@ class Trial(object):
         cv_params={}):
         self.M = M
         self.y = y
+        self.col_names = col_names 
         self.runs = None
         self.clf = clf
         self.clf_params = clf_params
@@ -509,14 +527,27 @@ class Trial(object):
     def has_run(self):
         return self.runs is not None
 
+    @staticmethod
+    def __indices_of_sublist(full_list, sublist):
+        set_sublist = frozenset(sublist)
+        return [i for i, full_list_item in enumerate(full_list) if
+                full_list_item in set_sublist]
+
     def run(self):
         if self.has_run():
             return self.runs
         runs = []
-        for subset, subset_note in self.subset(self.y, **self.subset_params):
+        for subset, sub_col_names, subset_note in self.subset(
+                self.y, 
+                self.col_names, 
+                **self.subset_params):
             runs_this_subset = []
             y_sub = self.y[subset]
-            M_sub = self.M[subset]
+            sub_col_inds = self.__indices_of_sublist(
+                self.col_names, 
+                sub_col_names)
+            # np.ix_ from http://stackoverflow.com/questions/30176268/error-when-indexing-with-2-dimensions-in-numpy
+            M_sub = self.M[np.ix_(subset, sub_col_inds)]
             cv_cls = self.cv
             cv_kwargs = copy.deepcopy(self.cv_params)
             expected_cv_kwargs = inspect.getargspec(cv_cls.__init__).args
@@ -526,6 +557,8 @@ class Trial(object):
                 cv_kwargs['y'] = y_sub
             if 'M' in expected_cv_kwargs:
                 cv_kwargs['M'] = M_sub
+            if 'col_names' in expected_cv_kwargs:
+                cv_kwargs['col_names'] = sub_col_names
             cv_inst = cv_cls(**cv_kwargs)
             for fold_idx, (train, test) in enumerate(cv_inst):
                 if hasattr(cv_inst, 'cv_note'):
@@ -536,9 +569,17 @@ class Trial(object):
                 clf_inst.fit(M_sub[train], y_sub[train])
                 test_indices = subset[test]
                 train_indices = subset[train]
-                runs_this_subset.append(Run(self.M, self.y, clf_inst, 
-                                            train_indices, test_indices,
-                                            subset_note, cv_note))
+                runs_this_subset.append(Run(
+                    self.M, 
+                    self.y, 
+                    self.col_names, 
+                    clf_inst, 
+                    train_indices, 
+                    test_indices,
+                    sub_col_names, 
+                    sub_col_inds,
+                    subset_note, 
+                    cv_note))
             runs.append(runs_this_subset)    
         self.runs = runs
         return self

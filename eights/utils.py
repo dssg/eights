@@ -11,6 +11,8 @@ def validate_time(date_text):
         return True
     except ValueError:
         return False
+
+
 def str_to_time(date_text):
     try:
         return np.datetime64(date_text)
@@ -54,7 +56,7 @@ def convert_to_sa(M, c_name=None):
 
     raise ValueError('Can\'t cast to sa')
 
-__type_permissiveness_ranks = {'b': 0, 'M': 100, 'i': 200, 'f': 300, 'S': 400}
+__type_permissiveness_ranks = {'b': 0, 'M': 100, 'm': 100, 'i': 200, 'f': 300, 'S': 400}
 def __type_permissiveness(dtype):
     # TODO handle other types
     return __type_permissiveness_ranks[dtype.kind] + dtype.itemsize
