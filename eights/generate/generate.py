@@ -2,18 +2,23 @@ import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
 from ..utils import append_cols
+from uuid import uuid4
 
 
-def where_all_are_true(M, lambdas, col_names, vals, generated_names):
+def where_all_are_true(M, arguments, generated_name=None):
+    if generated_name is None:
+        generated_name = str(uuid4())
     to_select = np.ones(M.size, dtype=bool)
-    for lambd, col_name, val in zip(lambdas, col_names, vals):
-        to_select = np.logical_and(to_select, lambd(M, col_name, val))
-    return append_cols(M, to_select, generated_names)
+    for arg_set in arguments:
+        lambd, col_name, vals = (arg_set['func'], arg_set['col_name'],
+                                    arg_set['vals'])
+        to_select = np.logical_and(to_select, lambd(M, col_name, vals))
+    return append_cols(M, to_select, generated_name)
 
-#where_all_are_true(
-#    M, 
-#    [(val_eq, 'f1', 4),
-#     (val_between, 'f7', (1.2, 2.5)]))
+# where_all_are_true(
+#    M,
+#    [{'func': val_eq, 'col_name': 'f1', 'vals': 4},
+#     {'func': val_between, 'col_name': 'f7', 'vals': (1.2, 2.5)}]      
 
 def is_outlier(M, col_name, boundary):
     std = np.std(M[col_name])

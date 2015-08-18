@@ -34,18 +34,14 @@ if plot:
 
 
 ####################generate#######################
-import eights.generate as gen
+import eights.generate  as gen
 
 #lets generate row of our data
-M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], '4 and(2.7-3.1)')
-#
-M = gen.where(M, '4 and(2.7-3.1)', 
-                    [[gen.val_between, ['f0'], (3.5, 2.7)],
-                     [gen.val_between, ['f1'], (5.0, 3.1)]])
-        
 
-
-M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
+arguments_bt = [{'func': gen.val_between, 'col_name': 'f0', 'vals': (3.5, 5.0)},
+                {'func': gen.val_between, 'col_name': 'f1', 'vals': (2.7, 3.1)}]
+M = gen.where_all_are_true(M, arguments_bt, '4 and(2.7-3.1)')
+M = gen.where_all_are_true(M, arguments_bt, 'bad_rules')
 
 
 
@@ -53,10 +49,11 @@ M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3
 def rounds_to_val(M, col_name, boundary):
     return (np.round(M[col_name]) == boundary)
     
-M = gen.where_all_are_true(M, [rounds_to_val], ['f0'],[5], 'rounds to 5')
+arguments_rd = [{'func': rounds_to_val, 'col_name': 'f0', 'vals': 5}]
+M = gen.where_all_are_true(M, arguments_rd, 'rounds to 5')
 
 #making a useless row
-M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(35,50),(27, 31)], 'Useless Cols')
+M = gen.where_all_are_true(M, arguments_bt, 'Useless Cols')
 
 import pdb; pdb.set_trace()
 
