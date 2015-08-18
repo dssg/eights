@@ -459,13 +459,9 @@ class Report(object):
         fig = plt.figure()
         plt.bar(x, y)
         maxy = max(y)
-        colors = ('r', 'g')
-        for color, (rank, result) in zip(it.cycle(colors), 
-                                           enumerate(results_sorted)):
-            plt.text(rank, result[1], '{}'.format(result[2]), 
-                     color=color)
+        for rank, result in enumerate(results_sorted):
+            plt.text(rank, result[1], '{}'.format(result[2]))
         plt.ylabel(measure)
-        plt.xlabel('Ranking')
         self.__add_fig(fig)
 
     def add_summary_graph_roc_auc(self):
