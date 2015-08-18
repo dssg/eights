@@ -113,23 +113,33 @@ class TestPerambulate(unittest.TestCase):
                       (10, 2005)], dtype=[('id', int), ('year', int)])
         y = np.array([True, False, True, False, True, False, True, False,
                       True, False])
-        cvs = {SlidingWindowIdx: {'train_start': [0], 'train_window_size': [2], 
-                                  'test_start': [2], 'test_window_size': [2],
-                                  'inc_value': [2]},
-               SlidingWindowValue: {'train_start': [1997], 'train_window_size': [2],
-                                    'test_start': [1999], 'test_window_size': [2],
-                                    'inc_value': [2], 'col_name': ['year']}}
+        cvs = [{'cv': SlidingWindowIdx, 
+                'train_start': [0], 
+                'train_window_size': [2], 
+                'test_start': [2], 
+                'test_window_size': [2],
+                'inc_value': [2]},
+                {'cv': SlidingWindowValue, 
+                 'train_start': [1997], 
+                 'train_window_size': [2],
+                 'test_start': [1999], 
+                 'test_window_size': [2],
+                 'inc_value': [2], 
+                 'col_name': ['year']}]
         exp = Experiment(M, y, cvs=cvs)
         exp.make_csv()
 
     def test_report_complex(self):
         M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
-        clfs = {RandomForestClassifier: {'n_estimators': [10, 100], 
-                                         'max_depth': [1, 10]}, 
-                SVC: {'kernel': ['linear', 'rbf'], 'probability': [True]}}        
-        subsets = {SubsetRandomRowsActualDistribution: {'subset_size': 
-                                             [20, 40, 60, 80, 100]}}
-        cvs = {StratifiedKFold: {}}
+        clfs = [{'clf': RandomForestClassifier, 
+                 'n_estimators': [10, 100], 
+                 'max_depth': [1, 10]}, 
+                 {'clf': SVC, 
+                  'kernel': ['linear', 'rbf'], 
+                  'probability': [True]}]        
+        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20, 40, 60, 80, 100]}]
+        cvs = [{'clf': StratifiedKFold}]
         exp = Experiment(M, y, clfs, subsets, cvs)
         exp.make_report(dimension=CLF)
 
