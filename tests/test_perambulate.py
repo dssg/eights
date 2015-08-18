@@ -32,10 +32,14 @@ class TestPerambulate(unittest.TestCase):
                     'subset_size': [20, 40, 60, 80, 100]}]
         cvs = [{'cv': StratifiedKFold}]
         exp = Experiment(M, y, clfs, subsets, cvs)
-        for trial in exp.slice_on_dimension(CLF, RandomForestClassifier):
+        for trial in exp.slice_on_dimension(
+                CLF, 
+                RandomForestClassifier).trials:
             print trial
         print
-        for trial in exp.slice_on_dimension(SUBSET_PARAMS, {'subset_size': 60}):
+        for trial in exp.slice_on_dimension(
+                SUBSET_PARAMS, 
+                {'subset_size': 60}).trials:
             print trial
 
     def test_slice_by_best_score(self):
@@ -53,7 +57,7 @@ class TestPerambulate(unittest.TestCase):
         for trial in exp.run():
             print trial, trial.average_score()
         print
-        for trial in exp.slice_by_best_score(CLF_PARAMS):
+        for trial in exp.slice_by_best_score(CLF_PARAMS).trials:
             print trial, trial.average_score()
 
     def test_report_simple(self):

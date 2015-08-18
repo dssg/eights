@@ -33,8 +33,12 @@ class Experiment(object):
             subsets=[{'subset': SubsetNoSubset}], 
             cvs=[{'cv': NoCV}],
             trials=None):
-        self.col_names = M.dtype.names
-        self.M = utils.cast_np_sa_to_nd(M)
+        if utils.is_sa(M):
+            self.col_names = M.dtype.names
+            self.M = utils.cast_np_sa_to_nd(M)
+        else: # assuming an nd_array
+            self.M = M
+            self.col_names = ['f{}'.format(i) for i in xrange(M.shape[1])]
         self.y = y
         self.clfs = clfs
         self.subsets = subsets
@@ -50,9 +54,9 @@ class Experiment(object):
         
     def __run_all_trials(self, trials):
         # TODO parallelize on Runs too
-        return Parallel(n_jobs=cpu_count())(delayed(_run_trial)(t) 
-                                           for t in trials)
-        #return [_run_trial(t) for t in trials]
+        #return Parallel(n_jobs=cpu_count())(delayed(_run_trial)(t) 
+        #                                   for t in trials)
+        return [_run_trial(t) for t in trials]
 
     def __copy(self, trials):
         return Experiment(
