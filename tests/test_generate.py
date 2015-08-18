@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from numpy.random import rand
 import eights.investigate
+import eights.utils
 import eights.generate
 import eights.generate.generate_helper as gh
 import eights.generate as gen
@@ -12,19 +13,19 @@ class TestGenerate(unittest.TestCase):
         M = [[1,2,3], [2,3,4], [3,4,5]]
         col_names = ['heigh','weight', 'age']
         lables= [0,0,1]
-        M = eights.investigate.convert_list_of_list_to_sa(
-            np.array(M),
-            c_name=col_names)
+        M = eights.utils.cast_list_of_list_to_sa(
+            M,
+            names=col_names)
 
-        def test_equality(M, col_name, boundary):
-            return M[col_name] == boundary
+        arguments = [{'func': gen.val_eq, 'col_name': 'heigh', 'vals': 1},
+                     {'func': gen.val_lt, 'col_name': 'weight', 'vals': 3},
+                     {'func': gen.val_between, 'col_name': 'age', 'vals': 
+                      (3, 4)}]
 
         res = eights.generate.where_all_are_true(
             M, 
-            [test_equality, test_equality, test_equality], 
-            ['heigh','weight', 'age'], 
-            [1,2,3],
-            ('eq_to_stuff',))
+            arguments,
+            'eq_to_stuff')
         ctrl = np.array(
             [(1, 2, 3, True), (2, 3, 4, False), (3, 4, 5, False)], 
             dtype=[('heigh', '<i8'), ('weight', '<i8'), ('age', '<i8'),
