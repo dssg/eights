@@ -16,9 +16,21 @@ def label_encoding(data):
     le = preprocessing.LabelEncoder()
     return le.fit_transform(data) 
 
-def replace_missing_vals(missing_val, strategy, data):
-    if strategy not in ['mean','median','most_frequent']:
+def replace_missing_vals(missing_val, strategy, data, constant=0):
+# TODO work on structured arrays in general
+    if strategy not in ['mean', 'median', 'most_frequent', 'constant']:
         raise ValueError('Invalid strategy')
+    if strategy == 'constant':
+        data_cp = data.copy()
+        # TODO work on things other than float
+        for col_name, col_type in data_cp.dtype.descr:
+            if 'f' in col_type:
+                col = data_cp[col_name]
+                if np.isnan(missing_val):
+                    col[np.isnan(col)] = constant
+                else:
+                    col[col == missing_val] = constant
+        return data_cp
     imp = Imputer(missing_values=missing_val, strategy=strategy, axis=0)
     return imp.fit_transform(data)
 

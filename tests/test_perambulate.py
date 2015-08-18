@@ -101,7 +101,7 @@ class TestPerambulate(unittest.TestCase):
                                   'inc_value': [2]},
                SlidingWindowValue: {'train_start': [1997], 'train_window_size': [2],
                                     'test_start': [1999], 'test_window_size': [2],
-                                    'inc_value': [2], 'col_idx': [1]}}
+                                    'inc_value': [2], 'col_name': ['year']}}
         exp = Experiment(M, y, cvs=cvs)
         exp.make_csv()
 

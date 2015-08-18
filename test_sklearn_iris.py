@@ -20,7 +20,7 @@ M = inv.cast_np_nd_to_sa(M)
 
 for x in inv.describe_cols(M): print x
 
-plot = True
+plot = False
 if plot:
     inv.plot_correlation_scatter_plot(M) #this is stange
     inv.plot_correlation_matrix(M)
@@ -38,9 +38,12 @@ import eights.generate  as gen
 
 #lets generate row of our data
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], '4 and(2.7-3.1)')
-    #ignore this
-    #we changed but haven't.
-    #[(gen.val_eq, 'f0', 4),(, 'f1', (2.7, 3.1))]) 
+#
+#M = gen.where(M, 
+#        [[gen.val_between,['f0'],(3.5,2.7)],
+#        [gen.val_between,['f1'],(5.,3.1)]],
+#        '4 and(2.7-3.1)'
+
 
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
 
@@ -61,7 +64,6 @@ import pdb; pdb.set_trace()
 import eights.truncate  as tr
 #remove Useless row
 M = tr.fewer_then_n_nonzero_in_col(M,1)
-
 
 #remove class 2
 M = gen.append_cols(M, labels, 'labels')
