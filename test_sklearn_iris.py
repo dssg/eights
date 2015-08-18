@@ -34,15 +34,15 @@ if plot:
 
 
 ####################generate#######################
-import eights.generate  as gen
+import eights.generate as gen
 
 #lets generate row of our data
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], '4 and(2.7-3.1)')
 #
-#M = gen.where(M, 
-#        [[gen.val_between,['f0'],(3.5,2.7)],
-#        [gen.val_between,['f1'],(5.,3.1)]],
-#        '4 and(2.7-3.1)'
+M = gen.where(M, '4 and(2.7-3.1)', 
+                    [[gen.val_between, ['f0'], (3.5, 2.7)],
+                     [gen.val_between, ['f1'], (5.0, 3.1)]])
+        
 
 
 M = gen.where_all_are_true(M, [gen.val_between,gen.val_between], ['f0','f1'],[(3.5,5.0),(2.7, 3.1)], 'bad_rules')
