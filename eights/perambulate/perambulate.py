@@ -29,12 +29,16 @@ class Experiment(object):
             self, 
             M, 
             y, 
-            clfs={RandomForestClassifier: {}}, 
-            subsets={SubsetNoSubset: {}}, 
-            cvs={NoCV: {}},
+            clfs=[{'clf': RandomForestClassifier}], 
+            subsets=[{'subset': SubsetNoSubset}], 
+            cvs=[{'cv': NoCV}],
             trials=None):
-        self.col_names = M.dtype.names
-        self.M = utils.cast_np_sa_to_nd(M)
+        if utils.is_sa(M):
+            self.col_names = M.dtype.names
+            self.M = utils.cast_np_sa_to_nd(M)
+        else: # assuming an nd_array
+            self.M = M
+            self.col_names = ['f{}'.format(i) for i in xrange(M.shape[1])]
         self.y = y
         self.clfs = clfs
         self.subsets = subsets
@@ -111,14 +115,20 @@ class Experiment(object):
         if self.has_run():
             return self.trials
         trials = []
-        for clf in self.clfs:
-            all_clf_ps = self.clfs[clf]
+        for clf_args in self.clfs:
+            clf = clf_args['clf']
+            all_clf_ps = clf_args.copy()
+            del all_clf_ps['clf']
             for clf_params in self.__transpose_dict_of_lists(all_clf_ps):
-                for subset in self.subsets:
-                    all_sub_ps = self.subsets[subset]
+                for subset_args in self.subsets:
+                    subset = subset_args['subset']
+                    all_sub_ps = subset_args.copy()
+                    del all_sub_ps['subset']
                     for subset_params in self.__transpose_dict_of_lists(all_sub_ps):
-                        for cv in self.cvs:
-                            all_cv_ps = self.cvs[cv]
+                        for cv_args in self.cvs:
+                            cv = cv_args['cv']
+                            all_cv_ps = cv_args.copy()
+                            del all_cv_ps['cv']
                             for cv_params in self.__transpose_dict_of_lists(all_cv_ps):
                                 trial = Trial(
                                     M=self.M,

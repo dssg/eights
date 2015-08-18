@@ -38,8 +38,9 @@ def simple_clf(M, labels, clfs):
     return exp
 
 #this should be clfs
-def simple_clf_cv(M, labels, clfs={RandomForestClassifier:{}},
-                  cvs={KFold:{}}):
+def simple_clf_cv(M, labels, clfs=[{'clf': RandomForestClassifier}],
+                  cvs=[{'cv': KFold}]):
+    # TODO the types of these parameters are wrong
     """This is simple execution a clf in our module.  
     Parameters
     ----------
@@ -90,15 +91,22 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
 
     """
     if clfs is None:
-        clfs = {AdaBoostClassifier: {'n_estimators': [20,50,100]}, 
-               RandomForestClassifier: {'n_estimators': [10,30,50],'max_depth': [None,4,7,15],'n_jobs':[1]}, 
-               LogisticRegression:{'C': [1.0,2.0,0.5,0.25],'penalty': ['l1','l2']}, 
-               DecisionTreeClassifier: {'max_depth': [None,4,7,15,25]},
-               SVC:{'kernel': ['linear','rbf'], 'probability': [True]},
-               DummyClassifier:{'strategy': ['stratified','most_frequent','uniform']}
-              }        
+        clfs = [{'clf': AdaBoostClassifier, 'n_estimators': [20,50,100]}, 
+                {'clf': RandomForestClassifier, 
+                 'n_estimators': [10,30,50],
+                 'max_depth': [None,4,7,15],
+                 'n_jobs':[1]}, 
+                {'clf': LogisticRegression, 
+                 'C': [1.0,2.0,0.5,0.25],
+                 'penalty': ['l1','l2']}, 
+                {'clf': DecisionTreeClassifier, 
+                 'max_depth': [None,4,7,15,25]},
+                {'clf': SVC, 'kernel': ['linear','rbf'], 
+                 'probability': [True]},
+                {'clf': DummyClassifier, 
+                 'strategy': ['stratified','most_frequent','uniform']}]
     if cvs == None:
-        cvs = {StratifiedKFold:{}}
+        cvs = [{'cv': StratifiedKFold}]
     exp = Experiment(
         M, 
         labels, 
