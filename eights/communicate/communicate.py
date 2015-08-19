@@ -64,11 +64,29 @@ def plot_simple_histogram(col, verbose=True):
 
 
 def plot_prec_recall(labels, score, title='Prec/Recall', verbose=True):
-    prec, recall, _ = precision_recall_curve(labels, score)
+    # adapted from Rayid's prec/recall code
+    y_true = labels
+    y_score = score
+    precision_curve, recall_curve, pr_thresholds = precision_recall_curve(
+        y_true, 
+        y_score)
+    precision_curve = precision_curve[:-1]
+    recall_curve = recall_curve[:-1]
+    pct_above_per_thresh = []
+    number_scored = len(y_score)
+    for value in pr_thresholds:
+        num_above_thresh = len(y_score[y_score>=value])
+        pct_above_thresh = num_above_thresh / float(number_scored)
+        pct_above_per_thresh.append(pct_above_thresh)
+    pct_above_per_thresh = np.array(pct_above_per_thresh)
     fig = plt.figure()
-    plt.plot(recall, prec)
-    plt.xlabel('Precision')
-    plt.ylabel('Recall')
+    ax1 = plt.gca()
+    ax1.plot(pct_above_per_thresh, precision_curve, 'b')
+    ax1.set_xlabel('percent of population')
+    ax1.set_ylabel('precision', color='b')
+    ax2 = ax1.twinx()
+    ax2.plot(pct_above_per_thresh, recall_curve, 'r')
+    ax2.set_ylabel('recall', color='r')
     plt.title(title)
     if verbose:
         fig.show()
