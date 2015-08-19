@@ -75,14 +75,26 @@ def plot_prec_recall(labels, score, title='Prec/Recall', verbose=True):
     return fig
 
 def plot_roc(labels, score, title='ROC', verbose=True):
-    fpr, tpr, _ = roc_curve(labels, score)
-    n_entries = fpr.shape[0] 
-    X = (np.arange(n_entries) + 1) / float(n_entries)
+    # adapted from Rayid's prec/recall code
+    fpr, tpr, thresholds = roc_curve(labels, score)
+    fpr = fpr
+    tpr = tpr
+    pct_above_per_thresh = []
+    number_scored = len(score)
+    for value in thresholds:
+        num_above_thresh = len(score[score>=value])
+        pct_above_thresh = num_above_thresh / float(number_scored)
+        pct_above_per_thresh.append(pct_above_thresh)
+    pct_above_per_thresh = np.array(pct_above_per_thresh)
+
     fig = plt.figure()
-    plt.plot(X, fpr, X, tpr)
-    plt.legend(['False Positive Rate', 'True Positive Rate'], 'upper left')
-    plt.xlabel('% Selected as True')
-    plt.ylabel('Rate')
+    ax1 = plt.gca()
+    ax1.plot(pct_above_per_thresh, fpr, 'b')
+    ax1.set_xlabel('percent of population')
+    ax1.set_ylabel('fpr', color='b')
+    ax2 = ax1.twinx()
+    ax2.plot(pct_above_per_thresh, tpr, 'r')
+    ax2.set_ylabel('tpr', color='r')
     plt.title(title)
     if verbose:
         fig.show()
