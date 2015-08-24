@@ -3,6 +3,7 @@ from collections import Counter
 import numpy as np
 import sqlalchemy as sqla
 from ..utils import *
+import itertools as it
 
 def open_simple_csv_as_list(file_loc):
     with open(file_loc, 'rb') as f:
@@ -50,36 +51,60 @@ def _u_to_ascii(s):
     if isinstance(s, unicode):
         return s.encode('utf-8')
     return s
+
+
+TYPE_PRECEDENCE = {type(None): 0, 
+                   int: 100, 
+                   long: 200,
+                   float: 300,
+                   str: 400,
+                   unicode: 500}
  
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
     # TODO deal w/ datetimes, unicode, null etc
     # TODO don't blow up if we're inferring types and types are inhomogeneous
     # TODO utils.cast_list_of_list_to_sa is redundant
+    dtypes = []
     if dtype is None:
-        row1 = L[0]
-        n_cols = len(row1)
-        if col_names is None:
-            col_names = ['f{}'.format(i) for i in xrange(n_cols)]
-        # can't have unicode col names?
-        col_names = [name.encode('utf-8') for name in col_names]
-        dtype = []
-        for idx, cell in enumerate(row1):
-            if isinstance(cell, int):
-                dtype.append((col_names[idx], int))
-            elif isinstance(cell, float):
-                dtype.append((col_names[idx], float))
-            else:
-                dtype.append((col_names[idx], str))
-        dtype = np.dtype(dtype)
+        for col in it.izip(*L):
+            dom_type = max(col, key=lambda cell: TYPE_PRECEDENCE[type(cell)])
+            if dom_type == int or dom_type == long or dom_type == float:
+                dtypes.append(dom_type)
+            elif dom_type == str 
+                max_len = len(max(col, key=lambda cell: len(dom_type(cell))))
+                dtypes.append('|S{}'.format(max_len))
+            elif dom_type == unicode:
+                max_len = len(max(col, key=lambda cell: len(dom_type(cell))))
+                dtypes.append('|U{}'.format(max_len))
+            elif dom_type == type(None):
+                # column full of None make it a column of empty strings
+                dtypes.append('|S
+#        row1 = L[0]
+#        n_cols = len(row1)
+#        if col_names is None:
+#            col_names = ['f{}'.format(i) for i in xrange(n_cols)]
+#        # can't have unicode col names?
+#        col_names = [name.encode('utf-8') for name in col_names]
+#        dtype = []
+#        for idx, cell in enumerate(row1):
+#            if isinstance(cell, int) or isinstance(cell, long):
+#                dtype.append((col_names[idx], int))
+#            elif isinstance(cell, float):
+#                dtype.append((col_names[idx], float))
+#            else:
+#                print '{}: {} ({})'.format(col_names[idx], cell, type(cell))
+#                dtype.append((col_names[idx], str))
+#                # ALSO unicode, long
+#        dtype = np.dtype(dtype)
         
-    dtype_fixed = []
-
-    for idx, (name, type_descr) in enumerate(dtype.descr):
-        if 'S' in type_descr:
-            max_val = max([len(row[idx]) for row in L])
-            dtype_fixed.append((name, 'S' + str(max_val)))
-        else:
-            dtype_fixed.append((name, type_descr))
+#    dtype_fixed = []
+#
+#    for idx, (name, type_descr) in enumerate(dtype.descr):
+#        if 'S' in type_descr:
+#            max_val = max([len(row[idx]) for row in L])
+#            dtype_fixed.append((name, 'S' + str(max_val)))
+#        else:
+#            dtype_fixed.append((name, type_descr))
     # Can't have unicode anywhere. Also, needs to explicity convert to tuples
     L = [tuple([_u_to_ascii(cell) for cell in row]) for row in L]
     return np.array(L, dtype=dtype_fixed)
