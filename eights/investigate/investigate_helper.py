@@ -59,17 +59,47 @@ TYPE_PRECEDENCE = {type(None): 0,
                    float: 300,
                    str: 400,
                    unicode: 500}
+
+def __primitive_clean(cell, expected_type, alt):
+    if isinstance(cell, expected_type):
+        return cell
+    return alt
+
+CLEAN_FUNCTIONS = {type(None): lambda cell: '',
+                   int: lambda cell: __primitive_clean(cell, int, -999),
+                   long: lambda cell: __primitive_clean(cell, long, -999L),
+                   float: lambda cell: __primitive_clean(cell, float, np.nan),
+                   str: lambda cell: __primitive_clean(cell, str, ''),
+                   unicode: lambda cell: __primitive_clean(cell, unicode, u'')}
+
+
+def __int_clean(cell, alt=-999):
+    if isinstance(cell, int):
+        return cell
+    return alt
+
+def __long_clean(cell, alt=-999L)
+    if isinstance(cell, long):
+        return cell
+    return alt
+
+def __float_clean(cell, alt=np.nan):
  
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
     # TODO deal w/ datetimes, unicode, null etc
     # TODO don't blow up if we're inferring types and types are inhomogeneous
     # TODO utils.cast_list_of_list_to_sa is redundant
+    n_cols = len(L[0])
+    if col_names is None:
+        col_names = ['f{}'.format(i) for i in xrange(n_cols)]
     dtypes = []
+    cleaned_cols = []
     if dtype is None:
-        for col in it.izip(*L):
+        for idx, col in enumerate(it.izip(*L)):
             dom_type = max(col, key=lambda cell: TYPE_PRECEDENCE[type(cell)])
-            if dom_type == int or dom_type == long or dom_type == float:
-                dtypes.append(dom_type)
+            if dom_type == int or dom_type == long 
+                dtypes.append(dom_type):
+            if dom_type == float:
             elif dom_type == str 
                 max_len = len(max(col, key=lambda cell: len(dom_type(cell))))
                 dtypes.append('|S{}'.format(max_len))
@@ -78,36 +108,15 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
                 dtypes.append('|U{}'.format(max_len))
             elif dom_type == type(None):
                 # column full of None make it a column of empty strings
-                dtypes.append('|S
-#        row1 = L[0]
-#        n_cols = len(row1)
-#        if col_names is None:
-#            col_names = ['f{}'.format(i) for i in xrange(n_cols)]
-#        # can't have unicode col names?
-#        col_names = [name.encode('utf-8') for name in col_names]
-#        dtype = []
-#        for idx, cell in enumerate(row1):
-#            if isinstance(cell, int) or isinstance(cell, long):
-#                dtype.append((col_names[idx], int))
-#            elif isinstance(cell, float):
-#                dtype.append((col_names[idx], float))
-#            else:
-#                print '{}: {} ({})'.format(col_names[idx], cell, type(cell))
-#                dtype.append((col_names[idx], str))
-#                # ALSO unicode, long
-#        dtype = np.dtype(dtype)
-        
-#    dtype_fixed = []
-#
-#    for idx, (name, type_descr) in enumerate(dtype.descr):
-#        if 'S' in type_descr:
-#            max_val = max([len(row[idx]) for row in L])
-#            dtype_fixed.append((name, 'S' + str(max_val)))
-#        else:
-#            dtype_fixed.append((name, type_descr))
-    # Can't have unicode anywhere. Also, needs to explicity convert to tuples
-    L = [tuple([_u_to_ascii(cell) for cell in row]) for row in L]
-    return np.array(L, dtype=dtype_fixed)
+                dtypes.append('|S0')
+            else:
+                raise ValueError(
+                        'Type of col: {} could not be determined'.format(
+                            col_names[idx]))
+            cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
+
+    return np.fromiter(it.izip(*cleaned_cols), dtype={'names': col_names, 
+                                                     'formats':dtype})
 
 def describe_column(col):
     if col.dtype.kind not in ['f','i']:
