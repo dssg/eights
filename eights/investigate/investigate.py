@@ -15,6 +15,12 @@ from .investigate_helper import *
 from ..communicate import *
 from ..utils import is_sa
 
+def open_simple_csv_as_list_wrap(file_loc):
+    return open_simple_csv_as_list(file_loc)
+
+def convert_list_to_structured_array_wrap(L, col_names=None, dtype=None):
+    return convert_list_to_structured_array(L, col_names, dtype)
+
 #open files 
 def open_csv(file_loc, delimiter=','):
     """single line description
