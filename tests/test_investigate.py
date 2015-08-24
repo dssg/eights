@@ -8,6 +8,7 @@ from eights.investigate.investigate import plot_correlation_scatter_plot
 from eights.investigate.investigate import convert_to_sa
 from eights.investigate.investigate import plot_kernel_density
 from eights.investigate.investigate import connect_sql
+from eights.investigate.investigate import convert_list_to_structured_array
 
 import utils_for_tests as utils
 
@@ -31,6 +32,14 @@ class TestInvestigate(unittest.TestCase):
         data = rand(100, 3)
         fig = plot_correlation_scatter_plot(data, verbose=False) 
         
+
+    def test_convert_list_to_structured_array(self):
+        L = [[None, None, None],
+             ['a',  5,    None],
+             ['ab', 'x',  None]]
+        conv =  convert_list_to_structured_array(L)
+        print conv
+        print conv.dtype
     
     def test_convert_list_of_list_to_sa(self):
         test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]

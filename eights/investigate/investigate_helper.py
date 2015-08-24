@@ -72,19 +72,6 @@ CLEAN_FUNCTIONS = {type(None): lambda cell: '',
                    str: lambda cell: __primitive_clean(cell, str, ''),
                    unicode: lambda cell: __primitive_clean(cell, unicode, u'')}
 
-
-def __int_clean(cell, alt=-999):
-    if isinstance(cell, int):
-        return cell
-    return alt
-
-def __long_clean(cell, alt=-999L)
-    if isinstance(cell, long):
-        return cell
-    return alt
-
-def __float_clean(cell, alt=np.nan):
- 
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
     # TODO deal w/ datetimes, unicode, null etc
     # TODO don't blow up if we're inferring types and types are inhomogeneous
@@ -96,11 +83,12 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
     cleaned_cols = []
     if dtype is None:
         for idx, col in enumerate(it.izip(*L)):
-            dom_type = max(col, key=lambda cell: TYPE_PRECEDENCE[type(cell)])
-            if dom_type == int or dom_type == long 
-                dtypes.append(dom_type):
-            if dom_type == float:
-            elif dom_type == str 
+            dom_type = type(max(
+                col, 
+                key=lambda cell: TYPE_PRECEDENCE[type(cell)]))
+            if dom_type == int or dom_type == long or dom_type == float:
+                dtypes.append(dom_type)
+            elif dom_type == str: 
                 max_len = len(max(col, key=lambda cell: len(dom_type(cell))))
                 dtypes.append('|S{}'.format(max_len))
             elif dom_type == unicode:
