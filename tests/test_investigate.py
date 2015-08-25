@@ -37,9 +37,36 @@ class TestInvestigate(unittest.TestCase):
         L = [[None, None, None],
              ['a',  5,    None],
              ['ab', 'x',  None]]
-        conv =  convert_list_to_structured_array(L)
-        print conv
-        print conv.dtype
+        ctrl = np.array(
+                [('', '', ''), 
+                 ('a', '5', ''),
+                 ('ab', 'x', '')],
+                dtype=[('f0', 'S2'),
+                       ('f1', 'S1'),
+                       ('f2', 'S1')])
+        conv = convert_list_to_structured_array(L)
+        self.assertTrue(np.array_equal(conv, ctrl))                 
+        L = [[None, u'\u05dd\u05d5\u05dc\u05e9', 4.0, 7],
+             [2, 'hello', np.nan, None],
+             [4, None, None, 14L]]
+        ctrl = np.array(
+                [(-999, u'\u05dd\u05d5\u05dc\u05e9', 4.0, 7),
+                 (2, u'hello', np.nan, -999L),
+                 (4, u'', np.nan, 14L)],
+                dtype=[('int', int), ('ucode', 'U5'), ('float', float),
+                       ('long', long)])
+        conv = convert_list_to_structured_array(
+                L, 
+                col_names=['int', 'ucode', 'float', 'long'])
+
+        self.assertEqual(conv.dtype, ctrl.dtype)
+        for col_name in ('int', 'ucode', 'long'):
+            self.assertTrue(np.array_equal(ctrl[col_name], conv[col_name]))
+        ctrl_float = ctrl['float']
+        conv_float = ctrl['float']
+        self.assertTrue(np.all(np.logical_or(
+            ctrl_float == conv_float,
+            np.logical_and(np.isnan(ctrl_float), np.isnan(conv_float)))))
     
     def test_convert_list_of_list_to_sa(self):
         test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]

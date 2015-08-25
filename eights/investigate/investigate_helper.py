@@ -61,9 +61,12 @@ TYPE_PRECEDENCE = {type(None): 0,
                    unicode: 500}
 
 def __primitive_clean(cell, expected_type, alt):
-    if isinstance(cell, expected_type):
-        return cell
-    return alt
+    if cell == None:
+        return alt
+    try:
+        return expected_type(cell)
+    except TypeError:
+        return alt
 
 CLEAN_FUNCTIONS = {type(None): lambda cell: '',
                    int: lambda cell: __primitive_clean(cell, int, -999),
@@ -88,23 +91,35 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
                 key=lambda cell: TYPE_PRECEDENCE[type(cell)]))
             if dom_type == int or dom_type == long or dom_type == float:
                 dtypes.append(dom_type)
+                cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
             elif dom_type == str: 
-                max_len = len(max(col, key=lambda cell: len(dom_type(cell))))
+                cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
+                max_len = max(
+                        len(max(cleaned_col, 
+                            key=lambda cell: len(dom_type(cell)))),
+                        1)
                 dtypes.append('|S{}'.format(max_len))
+                cleaned_cols.append(cleaned_col)
             elif dom_type == unicode:
-                max_len = len(max(col, key=lambda cell: len(dom_type(cell))))
+                cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
+                max_len = max(
+                        len(max(cleaned_col, 
+                            key=lambda cell: len(dom_type(cell)))),
+                        1)
                 dtypes.append('|U{}'.format(max_len))
+                cleaned_cols.append(cleaned_col)
             elif dom_type == type(None):
                 # column full of None make it a column of empty strings
-                dtypes.append('|S0')
+                dtypes.append('|S1')
+                cleaned_cols.append([''] * len(col))
             else:
                 raise ValueError(
                         'Type of col: {} could not be determined'.format(
                             col_names[idx]))
-            cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
 
-    return np.fromiter(it.izip(*cleaned_cols), dtype={'names': col_names, 
-                                                     'formats':dtype})
+    return np.fromiter(it.izip(*cleaned_cols), 
+                       dtype={'names': col_names, 
+                              'formats': dtypes})
 
 def describe_column(col):
     if col.dtype.kind not in ['f','i']:
