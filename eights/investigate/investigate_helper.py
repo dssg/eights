@@ -76,8 +76,7 @@ CLEAN_FUNCTIONS = {type(None): lambda cell: '',
                    unicode: lambda cell: __primitive_clean(cell, unicode, u'')}
 
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
-    # TODO deal w/ datetimes, unicode, null etc
-    # TODO don't blow up if we're inferring types and types are inhomogeneous
+    # TODO deal w/ datetimes
     # TODO utils.cast_list_of_list_to_sa is redundant
     n_cols = len(L[0])
     if col_names is None:
