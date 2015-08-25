@@ -54,11 +54,12 @@ def _u_to_ascii(s):
 
 
 TYPE_PRECEDENCE = {type(None): 0, 
-                   int: 100, 
-                   long: 200,
-                   float: 300,
-                   str: 400,
-                   unicode: 500}
+                   bool: 100,
+                   int: 200, 
+                   long: 300,
+                   float: 400,
+                   str: 500,
+                   unicode: 600}
 
 def __primitive_clean(cell, expected_type, alt):
     if cell == None:
@@ -69,11 +70,15 @@ def __primitive_clean(cell, expected_type, alt):
         return alt
 
 CLEAN_FUNCTIONS = {type(None): lambda cell: '',
+                   bool: lambda cell: __primitive_clean(cell, bool, False),
                    int: lambda cell: __primitive_clean(cell, int, -999),
                    long: lambda cell: __primitive_clean(cell, long, -999L),
                    float: lambda cell: __primitive_clean(cell, float, np.nan),
                    str: lambda cell: __primitive_clean(cell, str, ''),
                    unicode: lambda cell: __primitive_clean(cell, unicode, u'')}
+
+STR_TYPE_LETTERS = {str: 'S',
+                    unicode: 'U'}
 
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
     # TODO deal w/ datetimes
@@ -88,30 +93,25 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
             dom_type = type(max(
                 col, 
                 key=lambda cell: TYPE_PRECEDENCE[type(cell)]))
-            if dom_type == int or dom_type == long or dom_type == float:
+            if dom_type in (int, float, long, float):
                 dtypes.append(dom_type)
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
-            elif dom_type == str: 
+            elif dom_type in (str, unicode): 
                 cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
                 max_len = max(
                         len(max(cleaned_col, 
                             key=lambda cell: len(dom_type(cell)))),
                         1)
-                dtypes.append('|S{}'.format(max_len))
-                cleaned_cols.append(cleaned_col)
-            elif dom_type == unicode:
-                cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
-                max_len = max(
-                        len(max(cleaned_col, 
-                            key=lambda cell: len(dom_type(cell)))),
-                        1)
-                dtypes.append('|U{}'.format(max_len))
+                dtypes.append('|{}{}'.format(
+                    STR_TYPE_LETTERS[dom_type],
+                    max_len))
                 cleaned_cols.append(cleaned_col)
             elif dom_type == type(None):
                 # column full of None make it a column of empty strings
                 dtypes.append('|S1')
                 cleaned_cols.append([''] * len(col))
             else:
+                import pdb; pdb.set_trace()
                 raise ValueError(
                         'Type of col: {} could not be determined'.format(
                             col_names[idx]))
