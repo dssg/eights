@@ -93,7 +93,7 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
             dom_type = type(max(
                 col, 
                 key=lambda cell: TYPE_PRECEDENCE[type(cell)]))
-            if dom_type in (int, float, long, float):
+            if dom_type in (bool, int, float, long, float):
                 dtypes.append(dom_type)
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
             elif dom_type in (str, unicode): 
@@ -111,7 +111,6 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
                 dtypes.append('|S1')
                 cleaned_cols.append([''] * len(col))
             else:
-                import pdb; pdb.set_trace()
                 raise ValueError(
                         'Type of col: {} could not be determined'.format(
                             col_names[idx]))
