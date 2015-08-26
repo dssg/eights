@@ -4,6 +4,7 @@ import numpy as np
 import sqlalchemy as sqla
 from ..utils import *
 import itertools as it
+from dateutil.parser import parse
 
 def open_simple_csv_as_list(file_loc):
     with open(file_loc, 'rb') as f:
@@ -80,6 +81,30 @@ CLEAN_FUNCTIONS = {type(None): lambda cell: '',
 STR_TYPE_LETTERS = {str: 'S',
                     unicode: 'U'}
 
+NOT_A_TIME = np.datetime64('NaT')
+
+def __str_to_datetime(s):
+    # Invalid time if the string is empty
+    if not s:
+        return NOT_A_TIME
+    # Invalid time if the string is just a number
+    try: 
+        float(s)
+        return NOT_A_TIME
+    except ValueError:
+        pass
+    # Invalid time if dateutil.parser.parse can't parse it
+    try:
+        return parse(s)
+    except (TypeError, ValueError):
+        return NOT_A_TIME
+
+def __str_col_to_datetime(col):
+    col_dtimes = [__str_to_datetime(s) for s in col]
+    valid_dtimes = [dt for dt in col_dtimes if dt != NOT_A_TIME]
+    # If there is even one valid datetime, we're calling this a datetime col
+    return (bool(valid_dtimes), col_dtimes)
+
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
     # TODO deal w/ datetimes
     # TODO utils.cast_list_of_list_to_sa is redundant
@@ -98,14 +123,19 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
             elif dom_type in (str, unicode): 
                 cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
-                max_len = max(
-                        len(max(cleaned_col, 
-                            key=lambda cell: len(dom_type(cell)))),
-                        1)
-                dtypes.append('|{}{}'.format(
-                    STR_TYPE_LETTERS[dom_type],
-                    max_len))
-                cleaned_cols.append(cleaned_col)
+                is_datetime, dt_col = __str_col_to_datetime(cleaned_col)
+                if is_datetime:
+                    dtypes.append('M8[us]')
+                    cleaned_cols.append(dt_col)
+                else:
+                    max_len = max(
+                            len(max(cleaned_col, 
+                                key=lambda cell: len(dom_type(cell)))),
+                            1)
+                    dtypes.append('|{}{}'.format(
+                        STR_TYPE_LETTERS[dom_type],
+                        max_len))
+                    cleaned_cols.append(cleaned_col)
             elif dom_type == type(None):
                 # column full of None make it a column of empty strings
                 dtypes.append('|S1')
