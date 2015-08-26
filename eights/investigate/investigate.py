@@ -15,7 +15,8 @@ from .investigate_helper import *
 from ..communicate import *
 from ..utils import is_sa
 
-def open_simple_csv_as_list_wrap(file_loc):
+
+def open_csv_list(file_loc):
     return open_simple_csv_as_list(file_loc)
 
 def convert_list_to_structured_array_wrap(L, col_names=None, dtype=None):
@@ -114,14 +115,17 @@ def describe_cols(M):
     temp : type
        Description
        
-    """
+    """ 
+           
     #remove the [] if only one?
     if is_sa(M):
         #then its a structured array
         return [describe_column(M[x]) for x in M.dtype.names]
+    elif len(M.shape)==1: #intented to solve np.array([1,2,3]) data
+        return [describe_column(M)] 
     else:
         #then its a list of np.arrays
-        return [describe_column(M[x]) for x in M]
+        return [describe_column(M[:,x]) for x in range(M.shape[1])]
 
 def print_crosstab(L_1, L_2, verbose=True):
     """this prints a crosstab results

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from numpy.random import rand
 
-from eights.investigate.investigate import open_csv, describe_cols
+from eights.investigate.investigate import open_csv, describe_cols, open_csv_list
 from eights.investigate.investigate import plot_correlation_matrix
 from eights.investigate.investigate import plot_correlation_scatter_plot
 from eights.investigate.investigate import convert_to_sa
@@ -12,25 +12,28 @@ from eights.investigate.investigate import connect_sql
 import utils_for_tests as utils
 
 class TestInvestigate(unittest.TestCase):
-    def test_open_csv(self):
+    
+    def test_open_csv_list(self):
         csv_file = utils.path_of_data("mixed.csv")
         correct = np.array([(0, 'Jim', 5.6), (1, 'Jill', 5.5)],
                             dtype=[('id', '<i8'), ('name', 'S4'), ('height', '<f8')])
-
+        self.assertTrue(np.array_equal(open_csv_list(csv_file),correct))
+        
+    def test_open_csv(self):
+        csv_file = utils.path_of_data("mixed.csv")
+        correct = np.array([(0, 'Jim', 5.6), (1, 'Jill', 5.5)],dtype=[('id', '<i8'), ('name', 'S4'), ('height', '<f8')])
         self.assertTrue(np.array_equal(open_csv(csv_file),correct))
-    def test_describe_cold(self):
-        test = np.array([1,2,3,4,5,6])
-        correct = {'Maximal:': 6, 'Standard Dev:': 1.707825127659933, 'Count:': 6, 'Mean:': 3.5, 'Minimal ': 1}
+        
+    def test_describe_cols(self):
+        test = np.array([[1],[2],[3],[4],[5],[6]])
+        test_list = np.array([1,2,3,4,5,6])
+        
+        test_sa =np.array([(1,), (2,),(3,), (4,),(5,),(6,)],dtype=[('id', '<i8')])
+        correct = [{'Maximal:': 6, 'Standard Dev:': 1.707825127659933, 'Count:': 6, 'Mean:': 3.5, 'Minimal ': 1}]
         self.assertTrue(np.array_equal(describe_cols(test),correct))
-        
-    def test_plot_correlation_matrix(self):
-        data = rand(100, 10)
-        fig = plot_correlation_matrix(dataverbose=False)
-        
-    def test_plot_correlation_scatter_plot(self):
-        data = rand(100, 3)
-        fig = plot_correlation_scatter_plot(data, verbose=False) 
-        
+        self.assertTrue(np.array_equal(describe_cols(test_list),correct))
+        self.assertTrue(np.array_equal(describe_cols(test_sa),correct))
+                
     
     def test_convert_list_of_list_to_sa(self):
         test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]
@@ -39,7 +42,6 @@ class TestInvestigate(unittest.TestCase):
         test_2 = convert_to_sa(test, names)
         correct_1 = 0
         correct_2 = 0
-        import pdb; pdb.set_trace()
         
     def test_plot_histogram(self):
         test = np.array([[ 0.94888426],[ 1.00435848],[ 0.13563403],[-0.72318153],[ 1.3204944 ],[-1.5182872 ],
@@ -59,7 +61,7 @@ class TestInvestigate(unittest.TestCase):
     def test_connect_sql(self):
         conn_str = 'sqlite:///{}'.format(utils.path_of_data('small.db'))
         conn = connect_sql(conn_str)
-        print conn.execute('SELECT * FROM employees')
+        #print conn.execute('SELECT * FROM employees')
         
 if __name__ == '__main__':
     unittest.main()
