@@ -213,18 +213,57 @@ def append_cols(M, cols, names):
 def remove_cols(M, col_names):
     return nprf.drop_fields(M, col_names, usemask=False)
 
+def __fill_by_descr(s):
+    if 'b' in s:
+        return False
+    if 'i' in s:
+        return -999
+    if 'f' in s:
+        return np.nan
+    if 'S' in s:
+        return ''
+    if 'U' in s:
+        return u''
+    if 'M' in s or 'm' in s:
+        return np.datetime64('NaT')
+    raise ValueError('Unrecognized description {}'.format(s))
 
-def join(left, right, how, left_on, right_on, suffixes):
+def join(left, right, how, left_on, right_on, suffixes=('', '')):
     # approximates Pandas DataFrame.merge
     # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
     # implements a hash join 
     # http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
-    #TODO dtypes, actually make array
-    # TODO we have to fill with appropriate type rather than using None
+
+    # left_on and right_on can both be strings or lists
     if isinstance(left_on, basestring):
         left_on = [left_on]
     if isinstance(right_on, basestring):
         right_on = [right_on]
+
+    # get arrays without join columns
+    left_no_idx = remove_cols(left, left_on)
+    right_no_idx = remove_cols(right, right_on)
+
+    # assemble dtype for the merged array
+    col_names = (left_on + [name + suffix[0] for name in 
+                            left_no_idx.dtype.names] +
+                 [name + suffix[1] for name in right_no_idx.dtype.names])
+    col_dtypes = ([left[left_on_col].dtype for left_on_col in left_on] +
+                  [left_no_idx[col].dtype for col in 
+                   left_no_idx.dtype.names] +
+                  [right_no_idx[col].dtype for col in
+                   right_no_idx.dtype.names])
+
+    take_all_right_rows = how in ('outer', 'right')
+    take_all_left_rows = how in ('outer', 'left')
+    # data to fill in if we're doing an outer join and one of the sides is
+    # missing
+    left_fill = tuple([__fill_by_descr(dtype) for _, dtype in 
+                       left_no_idx.dtype.descr])
+    right_fill = tuple([__fill_by_descr(dtype) for _, dtype in 
+                       right_no_idx.dtype.descr])
+
+    # Make a hash of the first join column in the left table
     left_col = left[left_on[0]]
     hashed_col = {}
     for left_idx, left_cell in enumerate(left_col):
@@ -234,23 +273,26 @@ def join(left, right, how, left_on, right_on, suffixes):
             rows = []
             hashed_col[left_cell] = rows
         rows.append(left_idx)
-    rows_new_table = []
-    right_col = right[right_on[0]]
-    left_rows_used = set()
-    take_all_right_rows = how in ('outer', 'right')
-    take_all_left_rows = how in ('outer', 'left')
-    left_no_idx = remove_cols(left, left_on)
-    right_no_idx = remove_cols(right, right_on)
-    n_extra_cols_left = len(left_no_idx.dtype)
-    n_extra_cols_right = len(right_no_idx.dtype)
+
+    # Pick out columns that we will be joining on beyond the 0th
     extra_left_cols = [left[left_on_name] for left_on_name in left_on[1:]]
     extra_right_cols = [right[right_on_name] for right_on_name in right_on[1:]]
+
+    rows_new_table = []
+    right_col = right[right_on[0]]
+    # keep track of used left rows so we can include all the rows if we're
+    # doint a left or outer join
+    left_rows_used = set()
     extra_contraint_cols = zip(extra_left_cols, extra_right_col)
+    # Iterate through every row in the right table
     for right_idx, right_cell in enumerate(right_col):
         has_match = False
+        # See if we have matches from the hashed col of the left table
         try:
             left_matches = hashed_col[right_cell]
+            
             for left_idx in left_matches:
+                # If all the constraints are met, we have a match
                 if all([extra_left_col[left_idx] == extra_right_col[right_idx] 
                         for extra_left_col, extra_right_col in 
                         extra_contraint_cols]):
@@ -261,13 +303,20 @@ def join(left, right, how, left_on, right_on, suffixes):
                             left_no_idx[left_idx] + 
                             right_no_idx[right_idx])
                     left_rows_used.add(left_idx) 
+        # No match found for this right row
         except KeyError:
             pass  
+        # If we're doing a right or outer join and we didn't find a match, add
+        # this row from the right table, filled with type-appropriate versions
+        # of NULL from the left table
         if (not has_match) and take_all_right_rows:
             rows_new_table.append(
                     tuple([right[right_on_col][right_idx] for right_on_col in
-                           right_on]) + (None,) * extra_left_cols + 
+                           right_on]) + left_fill + 
                     right_no_idx[right_idx])
+
+    # if we're doing a left or outer join, we have to add all rows from the 
+    # left table, using type-appropriate versions of NULL for the right table
     if take_all_left_rows:    
         for unused_left_idx in [i in xrange(len(left)) if i not in 
                                 left_rows_used]:
@@ -275,4 +324,7 @@ def join(left, right, how, left_on, right_on, suffixes):
                     tuple([left[left_on_col][left_idx] 
                            for left_on_col in left_on]) +
                     left_no_idx[unused_left_idx] +
-                    (None,) * extra_right_cols)
+                    right_fill)
+
+    return np.array(rows_new_table, dtype={'names': col_names, 
+                                           'formats': col_dtypes})
