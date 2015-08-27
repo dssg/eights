@@ -3,21 +3,23 @@ from sklearn import preprocessing
 from sklearn.preprocessing import Imputer
 
 def replace_with_n_bins(data, num_bins):
-    minimum = min(data)
-    maximum = max(data)
-    distance = maximum-minimum
+    #this just drops a list we still have to reattach or overwrite
+    minimum = float(min(data))
+    maximum = float(max(data))
+    distance = float(maximum-minimum)
     l =[]
     for x in data:
         l.append(int(((x-minimum)/distance)*num_bins))
     return l
 
 def label_encoding(data):
-    #requires smae datatype
+    #requires same datatype
+    #what does this do?
     le = preprocessing.LabelEncoder()
     return le.fit_transform(data) 
 
 def replace_missing_vals(missing_val, strategy, data, constant=0):
-# TODO work on structured arrays in general
+    #TODO work on structured arrays in general
     if strategy not in ['mean', 'median', 'most_frequent', 'constant']:
         raise ValueError('Invalid strategy')
     if strategy == 'constant':

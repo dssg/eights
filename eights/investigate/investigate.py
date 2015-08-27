@@ -19,90 +19,9 @@ from ..utils import is_sa
 def open_csv_list(file_loc):
     return open_simple_csv_as_list(file_loc)
 
-def convert_list_to_structured_array_wrap(L, col_names=None, dtype=None):
-    return convert_list_to_structured_array(L, col_names, dtype)
-
-#open files 
 def open_csv(file_loc, delimiter=','):
-    """single line description
-    Parameters
-    ----------
-    temp : type
-       Description 
-    
-    Attributes
-    ----------
-    temp : type
-       Description 
-       
-    Returns
-    -------
-    temp : type
-       Description
-       
-    """
     f = open_csv_as_structured_array(file_loc, delimiter)
     return set_structured_array_datetime_as_day(f, file_loc, delimiter)
-
-def open_JSON():
-    """single line description
-    Parameters
-    ----------
-    temp : type
-       Description 
-    
-    Attributes
-    ----------
-    temp : type
-       Description 
-       
-    Returns
-    -------
-    temp : type
-       Description
-       
-    """
-    raise NotImplementedError
-    
-def open_PostgreSQL():
-    """single line description
-    Parameters
-    ----------
-    temp : type
-       Description 
-    
-    Attributes
-    ----------
-    temp : type
-       Description 
-       
-    Returns
-    -------
-    temp : type
-       Description
-       
-    """
-    raise NotImplementedError
-    
-def open_SQL():
-    """works with an sql database
-    Parameters
-    ----------
-    temp : type
-       Description 
-    
-    Returns
-    -------
-    temp : type
-       Description
-       
-    """
-    raise NotImplementedError
-def query_sql():
-    raise NotImplementedError
-def query_postgreSQL():
-    raise NotImplementedError
-#descriptive statistics
 def describe_cols(M):
     """takes a SA or list of Np.rayas and returns the summary statistcs
     Parameters
@@ -127,6 +46,11 @@ def describe_cols(M):
         #then its a list of np.arrays
         return [describe_column(M[:,x]) for x in range(M.shape[1])]
 
+
+
+def convert_list_to_structured_array_wrap(L, col_names=None, dtype=None):
+    return convert_list_to_structured_array(L, col_names, dtype)
+
 def print_crosstab(L_1, L_2, verbose=True):
     """this prints a crosstab results
     Parameters
@@ -145,6 +69,10 @@ def print_crosstab(L_1, L_2, verbose=True):
         print_crosstab_dict(crosstab_dict)
     return crosstab_dict
 
+def connect_sql(con_str):
+    return SQLConnection(con_str)
+    
+
 
 #Plots of desrcptive statsitics
 from ..communicate.communicate import plot_correlation_matrix
@@ -155,9 +83,6 @@ from ..communicate.communicate import plot_on_timeline
 from ..communicate.communicate import plot_box_plot
 
 
-#simple non-permabulated rfs
-from ..operate.operate import simple_clf
-from ..operate.operate import simple_clf_cv
 
 #this works but need the sa's to be good...
 #data = [[(1,2),(1,2),(1,4)],[(1,2),(3,1)],[(1,2)]]
@@ -185,5 +110,60 @@ from ..operate.operate import simple_clf_cv
 #M = turn_list_of_list_of_items_to_SA_by_over_Lap(data)     
 #
 
-def connect_sql(con_str):
-    return SQLConnection(con_str)
+#def open_JSON():
+#    """single line description
+#    Parameters
+#    ----------
+#    temp : type
+#       Description 
+#    
+#    Attributes
+#    ----------
+#    temp : type
+#       Description 
+#       
+#    Returns
+#    -------
+#    temp : type
+#       Description
+#       
+#    """
+#    raise NotImplementedError    
+#def open_PostgreSQL():
+#    """single line description
+#    Parameters
+#    ----------
+#    temp : type
+#       Description 
+#    
+#    Attributes
+#    ----------
+#    temp : type
+#       Description 
+#       
+#    Returns
+#    -------
+#    temp : type
+#       Description
+#       
+#    """
+#    raise NotImplementedError    
+#def open_SQL():
+#    """works with an sql database
+#    Parameters
+#    ----------
+#    temp : type
+#       Description 
+#    
+#    Returns
+#    -------
+#    temp : type
+#       Description
+#       
+#    """
+#    raise NotImplementedError
+#def query_sql():
+#    raise NotImplementedError
+#def query_postgreSQL():
+#    raise NotImplementedError
+#

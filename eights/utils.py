@@ -189,6 +189,18 @@ def is_sa(M):
 def is_nd(M):
     return isinstance(M, np.ndarray)
 
+def get_type(d):
+    #assumes everything identical structure
+    if type(d) == list:
+        return 'list'
+    elif type(d)== np.ndarray:
+        if is_sa(d):
+            return 'sa'
+        elif len(d.shape)==1:
+            return
+    return
+
+
 def stack_rows(M1, M2):
     raise NotImplementedError
 
