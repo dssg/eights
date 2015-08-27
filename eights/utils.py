@@ -212,3 +212,66 @@ def append_cols(M, cols, names):
 
 def remove_cols(M, col_names):
     return nprf.drop_fields(M, col_names, usemask=False)
+
+
+def join(left, right, how, left_on, right_on, suffixes):
+    # approximates Pandas DataFrame.merge
+    # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
+    # implements a hash join 
+    # http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
+    #TODO dtypes, actually make array
+    if isinstance(left_on, basestring):
+        left_on = [left_on]
+    if isinstance(right_on, basestring):
+        right_on = [right_on]
+    left_col = left[left_on[0]]
+    hashed_col = {}
+    for left_idx, left_cell in enumerate(left_col):
+        try:
+            rows = hashed_col[left_cell]
+        except KeyError:
+            rows = []
+            hashed_col[left_cell] = rows
+        rows.append(left_idx)
+    rows_new_table = []
+    right_col = right[right_on[0]]
+    left_rows_used = set()
+    take_all_right_rows = how in ('outer', 'right')
+    take_all_left_rows = how in ('outer', 'left')
+    left_no_idx = remove_cols(left, left_on)
+    right_no_idx = remove_cols(right, right_on)
+    n_extra_cols_left = len(left_no_idx.dtype)
+    n_extra_cols_right = len(right_no_idx.dtype)
+    extra_left_cols = [left[left_on_name] for left_on_name in left_on[1:]]
+    extra_right_cols = [right[right_on_name] for right_on_name in right_on[1:]]
+    extra_contraint_cols = zip(extra_left_cols, extra_right_col)
+    for right_idx, right_cell in enumerate(right_col):
+        has_match = False
+        try:
+            left_matches = hashed_col[right_cell]
+            for left_idx in left_matches:
+                if all([extra_left_col[left_idx] == extra_right_col[right_idx] 
+                        for extra_left_col, extra_right_col in 
+                        extra_contraint_cols]):
+                    has_match = True
+                    rows_new_table.append(
+                            tuple([left[left_on_col][left_idx] 
+                                   for left_on_col in left_on]) +
+                            left_no_idx[left_idx] + 
+                            right_no_idx[right_idx])
+                    left_rows_used.add(left_idx) 
+        except KeyError:
+            pass  
+        if (not has_match) and take_all_right_rows:
+            rows_new_table.append(
+                    tuple([right[right_on_col][right_idx] for right_on_col in
+                           right_on]) + (None,) * extra_left_cols + 
+                    right_no_idx[right_idx])
+    if take_all_left_rows:    
+        for unused_left_idx in [i in xrange(len(left)) if i not in 
+                                left_rows_used]:
+            rows_new_table.append(
+                    tuple([left[left_on_col][left_idx] 
+                           for left_on_col in left_on]) +
+                    left_no_idx[unused_left_idx] +
+                    (None,) * extra_right_cols)
