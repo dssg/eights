@@ -228,7 +228,7 @@ def __fill_by_descr(s):
         return np.datetime64('NaT')
     raise ValueError('Unrecognized description {}'.format(s))
 
-def join(left, right, how, left_on, right_on, suffixes=('', '')):
+def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
     # approximates Pandas DataFrame.merge
     # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
     # implements a hash join 
@@ -245,9 +245,10 @@ def join(left, right, how, left_on, right_on, suffixes=('', '')):
     right_no_idx = remove_cols(right, right_on)
 
     # assemble dtype for the merged array
-    col_names = (left_on + [name + suffix[0] for name in 
+    col_names = ([left_on_col + suffixes[0] for left_on_col in left_on] + 
+                 [name + suffixes[0] for name in 
                             left_no_idx.dtype.names] +
-                 [name + suffix[1] for name in right_no_idx.dtype.names])
+                 [name + suffixes[1] for name in right_no_idx.dtype.names])
     col_dtypes = ([left[left_on_col].dtype for left_on_col in left_on] +
                   [left_no_idx[col].dtype for col in 
                    left_no_idx.dtype.names] +
@@ -277,13 +278,13 @@ def join(left, right, how, left_on, right_on, suffixes=('', '')):
     # Pick out columns that we will be joining on beyond the 0th
     extra_left_cols = [left[left_on_name] for left_on_name in left_on[1:]]
     extra_right_cols = [right[right_on_name] for right_on_name in right_on[1:]]
+    extra_contraint_cols = zip(extra_left_cols, extra_right_cols)
 
     rows_new_table = []
     right_col = right[right_on[0]]
     # keep track of used left rows so we can include all the rows if we're
     # doint a left or outer join
     left_rows_used = set()
-    extra_contraint_cols = zip(extra_left_cols, extra_right_col)
     # Iterate through every row in the right table
     for right_idx, right_cell in enumerate(right_col):
         has_match = False
@@ -300,8 +301,8 @@ def join(left, right, how, left_on, right_on, suffixes=('', '')):
                     rows_new_table.append(
                             tuple([left[left_on_col][left_idx] 
                                    for left_on_col in left_on]) +
-                            left_no_idx[left_idx] + 
-                            right_no_idx[right_idx])
+                            tuple(left_no_idx[left_idx]) + 
+                            tuple(right_no_idx[right_idx]))
                     left_rows_used.add(left_idx) 
         # No match found for this right row
         except KeyError:
@@ -313,17 +314,18 @@ def join(left, right, how, left_on, right_on, suffixes=('', '')):
             rows_new_table.append(
                     tuple([right[right_on_col][right_idx] for right_on_col in
                            right_on]) + left_fill + 
-                    right_no_idx[right_idx])
+                    tuple(right_no_idx[right_idx]))
 
     # if we're doing a left or outer join, we have to add all rows from the 
     # left table, using type-appropriate versions of NULL for the right table
     if take_all_left_rows:    
-        for unused_left_idx in [i in xrange(len(left)) if i not in 
-                                left_rows_used]:
+        left_rows_unused = [i for i in xrange(len(left)) if i not in 
+                            left_rows_used]
+        for unused_left_idx in left_rows_unused:
             rows_new_table.append(
                     tuple([left[left_on_col][left_idx] 
                            for left_on_col in left_on]) +
-                    left_no_idx[unused_left_idx] +
+                    tuple(left_no_idx[unused_left_idx]) +
                     right_fill)
 
     return np.array(rows_new_table, dtype={'names': col_names, 
