@@ -220,6 +220,7 @@ def join(left, right, how, left_on, right_on, suffixes):
     # implements a hash join 
     # http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
     #TODO dtypes, actually make array
+    # TODO we have to fill with appropriate type rather than using None
     if isinstance(left_on, basestring):
         left_on = [left_on]
     if isinstance(right_on, basestring):
