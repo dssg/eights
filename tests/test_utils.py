@@ -28,7 +28,7 @@ class TestUtils(unittest.TestCase):
                     pd.DataFrame(a2),
                     left_on='dept_id',
                     right_on='id').to_records(index=False)
-        res = utils.join(a1, a2, 'inner', 'dept_id', 'id', ('_emp', '_dept'))
+        res = utils.join(a1, a2, 'inner', 'dept_id', 'id')
         print res
         print res.dtype
         print
