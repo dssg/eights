@@ -275,7 +275,6 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
     col_dtypes = ([left[left_col].dtype for left_col in left_names] +
                   [left[shared_on_col].dtype for shared_on_col in shared_on] +
                   [right[right_col].dtype for right_col in right_names])
-
     take_all_right_rows = how in ('outer', 'right')
     take_all_left_rows = how in ('outer', 'left')
     # data to fill in if we're doing an outer join and one of the sides is
