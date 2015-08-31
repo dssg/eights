@@ -5,6 +5,7 @@ import sqlalchemy as sqla
 from ..utils import *
 import itertools as it
 from dateutil.parser import parse
+from datetime import datetime
 
 def open_simple_csv_as_list(file_loc,delimiter=','):
     with open(file_loc, 'rU') as f:
@@ -53,6 +54,7 @@ def _u_to_ascii(s):
         return s.encode('utf-8')
     return s
 
+NOT_A_TIME = np.datetime64('NaT')
 
 TYPE_PRECEDENCE = {type(None): 0, 
                    bool: 100,
@@ -60,7 +62,8 @@ TYPE_PRECEDENCE = {type(None): 0,
                    long: 300,
                    float: 400,
                    str: 500,
-                   unicode: 600}
+                   unicode: 600,
+                   datetime: 700}
 
 def __primitive_clean(cell, expected_type, alt):
     if cell == None:
@@ -70,18 +73,24 @@ def __primitive_clean(cell, expected_type, alt):
     except TypeError:
         return alt
 
+def __datetime_clean(cell):
+    # Because, unlike primitives, we can't cast random objects to datetimes
+    if isinstance(cell, datetime):
+        return cell
+    return NOT_A_TIME
+
 CLEAN_FUNCTIONS = {type(None): lambda cell: '',
                    bool: lambda cell: __primitive_clean(cell, bool, False),
                    int: lambda cell: __primitive_clean(cell, int, -999),
                    long: lambda cell: __primitive_clean(cell, long, -999L),
                    float: lambda cell: __primitive_clean(cell, float, np.nan),
                    str: lambda cell: __primitive_clean(cell, str, ''),
-                   unicode: lambda cell: __primitive_clean(cell, unicode, u'')}
+                   unicode: lambda cell: __primitive_clean(cell, unicode, u''),
+                   datetime: __datetime_clean}
 
 STR_TYPE_LETTERS = {str: 'S',
                     unicode: 'U'}
 
-NOT_A_TIME = np.datetime64('NaT')
 
 def __str_to_datetime(s):
     # Invalid time if the string is empty
@@ -106,7 +115,6 @@ def __str_col_to_datetime(col):
     return (bool(valid_dtimes), col_dtimes)
 
 def convert_list_to_structured_array(L, col_names=None, dtype=None):
-    # TODO deal w/ datetimes
     # TODO utils.cast_list_of_list_to_sa is redundant
     n_cols = len(L[0])
     if col_names is None:
@@ -120,6 +128,9 @@ def convert_list_to_structured_array(L, col_names=None, dtype=None):
                 key=lambda cell: TYPE_PRECEDENCE[type(cell)]))
             if dom_type in (bool, int, float, long, float):
                 dtypes.append(dom_type)
+                cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
+            elif dom_type == datetime:
+                dtypes.append('M8[us]')
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
             elif dom_type in (str, unicode): 
                 cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
