@@ -21,10 +21,6 @@ class TestUtils(unittest.TestCase):
         sa2_reordered = sa2[list(sa1.dtype.names)]
         sa1_set = {tuple(row) for row in sa1}
         sa2_set = {tuple(row) for row in sa2_reordered}
-        print 'ctrl'
-        print sa1_set
-        print 'res'
-        print sa2_set
         self.assertEqual(sa1_set, sa2_set)
 
     def test_join(self):
@@ -77,33 +73,55 @@ class TestUtils(unittest.TestCase):
 
         # outer joins
         a1 = np.array(
-            [(0, 'a1_0'),
-             (1, 'a1_1'),
-             (1, 'a1_2'),
-             (2, 'a1_3'),
-             (3, 'a1_4')], 
-            dtype=[('idx', int), ('label', 'S64')])
+            [(0, 'a1_0', 0),
+             (1, 'a1_1', 1),
+             (1, 'a1_2', 2),
+             (2, 'a1_3', 3),
+             (3, 'a1_4', 4)], 
+            dtype=[('key', int), ('label', 'S64'), ('idx', int)])
         a2 = np.array(
-            [(0, 'a2_0'),
-             (1, 'a2_1'),
-             (2, 'a2_2'),
-             (2, 'a2_3'),
-             (4, 'a2_4')], 
-            dtype=[('idx', int), ('label', 'S64')])
-        for how in ('inner', 'left', 'right', 'outer'):
-            ctrl = pd.DataFrame(a1).merge(
-                    pd.DataFrame(a2),
-                    how=how,
-                    left_on='idx',
-                    right_on='idx').to_records(index=False)
+            [(0, 'a2_0', 0),
+             (1, 'a2_1', 1),
+             (2, 'a2_2', 2),
+             (2, 'a2_3', 3),
+             (4, 'a2_4', 4)], 
+            dtype=[('key', int), ('label', 'S64'), ('idx', int)])
+        #for how in ('inner', 'left', 'right', 'outer'):
+        merged_dtype = [('key', int), ('label_x', 'S64'), ('idx_x', int),
+                        ('label_y', 'S64'), ('idx_y', int)]
+        merge_algos = ('inner', 'left', 'right', 'outer')
+        merged_data = [[(0, 'a1_0', 0, 'a2_0', 0),
+                        (1, 'a1_1', 1, 'a2_1', 1),
+                        (1, 'a1_2', 2, 'a2_1', 1),
+                        (2, 'a1_3', 3, 'a2_2', 2),
+                        (2, 'a1_3', 3, 'a2_3', 3)],
+                       [(0, 'a1_0', 0, 'a2_0', 0),
+                        (1, 'a1_1', 1, 'a2_1', 1),
+                        (1, 'a1_2', 2, 'a2_1', 1),
+                        (2, 'a1_3', 3, 'a2_2', 2),
+                        (2, 'a1_3', 3, 'a2_3', 3),
+                        (3, 'a1_4', 4, '', -999)], 
+                       [(0, 'a1_0', 0, 'a2_0', 0),
+                        (1, 'a1_1', 1, 'a2_1', 1),
+                        (1, 'a1_2', 2, 'a2_1', 1),
+                        (2, 'a1_3', 3, 'a2_2', 2),
+                        (2, 'a1_3', 3, 'a2_3', 3),
+                        (4, '', -999, 'a2_4', 4)], 
+                       [(0, 'a1_0', 0, 'a2_0', 0),
+                        (1, 'a1_1', 1, 'a2_1', 1),
+                        (1, 'a1_2', 2, 'a2_1', 1),
+                        (2, 'a1_3', 3, 'a2_2', 2),
+                        (2, 'a1_3', 3, 'a2_3', 3),
+                        (4, '', -999, 'a2_4', 4), 
+                        (3, 'a1_4', 4, '', -999)]] 
+        for how, data in zip(merge_algos, merged_data):
             res = utils.join(
                     a1,
                     a2, 
                     how,
-                    left_on='idx',
-                    right_on='idx')
-            print how.upper()
-            print '-' * 80
+                    left_on='key',
+                    right_on='key')
+            ctrl = np.array(data, dtype=merged_dtype)
             self.__sa_check(ctrl, res)
 
 

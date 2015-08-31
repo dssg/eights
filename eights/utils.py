@@ -344,7 +344,7 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
         for unused_left_idx in left_rows_unused:
             rows_new_table.append(
                     tuple(left_no_idx[unused_left_idx]) +
-                    tuple([left[shared_on_col][left_idx] 
+                    tuple([left[shared_on_col][unused_left_idx] 
                            for shared_on_col in shared_on]) +
                     right_fill)
 
