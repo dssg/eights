@@ -240,29 +240,41 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
     if isinstance(right_on, basestring):
         right_on = [right_on]
 
-    # get arrays without join columns
-    left_no_idx = remove_cols(left, left_on)
-    right_no_idx = remove_cols(right, right_on)
-
     # assemble dtype for the merged array
+    # Rules for naming columns in the new table, as inferred from Pandas:
+    # 1. If a joined on column has the same name in both tables, it appears
+    #    in the joined table once under that name (no suffix)
+    # 2. Otherwise, every column from each table will appear in the joined
+    #    table, whether they are joined on or not. If both tables share a 
+    #    column name, the name will appear twice with suffixes. If a column
+    #    name appears only in one table, it will appear without a suffix.
     frozenset_left_on = frozenset(left_on)
     frozenset_right_on = frozenset(right_on)
     frozenset_shared_on = frozenset_left_on.intersection(frozenset_right_on)
     shared_on = list(frozenset_shared_on)
-    unique_left_on = list(frozenset_left_on.difference(frozenset_shared_on))
-    unique_right_on = list(frozenset_right_on.difference(frozenset_shared_on))
-    col_names = (shared_on + unique_left_on + 
-                 [name + suffixes[0] for name in 
-                            left_no_idx.dtype.names] +
-                 unique_right_on +
-                 [name + suffixes[1] for name in right_no_idx.dtype.names])
-    col_dtypes = ([left[shared_on_col].dtype for shared_on_col in shared_on] +
-                  [left[left_on_col].dtype for left_on_col in unique_right_on] +
-                  [left_no_idx[col].dtype for col in 
-                   left_no_idx.dtype.names] +
-                  [right[right_on_col].dtype for right_on_col in unique_right_on] +
-                  [right_no_idx[col].dtype for col in
-                   right_no_idx.dtype.names])
+    # get arrays without shared join columns
+    left_names = left.dtype.names
+    right_names = right.dtype.names
+    frozenset_left_names = frozenset(left.dtype.names).difference(
+            frozenset_shared_on)
+    left_names = list(frozenset_left_names)
+    frozenset_right_names = frozenset(right.dtype.names).difference(
+            frozenset_shared_on)
+    right_names = list(frozenset_right_names)
+    left_no_idx = left[left_names]
+    right_no_idx = right[right_names]
+    left_names_w_suffix = [col_name + suffixes[0] if 
+                           col_name in frozenset_right_names else
+                           col_name for 
+                           col_name in left_names]
+    right_names_w_suffix = [col_name + suffixes[1] if 
+                            col_name in frozenset_left_names else
+                            col_name for 
+                            col_name in right_names]
+    col_names = (left_names_w_suffix + shared_on +  right_names_w_suffix)
+    col_dtypes = ([left[left_col].dtype for left_col in left_names] +
+                  [left[shared_on_col].dtype for shared_on_col in shared_on] +
+                  [right[right_col].dtype for right_col in right_names])
 
     take_all_right_rows = how in ('outer', 'right')
     take_all_left_rows = how in ('outer', 'left')
@@ -272,12 +284,6 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
                        left_no_idx.dtype.descr])
     right_fill = tuple([__fill_by_descr(dtype) for _, dtype in 
                        right_no_idx.dtype.descr])
-    unique_left_on_fill = tuple(
-        [__fill_by_descr(left[unique_left_col].dtype.str) for 
-         unique_left_col in unique_left_on])
-    unique_right_on_fill = tuple(
-        [__fill_by_descr(right[unique_right_col].dtype.str) for 
-         unique_right_col in unique_right_on])
 
     # Make a hash of the first join column in the left table
     left_col = left[left_on[0]]
@@ -314,13 +320,9 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
                         extra_contraint_cols]):
                     has_match = True
                     rows_new_table.append(
+                            tuple(left_no_idx[left_idx]) + 
                             tuple([left[shared_on_col][left_idx] 
                                    for shared_on_col in shared_on]) +
-                            tuple([left[left_on_col][left_idx]
-                                   for left_on_col in unique_left_on]) +
-                            tuple(left_no_idx[left_idx]) + 
-                            tuple([right[right_on_col][right_idx]
-                                   for right_on_col in unique_right_on]) +
                             tuple(right_no_idx[right_idx]))
                     left_rows_used.add(left_idx) 
         # No match found for this right row
@@ -330,11 +332,9 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
         # this row from the right table, filled with type-appropriate versions
         # of NULL from the left table
         if (not has_match) and take_all_right_rows:
-            rows_new_table.append(
+            rows_new_table.append(left_fill + 
                     tuple([right[shared_on_col][right_idx] for shared_on_col in
-                           shared_on]) + unique_left_on_fill + left_fill +
-                    tuple([right[right_on_col][right_idx] for right_on_col in
-                           unique_right_on]) + 
+                           shared_on]) + 
                     tuple(right_no_idx[right_idx]))
 
     # if we're doing a left or outer join, we have to add all rows from the 
@@ -344,16 +344,10 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
                             left_rows_used]
         for unused_left_idx in left_rows_unused:
             rows_new_table.append(
+                    tuple(left_no_idx[unused_left_idx]) +
                     tuple([left[shared_on_col][left_idx] 
                            for shared_on_col in shared_on]) +
-                    tuple([left[left_on_col][left_idx]
-                           for left_on_col in unique_left_on]) +
-                    tuple(left_no_idx[unused_left_idx]) +
-                    unique_right_fill +
                     right_fill)
 
-    print rows_new_table
-    print col_names
-    print col_dtypes
     return np.array(rows_new_table, dtype={'names': col_names, 
                                            'formats': col_dtypes})

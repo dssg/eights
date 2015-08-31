@@ -29,9 +29,11 @@ class TestUtils(unittest.TestCase):
                     left_on='dept_id',
                     right_on='id').to_records(index=False)
         res = utils.join(a1, a2, 'inner', 'dept_id', 'id')
+        print 'result'
         print res
         print res.dtype
         print
+        print 'control'
         print ctrl
         print ctrl.dtype
 
