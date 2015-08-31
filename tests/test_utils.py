@@ -21,6 +21,10 @@ class TestUtils(unittest.TestCase):
         sa2_reordered = sa2[list(sa1.dtype.names)]
         sa1_set = {tuple(row) for row in sa1}
         sa2_set = {tuple(row) for row in sa2_reordered}
+        print 'ctrl'
+        print sa1_set
+        print 'res'
+        print sa2_set
         self.assertEqual(sa1_set, sa2_set)
 
     def test_join(self):
@@ -70,6 +74,37 @@ class TestUtils(unittest.TestCase):
                 right_on=['idx0', 'a2_idx1', 'idx2'],
                 suffixes=['_left', '_right'])
         self.__sa_check(ctrl, res)
+
+        # outer joins
+        a1 = np.array(
+            [(0, 'a1_0'),
+             (1, 'a1_1'),
+             (1, 'a1_2'),
+             (2, 'a1_3'),
+             (3, 'a1_4')], 
+            dtype=[('idx', int), ('label', 'S64')])
+        a2 = np.array(
+            [(0, 'a2_0'),
+             (1, 'a2_1'),
+             (2, 'a2_2'),
+             (2, 'a2_3'),
+             (4, 'a2_4')], 
+            dtype=[('idx', int), ('label', 'S64')])
+        for how in ('inner', 'left', 'right', 'outer'):
+            ctrl = pd.DataFrame(a1).merge(
+                    pd.DataFrame(a2),
+                    how=how,
+                    left_on='idx',
+                    right_on='idx').to_records(index=False)
+            res = utils.join(
+                    a1,
+                    a2, 
+                    how,
+                    left_on='idx',
+                    right_on='idx')
+            print how.upper()
+            print '-' * 80
+            self.__sa_check(ctrl, res)
 
 
 if __name__ == '__main__':
