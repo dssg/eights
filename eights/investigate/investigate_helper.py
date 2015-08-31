@@ -6,9 +6,9 @@ from ..utils import *
 import itertools as it
 from dateutil.parser import parse
 
-def open_simple_csv_as_list(file_loc):
-    with open(file_loc, 'rb') as f:
-        reader = csv.reader(f)
+def open_simple_csv_as_list(file_loc,delimiter=','):
+    with open(file_loc, 'rU') as f:
+        reader = csv.reader(f,  delimiter=delimiter)
         data= list(reader)
     return data
     

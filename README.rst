@@ -25,7 +25,7 @@ interface of often used workflows.
 Installation
 ------------
 
-`pip install git+git://github.com/eights/eights.git`
+`pip install git+git://github.com/dssg/eights.git`
 
 Required
 ========
