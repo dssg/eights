@@ -6,7 +6,6 @@ import numpy as np
 import sqlalchemy as sqla
 from ..utils import *
 import itertools as it
-from dateutil.parser import parse
 from datetime import datetime
 
 
