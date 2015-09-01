@@ -102,7 +102,6 @@ class TestPerambulate(unittest.TestCase):
             for run in trial.runs:
                 print run
 
-    # TODO here
     def test_sliding_windows(self):
         M = np.array([(0, 2003),
                       (1, 1997),

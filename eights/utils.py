@@ -163,7 +163,7 @@ def convert_to_sa(M, c_name=None):
         return cast_np_nd_to_sa(M, names=c_name)
 
     if isinstance(M, list):
-        return convert_list_to_structured_array(M, names=c_name)
+        return convert_list_to_structured_array(M, col_names=c_name)
         # TODO make sure this function ^ ensures list of /lists/
 
     raise ValueError('Can\'t cast to sa')

@@ -520,7 +520,7 @@ class Report(object):
     def add_legend(self):
         list_of_tuple = [(str(i), str(trial)) for i, trial in 
                          enumerate(self.__exp.trials)]
-        table = convert_list_to_structured_array(list_of_tuple, names=('Id', 'Trial'))
+        table = convert_list_to_structured_array(list_of_tuple, col_names=('Id', 'Trial'))
         # display 10 at a time to give pdfkit an easier time with page breaks
         start_row = 0
         n_trials = len(list_of_tuple)
