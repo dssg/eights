@@ -20,8 +20,6 @@ class TestInvestigate(unittest.TestCase):
     def test_open_csv_list(self):
         csv_file = utils.path_of_data("mixed.csv")
         correct = [[0, 'Jim', 5.6], [1, 'Jill', 5.5]]
-        print open_csv_list(csv_file)
-        print correct 
         self.assertEqual(open_csv_list(csv_file),correct)
 
     #2    

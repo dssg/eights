@@ -16,7 +16,8 @@ import pdfkit
 from sklearn.metrics import roc_curve
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
-from ..utils import cast_list_of_list_to_sa, is_sa, cast_np_sa_to_nd
+from ..utils import is_sa, cast_np_sa_to_nd
+from ..utils import convert_list_to_structured_array
 from communicate_helper import *
 from communicate_helper import _feature_pair_report
 
@@ -519,7 +520,7 @@ class Report(object):
     def add_legend(self):
         list_of_tuple = [(str(i), str(trial)) for i, trial in 
                          enumerate(self.__exp.trials)]
-        table = cast_list_of_list_to_sa(list_of_tuple, names=('Id', 'Trial'))
+        table = convert_list_to_structured_array(list_of_tuple, names=('Id', 'Trial'))
         # display 10 at a time to give pdfkit an easier time with page breaks
         start_row = 0
         n_trials = len(list_of_tuple)

@@ -1,6 +1,9 @@
 import numpy as np
 import numpy.lib.recfunctions as nprf
 import matplotlib.mlab
+import itertools as it
+from datetime import datetime
+from dateutil.parser import parse
 
 @np.vectorize
 def validate_time(date_text):
@@ -66,8 +69,10 @@ STR_TYPE_LETTERS = {str: 'S',
 
 
 def __str_to_datetime(s):
-    # Invalid time if the string is empty
-    if not s:
+    # Invalid time if the string is too short
+    # This prevents empty strings from being times
+    # as well as odd short strings like 'a' 
+    if len(s) < 6:
         return NOT_A_TIME
     # Invalid time if the string is just a number
     try: 
