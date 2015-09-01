@@ -1,4 +1,6 @@
 import csv
+import os
+import cPickle
 from collections import Counter
 import numpy as np
 import sqlalchemy as sqla
@@ -186,10 +188,31 @@ def crosstab(L_1, L_2):
 
 class SQLConnection(object):
     # Intended to vaguely implement DBAPI 2
-    # TODO get this to work w/ time, unicode
-    def __init__(self, con_str):
+    # If allow_caching is True, will pickle results in cache_dir and reuse
+    # them if it encounters an identical query twice.
+    def __init__(self, con_str, allow_caching=False, cache_dir='.'):
         self.__engine = sqla.create_engine(con_str)
+        self.__cache_dir = cache_dir
+        if allow_caching:
+            self.execute = self.__execute_with_cache
 
-    def execute(self, exec_str):
-        result = self.__engine.execute(exec_str)
-        return convert_list_to_structured_array(result.fetchall(), result.keys())
+    def __sql_to_sa(self, exec_str):
+        raw_python = self.__engine.execute(exec_str)
+        return convert_list_to_structured_array(
+            raw_python.fetchall(),
+            [str(key) for key in raw_python.keys()])
+
+    def __execute_with_cache(self, exec_str, invalidate_cache=False):
+        pkl_file_name = os.path.join(
+            self.__cache_dir, 
+            'eights_cache_{}.pkl'.format(hash(exec_str)))
+        if os.path.exists(pkl_file_name) and not invalidate_cache:
+            with open(pkl_file_name) as fin:
+                return cPickle.load(fin)
+        ret = self.__sql_to_sa(exec_str)
+        with open(pkl_file_name, 'w') as fout:
+            cPickle.dump(ret, fout)
+        return ret
+
+    def execute(self, exec_str, invalidate_cache=False):
+        return self.__sql_to_sa(exec_str)

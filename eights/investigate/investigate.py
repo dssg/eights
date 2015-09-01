@@ -69,8 +69,8 @@ def print_crosstab(L_1, L_2, verbose=True):
         print_crosstab_dict(crosstab_dict)
     return crosstab_dict
 
-def connect_sql(con_str):
-    return SQLConnection(con_str)
+def connect_sql(con_str, allow_caching=False, cache_dir='.'):
+    return SQLConnection(con_str, allow_caching, cache_dir)
     
 
 
