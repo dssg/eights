@@ -9,14 +9,45 @@ import itertools as it
 from dateutil.parser import parse
 from datetime import datetime
 
-def open_simple_csv_as_list(file_loc,delimiter=','):
+
+__special_csv_strings = {'': None,
+                         'True': True,
+                         'False': False} 
+
+def __correct_csv_cell_type(cell):
+    # Change strings in CSV to appropriate Python objects
+    try:
+        return __special_csv_strings[cell]
+    except KeyError:
+        pass
+    try: 
+        return int(cell)
+    except ValueError:
+        pass
+    try:
+        return float(cell)
+    except ValueError:
+        pass
+    try:
+        return parse(cell)
+    except (TypeError, ValueError):
+        pass
+    return cell
+
+def open_simple_csv_as_list(file_loc, delimiter=',', return_col_names=False):
+    # infers types
     with open(file_loc, 'rU') as f:
         reader = csv.reader(f,  delimiter=delimiter)
-        data= list(reader)
+        names = reader.next() # skip header
+        data = [[__correct_csv_cell_type(cell) for cell in row] for
+                row in reader]
+    if return_col_names:
+        return data, names
     return data
     
 def open_csv_as_structured_array(file_loc, delimiter=','):
-    return np.genfromtxt(file_loc, dtype=None, names=True, delimiter=delimiter)
+    python_list, names = open_simple_csv_as_list(file_col, delimiter, True)
+    return convert_list_to_structured_array(python_list, names)
 
 def convert_fixed_width_list_to_CSV_list(data, list_of_widths):
     #assumes you loaded a fixed with thing into a list of list csv.

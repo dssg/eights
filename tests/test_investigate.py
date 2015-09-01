@@ -15,17 +15,21 @@ import utils_for_tests as utils
 
 from collections import Counter
 class TestInvestigate(unittest.TestCase):
+
     #1
     def test_open_csv_list(self):
         csv_file = utils.path_of_data("mixed.csv")
-        correct = np.array([(0, 'Jim', 5.6), (1, 'Jill', 5.5)],
-                            dtype=[('id', '<i8'), ('name', 'S4'), ('height', '<f8')])
-        self.assertTrue(np.array_equal(open_csv_list(csv_file),correct))
+        correct = [[0, 'Jim', 5.6], [1, 'Jill', 5.5]]
+        print open_csv_list(csv_file)
+        print correct 
+        self.assertEqual(open_csv_list(csv_file),correct)
+
     #2    
     def test_open_csv(self):
         csv_file = utils.path_of_data("mixed.csv")
         correct = np.array([(0, 'Jim', 5.6), (1, 'Jill', 5.5)],dtype=[('id', '<i8'), ('name', 'S4'), ('height', '<f8')])
         self.assertTrue(np.array_equal(open_csv(csv_file),correct))
+
     #3    
     def test_describe_cols(self):
         test = np.array([[1],[2],[3],[4],[5],[6]])
@@ -35,6 +39,7 @@ class TestInvestigate(unittest.TestCase):
         self.assertTrue(np.array_equal(describe_cols(test),correct))
         self.assertTrue(np.array_equal(describe_cols(test_list),correct))
         self.assertTrue(np.array_equal(describe_cols(test_sa),correct))           
+
     #4
     def test_convert_list_to_structured_array_wrap(self):
         test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]
@@ -43,6 +48,7 @@ class TestInvestigate(unittest.TestCase):
         correct_2 = np.array([(1, 2.0, 'a'), (2, 4.0, 'b'), (4, 5.0, 'g')], dtype=[('ints', '<i8'), ('floats', '<f8'), ('strings', 'S1')])
         self.assertTrue(np.array_equal(correct_1, convert_list_to_structured_array_wrap(test)))
         self.assertTrue(np.array_equal(correct_2, convert_list_to_structured_array_wrap(test, names)))
+
     #5
     def test_print_crosstab(self):
         l1= [1,2,3,3,2,1]
