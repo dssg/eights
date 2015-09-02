@@ -259,7 +259,6 @@ def cast_np_sa_to_nd(sa):
     return nd
 
 def distance(lat_1, lon_1, lat_2, lon_2):
-    from math import radians, cos, sin, asin, sqrt
     """
     Calculate the great circle distance between two points 
     on the earth (specified in decimal degrees)
@@ -268,14 +267,14 @@ def distance(lat_1, lon_1, lat_2, lon_2):
     """
     # convert decimal degrees to radians 
 
-    lon_1, lat_1, lon_2, lat_2 = map(radians, [lon_1, lat_1, lon_2, lat_2])
+    lon_1, lat_1, lon_2, lat_2 = map(np.radians, [lon_1, lat_1, lon_2, lat_2])
 
     # haversine formula 
     dlon = lon_2 - lon_1 
     dlat = lat_2 - lat_1 
-    a = sin(dlat/2)**2 + cos(lat_1) * cos(lat_2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a)) 
-    r = 3956 # 6371 Radius of earth in kilometers. Use 3956 for miles
+    a = np.sin(dlat/2)**2 + np.cos(lat_1) * np.cos(lat_2) * np.sin(dlon/2)**2
+    c = 2 * np.arcsin(np.sqrt(a)) 
+    r = 6371 # 6371 Radius of earth in kilometers. Use 3956 for miles
     return c * r
 
 def dist_less_than(lat_1, lon_1, lat_2, lon_2, threshold):

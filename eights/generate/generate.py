@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
-from ..utils import append_cols
+from ..utils import append_cols, distance
 from uuid import uuid4
 
 
@@ -43,41 +43,7 @@ def val_between(M, col_name, boundary):
 
 
 
-#def sweep_where_all_are_true(args, M):
-#   changing_args = [arg[2] for arg in args]
-#   runs = product(*changing_args)
-#   for r in runs:
-#      fixed_lambdas = [lambda col: lam(col, r[idx], args[idx][3]) for idx, lam in enumerate(lambdas)]
-#      yield select_one(fixed_lambdas, args[idx][1], M)
-#      
-      
-
-#
-#M = np.array([ ('home', 40.761036, -73.977374),
-#                  ('work', 45.5660930, -73.92599),
-#                  ('fun', 40.702646, -74.013799)],
-#                  dtype = [('name', 'S4'), ('lng', float), ('lat', float)]
-#                )    
-#                
-#target = GPS(40.748784, -73.985429)
-#threshold = .001
-#
-#lat_col_name = 'lat'
-#lng_col_name = 'lng'
-#
-#M_id =  select_by_dist_from(M, target, threshold, lat_col_name, lng_col_name)
-#
-#
-#import pdb; pdb.set_trace()
-#
-#
-#
-#
-#def generate():
-#    return
-#
-
-def generate_bin(col, number_of_bins):
+def generate_bin(col, num_bins):
     """Generates a column of categories, where each category is a bin.
 
     Parameters
@@ -92,13 +58,16 @@ def generate_bin(col, number_of_bins):
     --------
     >>> M = np.array([0.1, 3.0, 0.0, 1.2, 2.5, 1.7, 2])
     >>> generate_bin(M, 3)
-    [0 2 0 1 2 1 2]
+    [0 3 0 1 2 1 2]
 
     """
 
-    raise NotImplementedError
-    
-def normalize(col):
+    minimum = float(min(col))
+    maximum = float(max(col))
+    distance = float(maximum - minimum)
+    return [int((x - minimum) / distance * num_bins) for x in col]
+
+def normalize(col, mean=None, stddev=None, return_fit=False):
     """
     
     Generate a normalized column.
@@ -108,17 +77,35 @@ def normalize(col):
     Parameters
     ----------
     col : np.array
-    
+    mean : float or None
+        Mean to use for fit. If none, will use 0
+    stddev : float or None
+    return_fit : boolean
+        If True, returns tuple of fitted col, mean, and standard dev of fit.
+        If False, only returns fitted col
     Returns
     -------
-    np.array
+    np.array or (np.array, float, float)
     
     """
-    raise NotImplementedError    
+    # see infonavit for applying to different set than we fit on
+    # https://github.com/dssg/infonavit-public/blob/master/pipeline_src/preprocessing.py#L99
+    # Logic is from sklearn StandardScaler, but I didn't use sklearn because
+    # I want to pass in mean and stddev rather than a fitted StandardScaler
+    # https://github.com/scikit-learn/scikit-learn/blob/a95203b/sklearn/preprocessing/data.py#L276
+    if mean is None:
+        mean = np.mean(col)
+    if stddev is None:
+        stddev = np.std(col)
+    res = (col - mean) / stddev
+    if return_fit:
+        return (res, mean, stddev)
+    else:
+        return res
 
 def distance_from_point(lat_origin, lng_origin, lat_col, lng_col):
     """ Generates a column of how far each record is from the origin"""
-    raise NotImplementedError    
+    return distance(lat_origin, lng_origin, lat_col, lng_col)
 
 @np.vectorize
 def combine_sum(*args):
