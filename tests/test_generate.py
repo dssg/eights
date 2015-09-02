@@ -5,6 +5,7 @@ import eights.investigate
 import eights.utils
 from eights.generate import generate_bin
 from eights.generate import normalize
+from eights.generate import distance_from_point
 
 
 class TestGenerate(unittest.TestCase):
@@ -62,6 +63,24 @@ class TestGenerate(unittest.TestCase):
         col = np.arange(10)
         res = normalize(col, mean=mean, stddev=stddev)
         self.assertTrue(np.allclose(res, (col - mean) / stddev))
+
+    def test_distance_from_point(self):
+        # Coords according to Wikipedia
+        # Paris
+        lat_origin = 48.8567
+        lng_origin = 2.3508
+
+        # New York, Beijing, Jerusalem
+        lat_col = [40.7127, 39.9167, 31.7833]
+        lng_col = [-74.0059, 116.3833, 35.2167]
+
+        # According to http://www.movable-type.co.uk/scripts/latlong.html
+        # (Rounds to nearest km)
+        ctrl = np.array([5837, 8215, 3331])
+        res = distance_from_point(lat_origin, lng_origin, lat_col, lng_col)
+        # get it right within 1km
+        self.assertTrue(np.allclose(ctrl, res, atol=1, rtol=0))
+
         
 if __name__ == '__main__':
     unittest.main()

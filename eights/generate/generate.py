@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn import cross_validation
 import generate_helper as gh
-from ..utils import append_cols
+from ..utils import append_cols, distance
 from uuid import uuid4
 
 
@@ -105,7 +105,7 @@ def normalize(col, mean=None, stddev=None, return_fit=False):
 
 def distance_from_point(lat_origin, lng_origin, lat_col, lng_col):
     """ Generates a column of how far each record is from the origin"""
-    raise NotImplementedError    
+    return distance(lat_origin, lng_origin, lat_col, lng_col)
 
 @np.vectorize
 def combine_sum(*args):
