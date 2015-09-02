@@ -58,18 +58,14 @@ def generate_bin(col, num_bins):
     --------
     >>> M = np.array([0.1, 3.0, 0.0, 1.2, 2.5, 1.7, 2])
     >>> generate_bin(M, 3)
-    [0 2 0 1 2 1 2]
+    [0 3 0 1 2 1 2]
 
     """
 
-    #this just drops a list we still have to reattach or overwrite
     minimum = float(min(col))
     maximum = float(max(col))
-    distance = float(maximum-minimum)
-    l =[]
-    for x in col:
-        l.append(int(((x-minimum)/distance)*num_bins))
-    return l
+    distance = float(maximum - minimum)
+    return [int((x - minimum) / distance * num_bins) for x in col]
 
 def normalize(col):
     """

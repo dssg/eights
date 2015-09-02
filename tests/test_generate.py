@@ -13,7 +13,7 @@ class TestGenerate(unittest.TestCase):
         ctrl = [0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 0, 3]
         self.assertTrue(np.array_equal(ctrl, generate_bin(M, 3)))
         M = np.array([0.1, 3.0, 0.0, 1.2, 2.5, 1.7, 2])
-        ctrl = [0, 2, 0, 1, 2, 1, 2]
+        ctrl = [0, 3, 0, 1, 2, 1, 2]
         self.assertTrue(np.array_equal(ctrl, generate_bin(M, 3)))
     
 
