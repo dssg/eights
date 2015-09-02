@@ -43,41 +43,7 @@ def val_between(M, col_name, boundary):
 
 
 
-#def sweep_where_all_are_true(args, M):
-#   changing_args = [arg[2] for arg in args]
-#   runs = product(*changing_args)
-#   for r in runs:
-#      fixed_lambdas = [lambda col: lam(col, r[idx], args[idx][3]) for idx, lam in enumerate(lambdas)]
-#      yield select_one(fixed_lambdas, args[idx][1], M)
-#      
-      
-
-#
-#M = np.array([ ('home', 40.761036, -73.977374),
-#                  ('work', 45.5660930, -73.92599),
-#                  ('fun', 40.702646, -74.013799)],
-#                  dtype = [('name', 'S4'), ('lng', float), ('lat', float)]
-#                )    
-#                
-#target = GPS(40.748784, -73.985429)
-#threshold = .001
-#
-#lat_col_name = 'lat'
-#lng_col_name = 'lng'
-#
-#M_id =  select_by_dist_from(M, target, threshold, lat_col_name, lng_col_name)
-#
-#
-#import pdb; pdb.set_trace()
-#
-#
-#
-#
-#def generate():
-#    return
-#
-
-def generate_bin(col, number_of_bins):
+def generate_bin(col, num_bins):
     """Generates a column of categories, where each category is a bin.
 
     Parameters
@@ -96,8 +62,15 @@ def generate_bin(col, number_of_bins):
 
     """
 
-    raise NotImplementedError
-    
+    #this just drops a list we still have to reattach or overwrite
+    minimum = float(min(col))
+    maximum = float(max(col))
+    distance = float(maximum-minimum)
+    l =[]
+    for x in col:
+        l.append(int(((x-minimum)/distance)*num_bins))
+    return l
+
 def normalize(col):
     """
     

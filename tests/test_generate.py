@@ -3,12 +3,20 @@ import numpy as np
 from numpy.random import rand
 import eights.investigate
 import eights.utils
-import eights.generate
-import eights.generate.generate_helper as gh
-import eights.generate as gen
+from eights.generate import generate_bin
 
 
 class TestGenerate(unittest.TestCase):
+
+    def test_generate_bin(self):
+        M = [1, 1, 1, 3, 3, 3, 5, 5, 5, 5, 2, 6]
+        ctrl = [0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 0, 3]
+        self.assertTrue(np.array_equal(ctrl, generate_bin(M, 3)))
+        M = np.array([0.1, 3.0, 0.0, 1.2, 2.5, 1.7, 2])
+        ctrl = [0, 2, 0, 1, 2, 1, 2]
+        self.assertTrue(np.array_equal(ctrl, generate_bin(M, 3)))
+    
+
     def test_where_all_are_true(self):
         M = [[1,2,3], [2,3,4], [3,4,5]]
         col_names = ['heigh','weight', 'age']

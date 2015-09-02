@@ -3,16 +3,6 @@ from sklearn import preprocessing
 from sklearn.preprocessing import Imputer
 from eights.utils import convert_to_sa
 
-def replace_with_n_bins(col, num_bins):
-    #this just drops a list we still have to reattach or overwrite
-    minimum = float(min(col))
-    maximum = float(max(col))
-    distance = float(maximum-minimum)
-    l =[]
-    for x in col:
-        l.append(int(((x-minimum)/distance)*num_bins))
-    return l
-
 def label_encode(M):
     """
     Changes string cols to integers so that there is a 1-1 mapping between 
