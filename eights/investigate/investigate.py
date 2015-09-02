@@ -17,11 +17,13 @@ from ..utils import is_sa
 
 
 def open_csv_list(file_loc):
+    # Opens a csv as a list
     return open_simple_csv_as_list(file_loc)
 
 def open_csv(file_loc, delimiter=','):
-    f = open_csv_as_structured_array(file_loc, delimiter)
-    return set_structured_array_datetime_as_day(f, file_loc, delimiter)
+    # opens csv as a structured array
+    return open_csv_as_structured_array(file_loc, delimiter)
+
 def describe_cols(M):
     """takes a SA or list of Np.rayas and returns the summary statistcs
     Parameters
@@ -48,8 +50,9 @@ def describe_cols(M):
 
 
 
-def convert_list_to_structured_array_wrap(L, col_names=None, dtype=None):
-    return convert_list_to_structured_array(L, col_names, dtype)
+def cast_list_of_list_to_sa_wrap(L, col_names=None, dtype=None):
+# What is this supposed to do?
+    return cast_list_of_list_to_sa(L, col_names, dtype)
 
 def print_crosstab(L_1, L_2, verbose=True):
     """this prints a crosstab results
@@ -69,8 +72,8 @@ def print_crosstab(L_1, L_2, verbose=True):
         print_crosstab_dict(crosstab_dict)
     return crosstab_dict
 
-def connect_sql(con_str):
-    return SQLConnection(con_str)
+def connect_sql(con_str, allow_caching=False, cache_dir='.'):
+    return SQLConnection(con_str, allow_caching, cache_dir)
     
 
 
@@ -84,86 +87,3 @@ from ..communicate.communicate import plot_box_plot
 
 
 
-#this works but need the sa's to be good...
-#data = [[(1,2),(1,2),(1,4)],[(1,2),(3,1)],[(1,2)]]
-#
-#def turn_list_of_list_of_items_to_SA_by_over_Lap(lol_items):
-#    adict  = {}
-#    feature_index = 0
-#    bigram_index = []
-#    l = [item for l_items in lol_items for item in l_items]
-#    num_unique_items = len(set(l))
-#    M = np.zeros(shape=(len(lol_items), num_unique_items))    
-#    feature_index = 0
-#    for row, l_items in enumerate(lol_items):
-#        for item in l_items:
-#            try:
-#                M[row, adict[item]] += 1
-#                adict[item] += 1 #
-#            except KeyError:
-#                M[row, feature_index] += 1
-#                feature_index += 1
-#                bigram_index.append(item)
-#                adict[item] = 1
-#    return M
-#
-#M = turn_list_of_list_of_items_to_SA_by_over_Lap(data)     
-#
-
-#def open_JSON():
-#    """single line description
-#    Parameters
-#    ----------
-#    temp : type
-#       Description 
-#    
-#    Attributes
-#    ----------
-#    temp : type
-#       Description 
-#       
-#    Returns
-#    -------
-#    temp : type
-#       Description
-#       
-#    """
-#    raise NotImplementedError    
-#def open_PostgreSQL():
-#    """single line description
-#    Parameters
-#    ----------
-#    temp : type
-#       Description 
-#    
-#    Attributes
-#    ----------
-#    temp : type
-#       Description 
-#       
-#    Returns
-#    -------
-#    temp : type
-#       Description
-#       
-#    """
-#    raise NotImplementedError    
-#def open_SQL():
-#    """works with an sql database
-#    Parameters
-#    ----------
-#    temp : type
-#       Description 
-#    
-#    Returns
-#    -------
-#    temp : type
-#       Description
-#       
-#    """
-#    raise NotImplementedError
-#def query_sql():
-#    raise NotImplementedError
-#def query_postgreSQL():
-#    raise NotImplementedError
-#

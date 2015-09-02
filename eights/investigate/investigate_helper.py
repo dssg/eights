@@ -1,17 +1,52 @@
 import csv
+import os
+import cPickle
 from collections import Counter
 import numpy as np
 import sqlalchemy as sqla
 from ..utils import *
+import itertools as it
+from datetime import datetime
 
-def open_simple_csv_as_list(file_loc,delimiter=','):
+
+__special_csv_strings = {'': None,
+                         'True': True,
+                         'False': False} 
+
+def __correct_csv_cell_type(cell):
+    # Change strings in CSV to appropriate Python objects
+    try:
+        return __special_csv_strings[cell]
+    except KeyError:
+        pass
+    try: 
+        return int(cell)
+    except ValueError:
+        pass
+    try:
+        return float(cell)
+    except ValueError:
+        pass
+    try:
+        return parse(cell)
+    except (TypeError, ValueError):
+        pass
+    return cell
+
+def open_simple_csv_as_list(file_loc, delimiter=',', return_col_names=False):
+    # infers types
     with open(file_loc, 'rU') as f:
         reader = csv.reader(f,  delimiter=delimiter)
-        data= list(reader)
+        names = reader.next() # skip header
+        data = [[__correct_csv_cell_type(cell) for cell in row] for
+                row in reader]
+    if return_col_names:
+        return data, names
     return data
     
 def open_csv_as_structured_array(file_loc, delimiter=','):
-    return np.genfromtxt(file_loc, dtype=None, names=True, delimiter=delimiter)
+    python_list, names = open_simple_csv_as_list(file_loc, delimiter, True)
+    return cast_list_of_list_to_sa(python_list, names)
 
 def convert_fixed_width_list_to_CSV_list(data, list_of_widths):
     #assumes you loaded a fixed with thing into a list of list csv.
@@ -23,66 +58,31 @@ def convert_fixed_width_list_to_CSV_list(data, list_of_widths):
         out.append(struct.unpack(s, x[0]))
     return out
 
-def set_structured_array_datetime_as_day(first_pass,file_loc, delimiter=','):
-    date_cols = []
-    int_cols = []
-    new_dtype = []
-    for i, (col_name, col_dtype) in enumerate(first_pass.dtype.descr):
-        if 'S' in col_dtype:
-            col = first_pass[col_name]
-            if np.any(validate_time(col)):
-                date_cols.append(i)
-		# TODO better inference
-                # col_dtype = 'M8[D]'
-                col_dtype = np.datetime64(col[0]).dtype
-        elif 'i' in col_dtype:
-            int_cols.append(i)
-        new_dtype.append((col_name, col_dtype))
-    
-    converter = {i: str_to_time for i in date_cols}        
-    missing_values = {i: '' for i in int_cols}
-    filling_values = {i: -999 for i in int_cols}
-    return np.genfromtxt(file_loc, dtype=new_dtype, names=True, delimiter=delimiter,
-                         converters=converter, missing_values=missing_values,
-                         filling_values=filling_values)
+# let's not use this any more
+#def set_structured_array_datetime_as_day(first_pass,file_loc, delimiter=','):
+#    date_cols = []
+#    int_cols = []
+#    new_dtype = []
+#    for i, (col_name, col_dtype) in enumerate(first_pass.dtype.descr):
+#        if 'S' in col_dtype:
+#            col = first_pass[col_name]
+#            if np.any(validate_time(col)):
+#                date_cols.append(i)
+#		# TODO better inference
+#                # col_dtype = 'M8[D]'
+#                col_dtype = np.datetime64(col[0]).dtype
+#        elif 'i' in col_dtype:
+#            int_cols.append(i)
+#        new_dtype.append((col_name, col_dtype))
+#    
+#    converter = {i: str_to_time for i in date_cols}        
+#    missing_values = {i: '' for i in int_cols}
+#    filling_values = {i: -999 for i in int_cols}
+#    return np.genfromtxt(file_loc, dtype=new_dtype, names=True, delimiter=delimiter,
+#                         converters=converter, missing_values=missing_values,
+#                         filling_values=filling_values)
 
-def _u_to_ascii(s):
-    if isinstance(s, unicode):
-        return s.encode('utf-8')
-    return s
- 
-def convert_list_to_structured_array(L, col_names=None, dtype=None):
-    # TODO deal w/ datetimes, unicode, null etc
-    # TODO don't blow up if we're inferring types and types are inhomogeneous
-    # TODO utils.cast_list_of_list_to_sa is redundant
-    if dtype is None:
-        row1 = L[0]
-        n_cols = len(row1)
-        if col_names is None:
-            col_names = ['f{}'.format(i) for i in xrange(n_cols)]
-        # can't have unicode col names?
-        col_names = [name.encode('utf-8') for name in col_names]
-        dtype = []
-        for idx, cell in enumerate(row1):
-            if isinstance(cell, int):
-                dtype.append((col_names[idx], int))
-            elif isinstance(cell, float):
-                dtype.append((col_names[idx], float))
-            else:
-                dtype.append((col_names[idx], str))
-        dtype = np.dtype(dtype)
-        
-    dtype_fixed = []
 
-    for idx, (name, type_descr) in enumerate(dtype.descr):
-        if 'S' in type_descr:
-            max_val = max([len(row[idx]) for row in L])
-            dtype_fixed.append((name, 'S' + str(max_val)))
-        else:
-            dtype_fixed.append((name, type_descr))
-    # Can't have unicode anywhere. Also, needs to explicity convert to tuples
-    L = [tuple([_u_to_ascii(cell) for cell in row]) for row in L]
-    return np.array(L, dtype=dtype_fixed)
 
 def describe_column(col):
     if col.dtype.kind not in ['f','i']:
@@ -110,10 +110,31 @@ def crosstab(L_1, L_2):
 
 class SQLConnection(object):
     # Intended to vaguely implement DBAPI 2
-    # TODO get this to work w/ time, unicode
-    def __init__(self, con_str):
+    # If allow_caching is True, will pickle results in cache_dir and reuse
+    # them if it encounters an identical query twice.
+    def __init__(self, con_str, allow_caching=False, cache_dir='.'):
         self.__engine = sqla.create_engine(con_str)
+        self.__cache_dir = cache_dir
+        if allow_caching:
+            self.execute = self.__execute_with_cache
 
-    def execute(self, exec_str):
-        result = self.__engine.execute(exec_str)
-        return convert_list_to_structured_array(result.fetchall(), result.keys())
+    def __sql_to_sa(self, exec_str):
+        raw_python = self.__engine.execute(exec_str)
+        return cast_list_of_list_to_sa(
+            raw_python.fetchall(),
+            [str(key) for key in raw_python.keys()])
+
+    def __execute_with_cache(self, exec_str, invalidate_cache=False):
+        pkl_file_name = os.path.join(
+            self.__cache_dir, 
+            'eights_cache_{}.pkl'.format(hash(exec_str)))
+        if os.path.exists(pkl_file_name) and not invalidate_cache:
+            with open(pkl_file_name) as fin:
+                return cPickle.load(fin)
+        ret = self.__sql_to_sa(exec_str)
+        with open(pkl_file_name, 'w') as fout:
+            cPickle.dump(ret, fout)
+        return ret
+
+    def execute(self, exec_str, invalidate_cache=False):
+        return self.__sql_to_sa(exec_str)
