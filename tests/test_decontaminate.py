@@ -2,7 +2,6 @@ import unittest
 import numpy as np
 from numpy.random import rand
 
-from eights.decontaminate import replace_with_n_bins
 from eights.decontaminate import label_encode
 from eights.decontaminate import replace_missing_vals
 import utils_for_tests 
