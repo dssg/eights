@@ -7,6 +7,7 @@ from dateutil.parser import parse
 
 @np.vectorize
 def validate_time(date_text):
+    # TODO __str_to_datetime does this differently
     if not date_text:
         return False
     try:
@@ -138,17 +139,12 @@ def cast_list_of_list_to_sa(L, col_names=None, dtype=None):
                        dtype={'names': col_names, 
                               'formats': dtypes})
 
-def convert_to_sa(M, c_name=None):
+def convert_to_sa(M, col_names=None):
     """Converts an list of lists or a np ndarray to a Structured Arrray
     Parameters
     ----------
     M  : List of List or np.ndarray
        This is the Matrix M, that it is assumed is the basis for the ML algorithm
-
-    Attributes
-    ----------
-    temp : type
-       Description
 
     Returns
     -------
@@ -160,10 +156,10 @@ def convert_to_sa(M, c_name=None):
         return M
 
     if is_nd(M):
-        return cast_np_nd_to_sa(M, names=c_name)
+        return cast_np_nd_to_sa(M, names=col_names)
 
     if isinstance(M, list):
-        return cast_list_of_list_to_sa(M, col_names=c_name)
+        return cast_list_of_list_to_sa(M, col_names=col_names)
         # TODO make sure this function ^ ensures list of /lists/
 
     raise ValueError('Can\'t cast to sa')

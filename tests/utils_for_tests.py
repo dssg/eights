@@ -34,3 +34,23 @@ def generate_correlated_test_matrix(n_rows):
     y = rand(n_rows) < M[:,0]
     return M, y
 
+def array_equal(M1, M2, eps=1e-5):
+    """
+    unlike np.array_equal, works correctly for nan and ignores floating
+    point errors up to eps
+    """
+    if M1.dtype != M2.dtype:
+        return False
+    for col_name, col_type in M1.dtype.descr:
+        M1_col = M1[col_name]
+        M2_col = M2[col_name]
+        if 'f' not in col_type:
+            if not(np.array_equal(M1_col, M2_col)):
+                return False
+        else:
+            if not (np.all(np.logical_or(
+                    abs(M1_col - M2_col) < eps,
+                    np.logical_and(np.isnan(M1_col), np.isnan(M2_col))))):
+                return False
+    return True
+

@@ -11,20 +11,20 @@ from eights.investigate.investigate import connect_sql
 from eights.investigate.investigate import cast_list_of_list_to_sa
 from eights.investigate.investigate import open_csv, describe_cols, open_csv_list,cast_list_of_list_to_sa_wrap, print_crosstab
 
-import utils_for_tests as utils
+import utils_for_tests 
 
 from collections import Counter
 class TestInvestigate(unittest.TestCase):
 
     #1
     def test_open_csv_list(self):
-        csv_file = utils.path_of_data("mixed.csv")
+        csv_file = utils_for_tests.path_of_data("mixed.csv")
         correct = [[0, 'Jim', 5.6], [1, 'Jill', 5.5]]
         self.assertEqual(open_csv_list(csv_file),correct)
 
     #2    
     def test_open_csv(self):
-        csv_file = utils.path_of_data("mixed.csv")
+        csv_file = utils_for_tests.path_of_data("mixed.csv")
         correct = np.array([(0, 'Jim', 5.6), (1, 'Jill', 5.5)],dtype=[('id', '<i8'), ('name', 'S4'), ('height', '<f8')])
         self.assertTrue(np.array_equal(open_csv(csv_file),correct))
 
@@ -84,15 +84,7 @@ class TestInvestigate(unittest.TestCase):
         conv = cast_list_of_list_to_sa(
                 L, 
                 col_names=['int', 'ucode', 'float', 'long'])
-
-        self.assertEqual(conv.dtype, ctrl.dtype)
-        for col_name in ('int', 'ucode', 'long'):
-            self.assertTrue(np.array_equal(ctrl[col_name], conv[col_name]))
-        ctrl_float = ctrl['float']
-        conv_float = ctrl['float']
-        self.assertTrue(np.all(np.logical_or(
-            ctrl_float == conv_float,
-            np.logical_and(np.isnan(ctrl_float), np.isnan(conv_float)))))
+        self.assertTrue(utils_for_tests.array_equal(ctrl, conv))
     
 if __name__ == '__main__':
     unittest.main()
