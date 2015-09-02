@@ -67,7 +67,7 @@ def generate_bin(col, num_bins):
     distance = float(maximum - minimum)
     return [int((x - minimum) / distance * num_bins) for x in col]
 
-def normalize(col):
+def normalize(col, mean=None, stddev=None, return_fit=False):
     """
     
     Generate a normalized column.
@@ -77,13 +77,31 @@ def normalize(col):
     Parameters
     ----------
     col : np.array
-    
+    mean : float or None
+        Mean to use for fit. If none, will use 0
+    stddev : float or None
+    return_fit : boolean
+        If True, returns tuple of fitted col, mean, and standard dev of fit.
+        If False, only returns fitted col
     Returns
     -------
-    np.array
+    np.array or (np.array, float, float)
     
     """
-    raise NotImplementedError    
+    # see infonavit for applying to different set than we fit on
+    # https://github.com/dssg/infonavit-public/blob/master/pipeline_src/preprocessing.py#L99
+    # Logic is from sklearn StandardScaler, but I didn't use sklearn because
+    # I want to pass in mean and stddev rather than a fitted StandardScaler
+    # https://github.com/scikit-learn/scikit-learn/blob/a95203b/sklearn/preprocessing/data.py#L276
+    if mean is None:
+        mean = np.mean(col)
+    if stddev is None:
+        stddev = np.std(col)
+    res = (col - mean) / stddev
+    if return_fit:
+        return (res, mean, stddev)
+    else:
+        return res
 
 def distance_from_point(lat_origin, lng_origin, lat_col, lng_col):
     """ Generates a column of how far each record is from the origin"""

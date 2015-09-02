@@ -4,6 +4,7 @@ from numpy.random import rand
 import eights.investigate
 import eights.utils
 from eights.generate import generate_bin
+from eights.generate import normalize
 
 
 class TestGenerate(unittest.TestCase):
@@ -52,6 +53,15 @@ class TestGenerate(unittest.TestCase):
         M = gen.combine_cols(M, gen.combine_sum, ('f0', 'f1'), 'sum')
         M = gen.combine_cols(M, gen.combine_mean, ('f1', 'f2'), 'avg')
         self.assertTrue(np.array_equal(M, ctrl))
+
+    def test_normalize(self):
+        col = np.array([-2, -1, 0, 1, 2])
+        res, mean, stddev = normalize(col, return_fit=True)
+        self.assertTrue(np.allclose(np.std(res), 1.0))
+        self.assertTrue(np.allclose(np.mean(res), 0.0))
+        col = np.arange(10)
+        res = normalize(col, mean=mean, stddev=stddev)
+        self.assertTrue(np.allclose(res, (col - mean) / stddev))
         
 if __name__ == '__main__':
     unittest.main()
