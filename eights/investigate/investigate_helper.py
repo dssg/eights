@@ -46,7 +46,7 @@ def open_simple_csv_as_list(file_loc, delimiter=',', return_col_names=False):
     
 def open_csv_as_structured_array(file_loc, delimiter=','):
     python_list, names = open_simple_csv_as_list(file_loc, delimiter, True)
-    return convert_list_to_structured_array(python_list, names)
+    return cast_list_of_list_to_sa(python_list, names)
 
 def convert_fixed_width_list_to_CSV_list(data, list_of_widths):
     #assumes you loaded a fixed with thing into a list of list csv.
@@ -120,7 +120,7 @@ class SQLConnection(object):
 
     def __sql_to_sa(self, exec_str):
         raw_python = self.__engine.execute(exec_str)
-        return convert_list_to_structured_array(
+        return cast_list_of_list_to_sa(
             raw_python.fetchall(),
             [str(key) for key in raw_python.keys()])
 

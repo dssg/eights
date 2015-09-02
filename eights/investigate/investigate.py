@@ -50,9 +50,9 @@ def describe_cols(M):
 
 
 
-def convert_list_to_structured_array_wrap(L, col_names=None, dtype=None):
+def cast_list_of_list_to_sa_wrap(L, col_names=None, dtype=None):
 # What is this supposed to do?
-    return convert_list_to_structured_array(L, col_names, dtype)
+    return cast_list_of_list_to_sa(L, col_names, dtype)
 
 def print_crosstab(L_1, L_2, verbose=True):
     """this prints a crosstab results

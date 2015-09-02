@@ -92,7 +92,7 @@ def __str_col_to_datetime(col):
     # If there is even one valid datetime, we're calling this a datetime col
     return (bool(valid_dtimes), col_dtimes)
 
-def convert_list_to_structured_array(L, col_names=None, dtype=None):
+def cast_list_of_list_to_sa(L, col_names=None, dtype=None):
     # TODO utils.cast_list_of_list_to_sa is redundant
     n_cols = len(L[0])
     if col_names is None:
@@ -163,7 +163,7 @@ def convert_to_sa(M, c_name=None):
         return cast_np_nd_to_sa(M, names=c_name)
 
     if isinstance(M, list):
-        return convert_list_to_structured_array(M, col_names=c_name)
+        return cast_list_of_list_to_sa(M, col_names=c_name)
         # TODO make sure this function ^ ensures list of /lists/
 
     raise ValueError('Can\'t cast to sa')

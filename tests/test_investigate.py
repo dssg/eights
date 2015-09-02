@@ -8,8 +8,8 @@ from eights.investigate.investigate import plot_correlation_scatter_plot
 from eights.investigate.investigate import convert_to_sa
 from eights.investigate.investigate import plot_kernel_density
 from eights.investigate.investigate import connect_sql
-from eights.investigate.investigate import convert_list_to_structured_array
-from eights.investigate.investigate import open_csv, describe_cols, open_csv_list,convert_list_to_structured_array_wrap, print_crosstab
+from eights.investigate.investigate import cast_list_of_list_to_sa
+from eights.investigate.investigate import open_csv, describe_cols, open_csv_list,cast_list_of_list_to_sa_wrap, print_crosstab
 
 import utils_for_tests as utils
 
@@ -39,13 +39,13 @@ class TestInvestigate(unittest.TestCase):
         self.assertTrue(np.array_equal(describe_cols(test_sa),correct))           
 
     #4
-    def test_convert_list_to_structured_array_wrap(self):
+    def test_cast_list_of_list_to_sa_wrap(self):
         test = [[1,2.,'a'],[2,4.,'b'],[4,5.,'g']]
         names = ['ints','floats','strings']
         correct_1 = np.array([(1, 2.0, 'a'), (2, 4.0, 'b'), (4, 5.0, 'g')],dtype=[('f0', '<i8'), ('f1', '<f8'), ('f2', 'S1')])
         correct_2 = np.array([(1, 2.0, 'a'), (2, 4.0, 'b'), (4, 5.0, 'g')], dtype=[('ints', '<i8'), ('floats', '<f8'), ('strings', 'S1')])
-        self.assertTrue(np.array_equal(correct_1, convert_list_to_structured_array_wrap(test)))
-        self.assertTrue(np.array_equal(correct_2, convert_list_to_structured_array_wrap(test, names)))
+        self.assertTrue(np.array_equal(correct_1, cast_list_of_list_to_sa_wrap(test)))
+        self.assertTrue(np.array_equal(correct_2, cast_list_of_list_to_sa_wrap(test, names)))
 
     #5
     def test_print_crosstab(self):
@@ -59,7 +59,7 @@ class TestInvestigate(unittest.TestCase):
         fig = plot_correlation_scatter_plot(data, verbose=False) 
         
 
-    def test_convert_list_to_structured_array(self):
+    def test_cast_list_of_list_to_sa(self):
         L = [[None, None, None],
              ['a',  5,    None],
              ['ab', 'x',  None]]
@@ -70,7 +70,7 @@ class TestInvestigate(unittest.TestCase):
                 dtype=[('f0', 'S2'),
                        ('f1', 'S1'),
                        ('f2', 'S1')])
-        conv = convert_list_to_structured_array(L)
+        conv = cast_list_of_list_to_sa(L)
         self.assertTrue(np.array_equal(conv, ctrl))                 
         L = [[None, u'\u05dd\u05d5\u05dc\u05e9', 4.0, 7],
              [2, 'hello', np.nan, None],
@@ -81,7 +81,7 @@ class TestInvestigate(unittest.TestCase):
                  (4, u'', np.nan, 14L)],
                 dtype=[('int', int), ('ucode', 'U5'), ('float', float),
                        ('long', long)])
-        conv = convert_list_to_structured_array(
+        conv = cast_list_of_list_to_sa(
                 L, 
                 col_names=['int', 'ucode', 'float', 'long'])
 
