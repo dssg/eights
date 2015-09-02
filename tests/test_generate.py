@@ -6,7 +6,8 @@ import eights.utils
 from eights.generate import generate_bin
 from eights.generate import normalize
 from eights.generate import distance_from_point
-
+from eights.generate import where_all_are_true, val_eq, val_lt, val_between
+from eights.generate import combine_sum, combine_mean, combine_cols
 
 class TestGenerate(unittest.TestCase):
 
@@ -25,14 +26,14 @@ class TestGenerate(unittest.TestCase):
         lables= [0,0,1]
         M = eights.utils.cast_list_of_list_to_sa(
             M,
-            names=col_names)
+            col_names=col_names)
 
-        arguments = [{'func': gen.val_eq, 'col_name': 'heigh', 'vals': 1},
-                     {'func': gen.val_lt, 'col_name': 'weight', 'vals': 3},
-                     {'func': gen.val_between, 'col_name': 'age', 'vals': 
+        arguments = [{'func': val_eq, 'col_name': 'heigh', 'vals': 1},
+                     {'func': val_lt, 'col_name': 'weight', 'vals': 3},
+                     {'func': val_between, 'col_name': 'age', 'vals': 
                       (3, 4)}]
 
-        res = eights.generate.where_all_are_true(
+        res = where_all_are_true(
             M, 
             arguments,
             'eq_to_stuff')
@@ -51,8 +52,8 @@ class TestGenerate(unittest.TestCase):
                 [(0, 1, 2, 1, 1.5), (3, 4, 5, 7, 4.5), (6, 7, 8, 13, 7.5)], 
                 dtype=[('f0', float), ('f1', float), ('f2', float), 
                        ('sum', float), ('avg', float)])
-        M = gen.combine_cols(M, gen.combine_sum, ('f0', 'f1'), 'sum')
-        M = gen.combine_cols(M, gen.combine_mean, ('f1', 'f2'), 'avg')
+        M = combine_cols(M, combine_sum, ('f0', 'f1'), 'sum')
+        M = combine_cols(M, combine_mean, ('f1', 'f2'), 'avg')
         self.assertTrue(np.array_equal(M, ctrl))
 
     def test_normalize(self):
@@ -78,6 +79,7 @@ class TestGenerate(unittest.TestCase):
         # (Rounds to nearest km)
         ctrl = np.array([5837, 8215, 3331])
         res = distance_from_point(lat_origin, lng_origin, lat_col, lng_col)
+
         # get it right within 1km
         self.assertTrue(np.allclose(ctrl, res, atol=1, rtol=0))
 
