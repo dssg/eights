@@ -20,7 +20,7 @@ M = inv.cast_np_nd_to_sa(M)
 
 for x in inv.describe_cols(M): print x
 
-plot = False
+plot = True
 if plot:
     inv.plot_correlation_scatter_plot(M) #this is stange
     inv.plot_correlation_matrix(M)

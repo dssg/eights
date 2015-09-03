@@ -115,6 +115,29 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
         )
     exp.make_report(report_file)
     return exp
+    
+def run_alt_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'):
+    if clfs is None:
+        clfs = [{'clf': RidgeClassifier, 'tol':[1e-2], 'solver':['lsqr']},
+                {'clf': SGDClassifier, 'alpha':[.0001], 'n_iter':[50],'penalty':['l1', 'l2', 'elasticnet'])},
+                {'clf': Perceptron, 'n_iter':[50])},
+                {'clf': PassiveAggressiveClassifier, 'n_iter':[50]},
+                {'clf': BernoulliNB, 'alpha':[.01]},
+                {'clf': MultinomialNB, 'alpha':[.01]},
+                {'clf': KNeighborsClassifier, 'n_neighbors':[10]},
+                {'clf': NearestCentroid}]
+    if cvs == None:
+        cvs = [{'cv': StratifiedKFold}]
+    exp = Experiment(
+        M, 
+        labels, 
+        clfs=clfs,
+        cvs = cvs
+        )
+    exp.make_report(report_file)
+    return exp    
+
+    
 
 def load_csv_simple_rf_cv(csv_loc, label_col=0):
     """ load from csv, run random forest crossvalidated.
