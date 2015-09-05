@@ -1,5 +1,6 @@
 import unittest
 from eights import utils
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ class TestUtils(unittest.TestCase):
 
     def test_utf_to_ascii(self):
         s = u'\u03BBf.(\u03BBx.f(x x)) (\u05DC.f(x x))'
-        ctrl = 'f.(x.f(x x)) (.f(x x))'
+        ctrl = '?f.(?x.f(x x)) (?.f(x x))'
         res = utils.utf_to_ascii(s)
         self.assertTrue(isinstance(res, str))
         self.assertEqual(ctrl, res)
@@ -33,8 +34,19 @@ class TestUtils(unittest.TestCase):
                   ('2012', False), # Just a number
                   ('a', False), # dateutil interprets this as now
                  ]
+        
         for (s, ctrl) in trials:
             self.assertEqual(utils.validate_time(s), ctrl)
+
+    def test_str_to_time(self):
+        trials = [('2014-12-12', datetime(2014, 12, 12)),
+                  ('1/2/1999 8:23PM', datetime(1999, 1, 2, 20, 23)),
+                  ('1988-08-15T13:43:01.123', 
+                   datetime(1988, 8, 15, 13, 43, 1, 123000)),
+                 ]
+
+        for (s, ctrl) in trials:
+            self.assertEqual(utils.str_to_time(s), ctrl)
 
     def test_join(self):
         # test basic inner join

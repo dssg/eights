@@ -10,7 +10,7 @@ NOT_A_TIME = np.datetime64('NaT')
 def utf_to_ascii(s):
     # http://stackoverflow.com/questions/4299675/python-script-to-convert-from-utf-8-to-ascii
     if isinstance(s, unicode):
-        return s.encode('ascii', 'ignore')
+        return s.encode('ascii', 'replace')
     return s
 
 @np.vectorize
