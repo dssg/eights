@@ -17,6 +17,14 @@ class TestUtils(unittest.TestCase):
         sa2_set = {tuple(row) for row in sa2_reordered}
         self.assertEqual(sa1_set, sa2_set)
 
+
+    def test_utf_to_ascii(self):
+        s = u'\u03BBf.(\u03BBx.f(x x)) (\u05DC.f(x x))'
+        ctrl = 'f.(x.f(x x)) (.f(x x))'
+        res = utils.utf_to_ascii(s)
+        self.assertTrue(isinstance(res, str))
+        self.assertEqual(ctrl, res)
+
     def test_join(self):
         # test basic inner join
         a1 = np.array([(0, 'Lisa', 2),

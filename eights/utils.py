@@ -8,8 +8,9 @@ from dateutil.parser import parse
 NOT_A_TIME = np.datetime64('NaT')
 
 def utf_to_ascii(s):
+    # http://stackoverflow.com/questions/4299675/python-script-to-convert-from-utf-8-to-ascii
     if isinstance(s, unicode):
-        return s.encode('utf-8')
+        return s.encode('ascii', 'ignore')
     return s
 
 @np.vectorize
