@@ -117,10 +117,6 @@ class TestUtils(unittest.TestCase):
                         dtype=[('i0', 'S5'), ('i1', float), ('i2', 'M8[us]'),
                                ('i3', 'M8[us]')])
         res = utils.convert_to_sa(lol, col_names = ['i0', 'i1', 'i2', 'i3'])
-        print ctrl
-        print ctrl.dtype
-        print res
-        print res.dtype
         self.assertTrue(utils_for_tests.array_equal(ctrl, res))
 
 

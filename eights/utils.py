@@ -45,6 +45,8 @@ def __datetime_clean(cell):
     # Because, unlike primitives, we can't cast random objects to datetimes
     if isinstance(cell, datetime):
         return cell
+    if isinstance(cell, basestring):
+        return str_to_time(cell)
     return NOT_A_TIME
 
 CLEAN_FUNCTIONS = {type(None): lambda cell: '',
