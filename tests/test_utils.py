@@ -156,9 +156,7 @@ class TestUtils(unittest.TestCase):
         sa = np.array([(-1.0, 2.0, -1.0), (0.0, -1.0, 2.0)], dtype=dtype)
         control = np.array([[-1.0, 2.0, -1.0], [0.0, -1.0, 2.0]],
                            dtype=float)
-        (result, sa_dtype) = utils.cast_np_sa_to_nd(sa)
-        self.assertEqual(dtype, sa_dtype)
-        self.assertEqual(control.dtype, result.dtype)
+        result = utils.cast_np_sa_to_nd(sa)
         self.assertTrue(np.array_equal(result, control))
 
     def test_is_sa(self):
@@ -215,47 +213,50 @@ class TestUtils(unittest.TestCase):
         dtype = [('id', int), ('name', 'S1')]
         M1 = np.array([(1, 'a'), (2, 'b')], dtype=dtype)
         M2 = np.array([(3, 'c'), (4, 'd'), (5, 'e')], dtype=dtype)
-        ctrl = np.array([(1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'), (5, 'e')])
+        ctrl = np.array([(1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'), (5, 'e')],
+                        dtype=dtype)
         res = utils.stack_rows(M1, M2)
         self.assertTrue(np.array_equal(ctrl, res))
 
     def test_from_cols(self):
         col1 = np.array([1, 2, 3])
         col2 = np.array([4.0, 5.0, 6.0])
-        ctrl = np.array([(1, 4.0), (2, 5.0), (3, 6.0)], dtype=[('f0'), ('f1')])
+        ctrl = np.array(
+            [(1, 4.0), (2, 5.0), (3, 6.0)], 
+            dtype=[('f0', int), ('f1', float)])
         res = utils.sa_from_cols([col1, col2])
         self.assertTrue(np.array_equal(ctrl, res))
 
     def test_append_cols(self):
         M = np.array([(1, 'a'), (2, 'b')], dtype=[('int', int), ('str', 'S1')])
         col1 = np.array([1.0, 2.0])
-        col2 = np.array([np.datetime(2015, 12, 12), np.datetime(2015, 12, 13)],
+        col2 = np.array([datetime(2015, 12, 12), datetime(2015, 12, 13)],
                         dtype='M8[us]')
         
         ctrl = np.array(
             [(1, 'a', 1.0), (2, 'b', 2.0)], 
-            dtype=[('int', int), ('str', 'S0'), ('float', float)])
-        res = utils.append_cols(M, col_1, 'float')
+            dtype=[('int', int), ('str', 'S1'), ('float', float)])
+        res = utils.append_cols(M, col1, 'float')
         self.assertTrue(np.array_equal(ctrl, res))
 
         ctrl = np.array(
-            [(1, 'a', 1.0, np.datetime(2015, 12, 12)), 
-             (2, 'b', 2.0, np.datetime(2015, 12, 13))], 
-            dtype=[('int', int), ('str', 'S0'), ('float', float),
+            [(1, 'a', 1.0, datetime(2015, 12, 12)), 
+             (2, 'b', 2.0, datetime(2015, 12, 13))], 
+            dtype=[('int', int), ('str', 'S1'), ('float', float),
                    ('dt', 'M8[us]')])
-        res = utils.append_cols(M, [col_1, col_2], ['float', 'dt'])
+        res = utils.append_cols(M, [col1, col2], ['float', 'dt'])
         self.assertTrue(np.array_equal(ctrl, res))
 
     def test_remove_cols(self):
         M = np.array(
-            [(1, 'a', 1.0, np.datetime(2015, 12, 12)), 
-             (2, 'b', 2.0, np.datetime(2015, 12, 13))], 
-            dtype=[('int', int), ('str', 'S0'), ('float', float),
+            [(1, 'a', 1.0, datetime(2015, 12, 12)), 
+             (2, 'b', 2.0, datetime(2015, 12, 13))], 
+            dtype=[('int', int), ('str', 'S1'), ('float', float),
                    ('dt', 'M8[us]')])
 
         ctrl = np.array(
             [(1, 'a', 1.0), (2, 'b', 2.0)], 
-            dtype=[('int', int), ('str', 'S0'), ('float', float)])
+            dtype=[('int', int), ('str', 'S1'), ('float', float)])
         res = utils.remove_cols(M, 'dt')
         self.assertTrue(np.array_equal(ctrl, res))
 
