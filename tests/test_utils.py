@@ -119,6 +119,55 @@ class TestUtils(unittest.TestCase):
         res = utils.convert_to_sa(lol, col_names = ['i0', 'i1', 'i2', 'i3'])
         self.assertTrue(utils_for_tests.array_equal(ctrl, res))
 
+    def test_np_dtype_is_homogeneous(self):
+        sa = np.array([(1, 'a', 2)], dtype=[('f0', int), ('f1', 'S1'), 
+                                            ('f2', int)])
+        self.assertFalse(utils.np_dtype_is_homogeneous(sa))
+
+        sa = np.array([('aa', 'a')], dtype=[('f0', 'S2'), ('f1', 'S1')])
+        self.assertFalse(utils.np_dtype_is_homogeneous(sa))
+
+        sa = np.array([(1, 2, 3)], dtype=[('f0', int), ('f1', int),
+                                          ('f2', int)])
+        self.assertTrue(utils.np_dtype_is_homogeneous(sa))
+
+
+    def test_nd_to_sa_w_type(self):
+        nd = np.array([[1, 2, 3], [4, 5, 6]], dtype=int)
+        dtype = np.dtype({'names': map('f{}'.format, xrange(3)),
+                          'formats': [int] * 3})
+        control = np.array([(1, 2, 3), (4, 5, 6)], dtype=dtype)
+        result = utils.cast_np_nd_to_sa(nd, dtype)
+        self.assertEqual(control.dtype, result.dtype)
+        self.assertTrue(np.array_equal(result, control))
+
+    def test_nd_to_sa_no_type(self):
+        nd = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=float)
+        dtype = np.dtype({'names': map('f{}'.format, xrange(3)),
+                          'formats': [float] * 3})
+        control = np.array([(1.0, 2.0, 3.0), (4.0, 5.0, 6.0)], dtype=dtype)
+        result = utils.cast_np_nd_to_sa(nd)
+        self.assertEqual(control.dtype, result.dtype)
+        self.assertTrue(np.array_equal(result, control))
+
+    def test_sa_to_nd(self):
+        dtype = np.dtype({'names': map('f{}'.format, xrange(3)),
+                          'formats': [float] * 3})
+        sa = np.array([(-1.0, 2.0, -1.0), (0.0, -1.0, 2.0)], dtype=dtype)
+        control = np.array([[-1.0, 2.0, -1.0], [0.0, -1.0, 2.0]],
+                           dtype=float)
+        (result, sa_dtype) = utils.cast_np_sa_to_nd(sa)
+        self.assertEqual(dtype, sa_dtype)
+        self.assertEqual(control.dtype, result.dtype)
+        self.assertTrue(np.array_equal(result, control))
+
+    def test_is_sa(self):
+        nd = np.array([[1, 2, 3], [4, 5, 6]], dtype=int)
+        dtype = np.dtype({'names': map('f{}'.format, xrange(3)),
+                          'formats': [float] * 3})
+        sa = np.array([(-1.0, 2.0, -1.0), (0.0, -1.0, 2.0)], dtype=dtype)
+        self.assertFalse(utils.is_sa(nd))
+        self.assertTrue(utils.is_sa(sa))
 
     def test_join(self):
         # test basic inner join
