@@ -1,5 +1,6 @@
 import unittest
 from eights import utils
+import utils_for_tests
 from datetime import datetime
 
 import numpy as np
@@ -47,6 +48,33 @@ class TestUtils(unittest.TestCase):
 
         for (s, ctrl) in trials:
             self.assertEqual(utils.str_to_time(s), ctrl)
+
+    def test_cast_list_of_list_to_sa(self):
+        L = [[None, None, None],
+             ['a',  5,    None],
+             ['ab', 'x',  None]]
+        ctrl = np.array(
+                [('', '', ''), 
+                 ('a', '5', ''),
+                 ('ab', 'x', '')],
+                dtype=[('f0', 'S2'),
+                       ('f1', 'S1'),
+                       ('f2', 'S1')])
+        conv = utils.cast_list_of_list_to_sa(L)
+        self.assertTrue(np.array_equal(conv, ctrl))                 
+        L = [[None, u'\u05dd\u05d5\u05dc\u05e9', 4.0, 7],
+             [2, 'hello', np.nan, None],
+             [4, None, None, 14L]]
+        ctrl = np.array(
+                [(-999, u'\u05dd\u05d5\u05dc\u05e9', 4.0, 7),
+                 (2, u'hello', np.nan, -999L),
+                 (4, u'', np.nan, 14L)],
+                dtype=[('int', int), ('ucode', 'U5'), ('float', float),
+                       ('long', long)])
+        conv = utils.cast_list_of_list_to_sa(
+                L, 
+                col_names=['int', 'ucode', 'float', 'long'])
+        self.assertTrue(utils_for_tests.array_equal(ctrl, conv))
 
     def test_join(self):
         # test basic inner join
