@@ -25,6 +25,17 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(isinstance(res, str))
         self.assertEqual(ctrl, res)
 
+    def test_validate_time(self):
+        trials = [('2014-12-12', True),
+                  ('1/2/1999 8:23PM', True),
+                  ('1988-08-15T13:43:01.123', True),
+                  ('2014-14-12', False), # invalid month
+                  ('2012', False), # Just a number
+                  ('a', False), # dateutil interprets this as now
+                 ]
+        for (s, ctrl) in trials:
+            self.assertEqual(utils.validate_time(s), ctrl)
+
     def test_join(self):
         # test basic inner join
         a1 = np.array([(0, 'Lisa', 2),
