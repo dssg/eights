@@ -5,33 +5,24 @@ import itertools as it
 from datetime import datetime
 from dateutil.parser import parse
 
+NOT_A_TIME = np.datetime64('NaT')
+
+def utf_to_ascii(s):
+    # http://stackoverflow.com/questions/4299675/python-script-to-convert-from-utf-8-to-ascii
+    if isinstance(s, unicode):
+        return s.encode('ascii', 'replace')
+    return s
+
 @np.vectorize
 def validate_time(date_text):
-    # TODO __str_to_datetime does this differently
-    if not date_text:
-        return False
-    try:
-        np.datetime64(date_text)
-        return True
-    except ValueError:
-        return False
-
+    return __str_to_datetime(date_text) != NOT_A_TIME
 
 def str_to_time(date_text):
-    try:
-        return np.datetime64(date_text)
-    except ValueError:
-        return np.datetime64('NaT')    
+    return __str_to_datetime(date_text)
 
 def invert_dictionary(aDict):
     return {v: k for k, v in aDict.items()}
 
-def utf_to_ascii(s):
-    if isinstance(s, unicode):
-        return s.encode('utf-8')
-    return s
-
-NOT_A_TIME = np.datetime64('NaT')
 
 TYPE_PRECEDENCE = {type(None): 0, 
                    bool: 100,
@@ -54,6 +45,8 @@ def __datetime_clean(cell):
     # Because, unlike primitives, we can't cast random objects to datetimes
     if isinstance(cell, datetime):
         return cell
+    if isinstance(cell, basestring):
+        return str_to_time(cell)
     return NOT_A_TIME
 
 CLEAN_FUNCTIONS = {type(None): lambda cell: '',
@@ -145,6 +138,10 @@ def convert_to_sa(M, col_names=None):
     ----------
     M  : List of List or np.ndarray
        This is the Matrix M, that it is assumed is the basis for the ML algorithm
+    col_names : list of str or None
+        Column names for new sa. If M is already a structured array, col_names
+        will be ignored. If M is not a structured array and col_names is None,
+        names will be generated
 
     Returns
     -------
@@ -180,7 +177,6 @@ def np_dtype_is_homogeneous(A):
 
 def cast_np_nd_to_sa(nd, dtype=None, names=None):
     """
-    
     Returns a view of a numpy, single-type, 0, 1 or 2-dimensional array as a
     structured array
     Parameters
@@ -296,22 +292,11 @@ def is_sa(M):
 def is_nd(M):
     return isinstance(M, np.ndarray)
 
-def get_type(d):
-    #assumes everything identical structure
-    if type(d) == list:
-        return 'list'
-    elif type(d)== np.ndarray:
-        if is_sa(d):
-            return 'sa'
-        elif len(d.shape)==1:
-            return
-    return
-
-
-def stack_rows(M1, M2):
-    raise NotImplementedError
+def stack_rows(*args):
+    return nprf.stack_arrays(args, usemask=False)
 
 def sa_from_cols(cols):
+    # TODO take col names
     return nprf.merge_arrays(cols, usemask=False)    
 
 def append_cols(M, cols, names):
@@ -336,10 +321,12 @@ def __fill_by_descr(s):
     raise ValueError('Unrecognized description {}'.format(s))
 
 def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
-    # approximates Pandas DataFrame.merge
-    # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
-    # implements a hash join 
-    # http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
+    """
+    approximates Pandas DataFrame.merge
+    http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
+    implements a hash join 
+    http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
+    """
 
     # left_on and right_on can both be strings or lists
     if isinstance(left_on, basestring):
@@ -410,7 +397,7 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
     rows_new_table = []
     right_col = right[right_on[0]]
     # keep track of used left rows so we can include all the rows if we're
-    # doint a left or outer join
+    # doing a left or outer join
     left_rows_used = set()
     # Iterate through every row in the right table
     for right_idx, right_cell in enumerate(right_col):

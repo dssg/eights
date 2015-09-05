@@ -66,7 +66,7 @@ class TestGenerate(unittest.TestCase):
         self.assertTrue(np.allclose(res, (col - mean) / stddev))
 
     def test_distance_from_point(self):
-        # Coords according to Wikipedia
+        # Coords according to https://tools.wmflabs.org/geohack/ 
         # Paris
         lat_origin = 48.8567
         lng_origin = 2.3508

@@ -119,8 +119,8 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
 def run_alt_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'):
     if clfs is None:
         clfs = [{'clf': RidgeClassifier, 'tol':[1e-2], 'solver':['lsqr']},
-                {'clf': SGDClassifier, 'alpha':[.0001], 'n_iter':[50],'penalty':['l1', 'l2', 'elasticnet'])},
-                {'clf': Perceptron, 'n_iter':[50])},
+                {'clf': SGDClassifier, 'alpha':[.0001], 'n_iter':[50],'penalty':['l1', 'l2', 'elasticnet']},
+                {'clf': Perceptron, 'n_iter':[50]},
                 {'clf': PassiveAggressiveClassifier, 'n_iter':[50]},
                 {'clf': BernoulliNB, 'alpha':[.01]},
                 {'clf': MultinomialNB, 'alpha':[.01]},
