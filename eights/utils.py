@@ -14,7 +14,7 @@ def utf_to_ascii(s):
 
 @np.vectorize
 def validate_time(date_text):
-    return __str_to_datetime(date_text) !+ NOT_A_TIME
+    return __str_to_datetime(date_text) != NOT_A_TIME
 
 def str_to_time(date_text):
     return __str_to_datetime(date_text)
