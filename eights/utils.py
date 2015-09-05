@@ -136,6 +136,10 @@ def convert_to_sa(M, col_names=None):
     ----------
     M  : List of List or np.ndarray
        This is the Matrix M, that it is assumed is the basis for the ML algorithm
+    col_names : list of str or None
+        Column names for new sa. If M is already a structured array, col_names
+        will be ignored. If M is not a structured array and col_names is None,
+        names will be generated
 
     Returns
     -------

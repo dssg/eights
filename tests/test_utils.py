@@ -76,6 +76,54 @@ class TestUtils(unittest.TestCase):
                 col_names=['int', 'ucode', 'float', 'long'])
         self.assertTrue(utils_for_tests.array_equal(ctrl, conv))
 
+    def test_convert_to_sa(self):
+        # already a structured array
+        sa = np.array([(1, 1.0, 'a', datetime(2015, 01, 01)),
+                       (2, 2.0, 'b', datetime(2016, 01, 01))],
+                      dtype=[('int', int), ('float', float), ('str', 'S1'),
+                             ('date', 'M8[s]')])
+        self.assertTrue(np.array_equal(sa, utils.convert_to_sa(sa)))
+
+        # homogeneous array no col names provided
+        nd = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        ctrl = np.array([(1, 2, 3), (4, 5, 6), (7, 8, 9)],
+                        dtype=[('f0', int), ('f1', int), ('f2', int)])
+        self.assertTrue(np.array_equal(ctrl, utils.convert_to_sa(nd)))
+
+        # homogeneous array with col names provided
+        nd = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        ctrl = np.array([(1, 2, 3), (4, 5, 6), (7, 8, 9)],
+                        dtype=[('i0', int), ('i1', int), ('i2', int)])
+        self.assertTrue(np.array_equal(ctrl, utils.convert_to_sa(
+            nd,
+            col_names=['i0', 'i1', 'i2'])))
+
+        # list of lists no col name provided
+        lol = [[1, 1, None],
+               ['abc', 2, 3.4]]
+        ctrl = np.array([('1', 1, np.nan),
+                         ('abc', 2, 3.4)],
+                        dtype=[('f0', 'S3'), ('f1', int), ('f2', float)])
+        res = utils.convert_to_sa(lol)
+        self.assertTrue(utils_for_tests.array_equal(ctrl, res))
+
+        # list of lists with col name provided
+        lol = [['hello', 1.2, datetime(2012, 1, 1), None],
+               [1.3, np.nan, None, '2013-01-01'],
+               [1.4, 1.5, '2014-01-01', 'NO_SUCH_RECORD']]
+        ctrl = np.array([('hello', 1.2, datetime(2012, 1, 1), utils.NOT_A_TIME),
+                         ('1.3', np.nan, utils.NOT_A_TIME, datetime(2013, 1, 1)),
+                         ('1.4', 1.5, datetime(2014, 1, 1), utils.NOT_A_TIME)],
+                        dtype=[('i0', 'S5'), ('i1', float), ('i2', 'M8[us]'),
+                               ('i3', 'M8[us]')])
+        res = utils.convert_to_sa(lol, col_names = ['i0', 'i1', 'i2', 'i3'])
+        print ctrl
+        print ctrl.dtype
+        print res
+        print res.dtype
+        self.assertTrue(utils_for_tests.array_equal(ctrl, res))
+
+
     def test_join(self):
         # test basic inner join
         a1 = np.array([(0, 'Lisa', 2),
