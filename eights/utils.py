@@ -5,33 +5,23 @@ import itertools as it
 from datetime import datetime
 from dateutil.parser import parse
 
-@np.vectorize
-def validate_time(date_text):
-    # TODO __str_to_datetime does this differently
-    if not date_text:
-        return False
-    try:
-        np.datetime64(date_text)
-        return True
-    except ValueError:
-        return False
-
-
-def str_to_time(date_text):
-    try:
-        return np.datetime64(date_text)
-    except ValueError:
-        return np.datetime64('NaT')    
-
-def invert_dictionary(aDict):
-    return {v: k for k, v in aDict.items()}
+NOT_A_TIME = np.datetime64('NaT')
 
 def utf_to_ascii(s):
     if isinstance(s, unicode):
         return s.encode('utf-8')
     return s
 
-NOT_A_TIME = np.datetime64('NaT')
+@np.vectorize
+def validate_time(date_text):
+    return __str_to_datetime(date_text) !+ NOT_A_TIME
+
+def str_to_time(date_text):
+    return __str_to_datetime(date_text)
+
+def invert_dictionary(aDict):
+    return {v: k for k, v in aDict.items()}
+
 
 TYPE_PRECEDENCE = {type(None): 0, 
                    bool: 100,
@@ -180,7 +170,6 @@ def np_dtype_is_homogeneous(A):
 
 def cast_np_nd_to_sa(nd, dtype=None, names=None):
     """
-    
     Returns a view of a numpy, single-type, 0, 1 or 2-dimensional array as a
     structured array
     Parameters
@@ -336,10 +325,12 @@ def __fill_by_descr(s):
     raise ValueError('Unrecognized description {}'.format(s))
 
 def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
-    # approximates Pandas DataFrame.merge
-    # http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
-    # implements a hash join 
-    # http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
+    """
+    approximates Pandas DataFrame.merge
+    http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.merge.html
+    implements a hash join 
+    http://blogs.msdn.com/b/craigfr/archive/2006/08/10/687630.aspx
+    """
 
     # left_on and right_on can both be strings or lists
     if isinstance(left_on, basestring):
@@ -410,7 +401,7 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
     rows_new_table = []
     right_col = right[right_on[0]]
     # keep track of used left rows so we can include all the rows if we're
-    # doint a left or outer join
+    # doing a left or outer join
     left_rows_used = set()
     # Iterate through every row in the right table
     for right_idx, right_cell in enumerate(right_col):

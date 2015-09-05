@@ -1,16 +1,10 @@
 import unittest
-import utils_for_tests
 from eights import utils
 
 import numpy as np
 import pandas as pd
 
 class TestUtils(unittest.TestCase):
-    def test_generate_matrix(self):
-        M, y = utils_for_tests.generate_test_matrix(100, 5, 3, [float, str, int])
-        print M
-        print y
-
     def __sa_check(self, sa1, sa2):
         # This works even if both rows and columns are in different
         # orders in the two arrays
