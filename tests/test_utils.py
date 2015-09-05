@@ -169,6 +169,40 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(utils.is_sa(nd))
         self.assertTrue(utils.is_sa(sa))
 
+    def test_distance(self):
+        # Coords according to https://tools.wmflabs.org/geohack/ 
+        # Minneapolis
+        lat1 = 44.98
+        lng1 = -93.27
+        
+        # Chicago
+        lat2 = 41.84
+        lng2 = -87.68
+
+        # Sao Paulo
+        lat3 = -23.55
+        lng3 = -46.63
+
+        # distances from http://www.movable-type.co.uk/scripts/latlong.html
+        # (Rounds to nearest km)
+
+        self.assertTrue(np.allclose(utils.distance(lat1, lng1, lat2, lng2), 
+                                                   570.6, atol=1, rtol=0))
+        self.assertTrue(np.allclose(utils.distance(lat1, lng1, lat3, lng3), 
+                                                   8966, atol=1, rtol=0))
+
+    def test_dist_less_than(self):
+        # Minneapolis
+        lat1 = 44.98
+        lng1 = -93.27
+        
+        # Chicago
+        lat2 = 41.84
+        lng2 = -87.68
+        
+        self.assertTrue(utils.dist_less_than(lat1, lng1, lat2, lng2, 600))
+        self.assertFalse(utils.dist_less_than(lat1, lng1, lat2, lng2, 500))
+
     def test_join(self):
         # test basic inner join
         a1 = np.array([(0, 'Lisa', 2),
