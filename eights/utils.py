@@ -292,22 +292,11 @@ def is_sa(M):
 def is_nd(M):
     return isinstance(M, np.ndarray)
 
-def get_type(d):
-    #assumes everything identical structure
-    if type(d) == list:
-        return 'list'
-    elif type(d)== np.ndarray:
-        if is_sa(d):
-            return 'sa'
-        elif len(d.shape)==1:
-            return
-    return
-
-
-def stack_rows(M1, M2):
-    raise NotImplementedError
+def stack_rows(*args):
+    return nprf.stack_arrays(args, usemask=False)
 
 def sa_from_cols(cols):
+    # TODO take col names
     return nprf.merge_arrays(cols, usemask=False)    
 
 def append_cols(M, cols, names):

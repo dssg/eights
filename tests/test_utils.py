@@ -169,6 +169,14 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(utils.is_sa(nd))
         self.assertTrue(utils.is_sa(sa))
 
+    def test_is_nd(self):
+        nd = np.array([[1, 2, 3], [4, 5, 6]], dtype=int)
+        dtype = np.dtype({'names': map('f{}'.format, xrange(3)),
+                          'formats': [float] * 3})
+        sa = np.array([(-1.0, 2.0, -1.0), (0.0, -1.0, 2.0)], dtype=dtype)
+        self.assertTrue(utils.is_nd(nd))
+        self.assertTrue(utils.is_nd(sa))
+
     def test_distance(self):
         # Coords according to https://tools.wmflabs.org/geohack/ 
         # Minneapolis
@@ -202,6 +210,59 @@ class TestUtils(unittest.TestCase):
         
         self.assertTrue(utils.dist_less_than(lat1, lng1, lat2, lng2, 600))
         self.assertFalse(utils.dist_less_than(lat1, lng1, lat2, lng2, 500))
+
+    def test_stack_rows(self):
+        dtype = [('id', int), ('name', 'S1')]
+        M1 = np.array([(1, 'a'), (2, 'b')], dtype=dtype)
+        M2 = np.array([(3, 'c'), (4, 'd'), (5, 'e')], dtype=dtype)
+        ctrl = np.array([(1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'), (5, 'e')])
+        res = utils.stack_rows(M1, M2)
+        self.assertTrue(np.array_equal(ctrl, res))
+
+    def test_from_cols(self):
+        col1 = np.array([1, 2, 3])
+        col2 = np.array([4.0, 5.0, 6.0])
+        ctrl = np.array([(1, 4.0), (2, 5.0), (3, 6.0)], dtype=[('f0'), ('f1')])
+        res = utils.sa_from_cols([col1, col2])
+        self.assertTrue(np.array_equal(ctrl, res))
+
+    def test_append_cols(self):
+        M = np.array([(1, 'a'), (2, 'b')], dtype=[('int', int), ('str', 'S1')])
+        col1 = np.array([1.0, 2.0])
+        col2 = np.array([np.datetime(2015, 12, 12), np.datetime(2015, 12, 13)],
+                        dtype='M8[us]')
+        
+        ctrl = np.array(
+            [(1, 'a', 1.0), (2, 'b', 2.0)], 
+            dtype=[('int', int), ('str', 'S0'), ('float', float)])
+        res = utils.append_cols(M, col_1, 'float')
+        self.assertTrue(np.array_equal(ctrl, res))
+
+        ctrl = np.array(
+            [(1, 'a', 1.0, np.datetime(2015, 12, 12)), 
+             (2, 'b', 2.0, np.datetime(2015, 12, 13))], 
+            dtype=[('int', int), ('str', 'S0'), ('float', float),
+                   ('dt', 'M8[us]')])
+        res = utils.append_cols(M, [col_1, col_2], ['float', 'dt'])
+        self.assertTrue(np.array_equal(ctrl, res))
+
+    def test_remove_cols(self):
+        M = np.array(
+            [(1, 'a', 1.0, np.datetime(2015, 12, 12)), 
+             (2, 'b', 2.0, np.datetime(2015, 12, 13))], 
+            dtype=[('int', int), ('str', 'S0'), ('float', float),
+                   ('dt', 'M8[us]')])
+
+        ctrl = np.array(
+            [(1, 'a', 1.0), (2, 'b', 2.0)], 
+            dtype=[('int', int), ('str', 'S0'), ('float', float)])
+        res = utils.remove_cols(M, 'dt')
+        self.assertTrue(np.array_equal(ctrl, res))
+
+        ctrl = np.array([(1, 'a'), (2, 'b')], dtype=[('int', int), 
+                                                     ('str', 'S1')])
+        res = utils.remove_cols(M, ['dt', 'float'])        
+        self.assertTrue(np.array_equal(ctrl, res))
 
     def test_join(self):
         # test basic inner join
