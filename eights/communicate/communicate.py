@@ -16,21 +16,17 @@ import pdfkit
 from sklearn.metrics import roc_curve
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
-from ..utils import is_sa, cast_np_sa_to_nd
+from ..utils import is_sa, cast_np_sa_to_nd, convert_to_sa
 from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 from communicate_helper import _feature_pair_report
-from utils_for_tests import rerout_stdout
 
 
 def print_matrix_row_col(M, row_labels=None, col_labels=None):
+    M = convert_to_sa(M, col_names=col_labels)
     if row_labels is None:
-        #TODO here
-    if col_labels is None:
-        if is_sa(M):
-            col_labels = M.dtype.names
-        else:
-            col_labels = ['f{}'.format(i) for i in len(M)]
+        row_labels = xrange(M.shape[0])
+    col_labels = M.dtype.names
     # From http://stackoverflow.com/questions/9535954/python-printing-lists-as-tabular-data
     row_format ="{:>15}" * (len(col_labels) + 1)
     print row_format.format("", *col_labels)

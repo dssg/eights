@@ -1,11 +1,37 @@
 import unittest
+import eights.communicate as comm
 from eights.communicate.communicate import feature_pairs_in_tree
 from eights.communicate.communicate import feature_pairs_in_rf
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 from utils_for_tests import rerout_stdout
+import numpy as np
 
 class TestCommunicate(unittest.TestCase):
+    def test_print_matrix_row_col(self):
+        M = [(1, 2, 3), (4, 5, 6), (7, 8, 'STRING')]
+        ctrl = """
+                            f0             f1             f2
+              0              1              2              3
+              1              4              5              6
+              2              7              8         STRING
+        """.strip()
+        with rerout_stdout() as get_stdout:
+            comm.print_matrix_row_col(M)
+            self.assertEqual(get_stdout().strip(), ctrl)
+        M = np.array([(1000, 'Bill'), (2000, 'Sam'), (3000, 'James')],
+                     dtype=[('number', float), ('name', 'S5')])
+        row_labels = [name[0] for name in M['name']]
+        ctrl = """
+                        number           name
+              B         1000.0           Bill
+              S         2000.0            Sam
+              J         3000.0          James
+        """.strip()
+        with rerout_stdout() as get_stdout:
+            comm.print_matrix_row_col(M, row_labels=row_labels)
+            self.assertEqual(get_stdout().strip(), ctrl)
+
     def test_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
