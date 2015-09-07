@@ -20,9 +20,18 @@ from ..utils import is_sa, cast_np_sa_to_nd
 from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 from communicate_helper import _feature_pair_report
+from utils_for_tests import rerout_stdout
 
 
-def print_matrix_row_col(M, row_labels, col_labels):
+def print_matrix_row_col(M, row_labels=None, col_labels=None):
+    if row_labels is None:
+        #TODO here
+    if col_labels is None:
+        if is_sa(M):
+            col_labels = M.dtype.names
+        else:
+            col_labels = ['f{}'.format(i) for i in len(M)]
+    # From http://stackoverflow.com/questions/9535954/python-printing-lists-as-tabular-data
     row_format ="{:>15}" * (len(col_labels) + 1)
     print row_format.format("", *col_labels)
     for row_name, row in zip(row_labels, M):

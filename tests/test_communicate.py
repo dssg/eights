@@ -3,6 +3,7 @@ from eights.communicate.communicate import feature_pairs_in_tree
 from eights.communicate.communicate import feature_pairs_in_rf
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
+from utils_for_tests import rerout_stdout
 
 class TestCommunicate(unittest.TestCase):
     def test_feature_pairs_in_tree(self):
