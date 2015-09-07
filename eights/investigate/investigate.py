@@ -54,23 +54,33 @@ def cast_list_of_list_to_sa_wrap(L, col_names=None, dtype=None):
 # What is this supposed to do?
     return cast_list_of_list_to_sa(L, col_names, dtype)
 
-def print_crosstab(L_1, L_2, verbose=True):
-    """this prints a crosstab results
-    Parameters
-    ----------
-    temp : type
-       Description 
-    
-    Returns
-    -------
-    temp : type
-       Description
+def crosstab(col1, col2):
     """
-    #assume np.structured arrays?
-    crosstab_dict = crosstab(L_1, L_2)
-    if verbose:
-        print_crosstab_dict(crosstab_dict)
-    return crosstab_dict
+    Makes a crosstab of col1 and col2. This is represented as a
+    structured array with the following properties:
+
+    1. The first column is the value of col1 being crossed
+    2. The name of every column except the first is the value of col2 being
+       crossed
+    3. To find the number of cooccurences of x from col1 and y in col2,
+       find the row that has 'x' in col1 and the column named 'y'. The 
+       corresponding cell is the number of cooccurrences of x and y
+    """
+    col1 = np.array(col1)
+    col2 = np.array(col2)
+    col1_unique = np.unique(col1)
+    col2_unique = np.unique(col2)
+    crosstab_rows = []
+    for col1_val in col1_unique:
+        loc_col1_val = np.where(col1==col1_val)[0]
+        col2_vals = col2[loc_col1_val]
+        cnt = Counter(col2_vals)
+        counts = [cnt[col2_val] if cnt.has_key(col2_val) else 0 for col2_val 
+                  in col2_unique]
+        crosstab_rows.append(['{}'.format(col1_val)] + counts)
+    col_names = ['col1_value'] + ['{}'.format(col2_val) for col2_val in 
+                                  col2_unique]
+    return convert_to_sa(crosstab_rows, col_names=col_names)
 
 def connect_sql(con_str, allow_caching=False, cache_dir='.'):
     return SQLConnection(con_str, allow_caching, cache_dir)
