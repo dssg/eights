@@ -26,19 +26,25 @@ def invert_dictionary(aDict):
 
 TYPE_PRECEDENCE = {type(None): 0, 
                    bool: 100,
+                   np.bool_: 101,
                    int: 200, 
                    long: 300,
+                   np.int64: 301,
                    float: 400,
+                   np.float64: 401,
                    str: 500,
+                   np.string_: 501,
                    unicode: 600,
-                   datetime: 700}
+                   np.unicode_: 601,
+                   datetime: 700,
+                   np.datetime64: 701}
 
 def __primitive_clean(cell, expected_type, alt):
     if cell == None:
         return alt
     try:
         return expected_type(cell)
-    except TypeError:
+    except (TypeError, ValueError):
         return alt
 
 def __datetime_clean(cell):
@@ -49,17 +55,40 @@ def __datetime_clean(cell):
         return str_to_time(cell)
     return NOT_A_TIME
 
+def __datetime64_clean(cell):
+    try:
+        # Not dealing with resolution. Everythin is us
+        return np.datetime64(cell).astype('M8[us]')
+    except (TypeError, ValueError):
+        return NOT_A_TIME
+
+
 CLEAN_FUNCTIONS = {type(None): lambda cell: '',
                    bool: lambda cell: __primitive_clean(cell, bool, False),
+                   np.bool_: lambda cell: __primitive_clean(cell, np.bool_, 
+                                                            np.bool_(False)),
                    int: lambda cell: __primitive_clean(cell, int, -999),
                    long: lambda cell: __primitive_clean(cell, long, -999L),
+                   np.int64: lambda cell: __primitive_clean(cell, np.int64, 
+                                                            np.int64(-999L)),
                    float: lambda cell: __primitive_clean(cell, float, np.nan),
+                   np.float64: lambda cell: __primitive_clean(cell, np.float64, 
+                                                              np.nan),
                    str: lambda cell: __primitive_clean(cell, str, ''),
+                   np.string_: lambda cell: __primitive_clean(cell, np.string_,
+                                                              np.string_('')),
                    unicode: lambda cell: __primitive_clean(cell, unicode, u''),
-                   datetime: __datetime_clean}
+                   np.unicode_: lambda cell: __primitive_clean(
+                       cell, 
+                       np.unicode_,
+                       np.unicode_('')),
+                   datetime: __datetime_clean,
+                   np.datetime64: __datetime64_clean}
 
 STR_TYPE_LETTERS = {str: 'S',
-                    unicode: 'U'}
+                    np.string_: 'S',
+                    unicode: 'U',
+                    np.unicode_: 'U'}
 
 
 def __str_to_datetime(s):
@@ -98,13 +127,17 @@ def cast_list_of_list_to_sa(L, col_names=None, dtype=None):
             dom_type = type(max(
                 col, 
                 key=lambda cell: TYPE_PRECEDENCE[type(cell)]))
-            if dom_type in (bool, int, float, long, float):
+            if dom_type in (bool, np.bool_, int, long, np.int64, float, 
+                            np.float64):
                 dtypes.append(dom_type)
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
             elif dom_type == datetime:
                 dtypes.append('M8[us]')
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
-            elif dom_type in (str, unicode): 
+            if dom_type == np.datetime64:
+                dtypes.append('M8[us]')
+                cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
+            elif dom_type in (str, unicode, np.string_, np.unicode_): 
                 cleaned_col = map(CLEAN_FUNCTIONS[dom_type], col)
                 is_datetime, dt_col = __str_col_to_datetime(cleaned_col)
                 if is_datetime:

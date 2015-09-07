@@ -30,13 +30,17 @@ class TestInvestigate(unittest.TestCase):
 
     #3    
     def test_describe_cols(self):
-        test = np.array([[1],[2],[3],[4],[5],[6]])
-        test_list = np.array([1,2,3,4,5,6])
-        test_sa =np.array([(1,), (2,),(3,), (4,),(5,),(6,)],dtype=[('id', '<i8')])
-        correct = [{'Maximal:': 6, 'Standard Dev:': 1.707825127659933, 'Count:': 6, 'Mean:': 3.5, 'Minimal ': 1}]
-        self.assertTrue(np.array_equal(describe_cols(test),correct))
-        self.assertTrue(np.array_equal(describe_cols(test_list),correct))
-        self.assertTrue(np.array_equal(describe_cols(test_sa),correct))           
+        test_list = [[1, 2],[2, 3],[3, 4],[4, 5],[5, 6],[6, 7]]
+        test_nd = np.array(test_list)
+        test_sa =np.array([(1, 2, 'a'), (2, 3, 'b'), (3, 4, 'c'), (4, 5, 'd'), 
+                           (5, 6, 'e'), (6, 7, 'f')], 
+                          dtype=[('id', int), ('val', float), ('name', 'S1')])
+        ctrl_list = np.array([('f0', 6, 3.5, 1.707825127659933, 1, 6),
+                              ('f1', 6, 4.5, 1.707825127659933, 2, 7)],
+                             dtype=[('Column Name', 'S2'), ('Count', int),
+                                    ('Mean', float), ('Standard Dev', float),
+                                    ('Minimum', int), ('Maximum', int)])
+        print describe_cols(test_list)
 
     #4
     def test_cast_list_of_list_to_sa_wrap(self):

@@ -24,6 +24,14 @@ def open_csv(file_loc, delimiter=','):
     # opens csv as a structured array
     return open_csv_as_structured_array(file_loc, delimiter)
 
+__describe_cols_metrics = [('Count', len),
+                           ('Mean', np.mean),
+                           ('Standard Dev', np.std),
+                           ('Minimum', min),
+                           ('Maximum', max)]
+
+__describe_cols_fill = [np.nan] * len(__describe_cols_metrics)
+
 def describe_cols(M):
     """takes a SA or list of Np.rayas and returns the summary statistcs
     Parameters
@@ -37,16 +45,19 @@ def describe_cols(M):
        Description
        
     """ 
-           
-    #remove the [] if only one?
-    if is_sa(M):
-        #then its a structured array
-        return [describe_column(M[x]) for x in M.dtype.names]
-    elif len(M.shape)==1: #intented to solve np.array([1,2,3]) data
-        return [describe_column(M)] 
-    else:
-        #then its a list of np.arrays
-        return [describe_column(M[:,x]) for x in range(M.shape[1])]
+    M = convert_to_sa(M)           
+    descr_rows = []
+    for col_name, col_type in M.dtype.descr:
+        if 'f' in col_type or 'i' in col_type:
+            col = M[col_name]
+            row = [col_name] + [func(col) for _, func in 
+                                __describe_cols_metrics]
+        else:
+            row = [col_name] + __describe_cols_fill
+        descr_rows.append(row)
+    col_names = ['Column Name'] + [col_name for col_name, _ in 
+                                   __describe_cols_metrics]
+    return convert_to_sa(descr_rows, col_names=col_names)
 
 
 
