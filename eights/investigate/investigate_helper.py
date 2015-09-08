@@ -94,18 +94,6 @@ def describe_column(col):
     mx = max(col)
     return {'Count:' : cnt,'Mean:': mean, 'Standard Dev:': std, 'Minimal ': mi,'Maximal:': mx}
 
-def crosstab(L_1, L_2):
-    #is this nessasry?
-    L_1 = np.array(L_1)
-    L_2 = np.array(L_2)
-    K_1 = np.unique(L_1)
-    a_dict = {}
-    for k in K_1:
-        loc_k = np.where(np.array(L_1)==k)[0]
-        tmp_list = L_2[loc_k]
-        cnt = Counter(tmp_list)
-        a_dict[k] = cnt
-    return a_dict
 
 
 class SQLConnection(object):

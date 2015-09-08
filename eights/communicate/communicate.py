@@ -16,32 +16,23 @@ import pdfkit
 from sklearn.metrics import roc_curve
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
-from ..utils import is_sa, cast_np_sa_to_nd
+from ..utils import is_sa, cast_np_sa_to_nd, convert_to_sa
 from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 from communicate_helper import _feature_pair_report
 
 
-def print_matrix_row_col(M, row_labels, col_labels):
+def print_matrix_row_col(M, row_labels=None, col_labels=None):
+    M = convert_to_sa(M, col_names=col_labels)
+    if row_labels is None:
+        row_labels = xrange(M.shape[0])
+    col_labels = M.dtype.names
+    # From http://stackoverflow.com/questions/9535954/python-printing-lists-as-tabular-data
     row_format ="{:>15}" * (len(col_labels) + 1)
     print row_format.format("", *col_labels)
     for row_name, row in zip(row_labels, M):
         print row_format.format(row_name, *row)
 
-def print_crosstab_dict(a_dict):
-    K_1 = a_dict.keys()
-    K_2 = np.unique([item for sublist in [list(x.elements()) for 
-                                          x in a_dict.values()] 
-                     for item in sublist])
-    #Here for simplicity REMOVE
-    M = np.zeros(shape=(len(K_1),len(K_2)))
-    for idx, x in enumerate(K_1):
-        for idy, y in enumerate(K_2):
-            M[idx,idy] = a_dict[x][y]
-    row_format ="{:>15}" * (len(K_2) + 1)
-    print row_format.format("", *K_2)
-    for team, row in zip(K_1, M):
-        print row_format.format(team, *row)
     
 def print_describe_all(a_dict):
     row_labels = a_dict.keys()
