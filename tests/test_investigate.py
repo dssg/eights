@@ -10,6 +10,7 @@ from eights.investigate.investigate import plot_kernel_density
 from eights.investigate.investigate import connect_sql
 from eights.investigate.investigate import cast_list_of_list_to_sa
 from eights.investigate.investigate import open_csv, describe_cols, open_csv_list,cast_list_of_list_to_sa_wrap, crosstab
+from eights import utils
 
 import utils_for_tests 
 
@@ -32,15 +33,26 @@ class TestInvestigate(unittest.TestCase):
     def test_describe_cols(self):
         test_list = [[1, 2],[2, 3],[3, 4],[4, 5],[5, 6],[6, 7]]
         test_nd = np.array(test_list)
-        test_sa =np.array([(1, 2, 'a'), (2, 3, 'b'), (3, 4, 'c'), (4, 5, 'd'), 
-                           (5, 6, 'e'), (6, 7, 'f')], 
-                          dtype=[('id', int), ('val', float), ('name', 'S1')])
+        test_sa = np.array([(1, 2, 'a'), (2, 3, 'b'), (3, 4, 'c'), (4, 5, 'd'), 
+                            (5, 6, 'e'), (6, 7, 'f')], 
+                           dtype=[('id', int), ('val', float), ('name', 'S1')])
         ctrl_list = np.array([('f0', 6, 3.5, 1.707825127659933, 1, 6),
                               ('f1', 6, 4.5, 1.707825127659933, 2, 7)],
                              dtype=[('Column Name', 'S2'), ('Count', int),
                                     ('Mean', float), ('Standard Dev', float),
                                     ('Minimum', int), ('Maximum', int)])
-        print describe_cols(test_list)
+        self.assertTrue(utils_for_tests.array_equal(ctrl_list, 
+                                                    describe_cols(test_list)))
+        self.assertTrue(utils_for_tests.array_equal(ctrl_list, 
+                                                    describe_cols(test_nd)))
+        ctrl_sa = np.array([('id', 6, 3.5, 1.707825127659933, 1, 6),
+                            ('val', 6, 4.5, 1.707825127659933, 2, 7),
+                            ('name', np.nan, np.nan, np.nan, np.nan, np.nan)],
+                           dtype=[('Column Name', 'S4'), ('Count', float),
+                                  ('Mean', float), ('Standard Dev', float),
+                                  ('Minimum', float), ('Maximum', float)])
+        self.assertTrue(utils_for_tests.array_equal(ctrl_sa, 
+                                                    describe_cols(test_sa)))
 
     #4
     def test_cast_list_of_list_to_sa_wrap(self):
