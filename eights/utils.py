@@ -134,7 +134,7 @@ def cast_list_of_list_to_sa(L, col_names=None, dtype=None):
             elif dom_type == datetime:
                 dtypes.append('M8[us]')
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
-            if dom_type == np.datetime64:
+            elif dom_type == np.datetime64:
                 dtypes.append('M8[us]')
                 cleaned_cols.append(map(CLEAN_FUNCTIONS[dom_type], col))
             elif dom_type in (str, unicode, np.string_, np.unicode_): 
