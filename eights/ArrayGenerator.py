@@ -2,6 +2,114 @@ import numpy as np
 
 class ArrayGenerator(object):
     """
+    Array generator is a tool to confederate tables from either SQL or CSV,
+    then generate Numpy structured arrays based on subsets of that 
+    confederation of tables.
+
+    **Tables**
+
+    Tables can be specified from either a CSV file (using the 
+    import_from_csv method) or from a SQL query (using the
+    import_from_SQL method). Imported tables may adhere to one of two formats:
+
+    1. The Static Format. 
+
+        In The static format, each row represents one unit of the population.
+        The table contains one column that uniquely identifies each unit. For
+        example, 
+
+        *Table 1:*
+
+        +------------+-----------+----------------+
+        | student_id | grad_year |        address |
+        +============+===========+================+
+        |          0 |      2007 | 1234 N Halsted |
+        +------------+-----------+----------------+
+        |          1 |      2008 | 5555 W Addison |
+        +------------+-----------+----------------+
+        |          2 |      2007 |   2726 N Clark |
+        +------------+-----------+----------------+
+
+        In Table 1, each unit is a student. Each student has his or her own 
+        row, which is uniquely identified by its entry in the student_id 
+        column.
+
+        It is expected that all tables provided to the ArrayGenerator
+        will have the same concept of a unit and the same unique numbering
+        scheme. For example, if the ArrayGenerator is provided with Table 1,
+        then every further table provided will also have a column for 
+        student_id, where student X in Table 1 corresponds to student X in
+        the new table.
+
+    2. The Log Format
+
+        In a log format table, there are four columns:
+        
+        1. The unique identifier of a unit. Unit here means the same thing
+           as it did static format tables.
+        2. A time frame for which the column is applicable.
+        3. The name of a feature applicable to that unit at that time.
+        4. The value of the feature for that unit at that time. 
+
+        The values in column one still uniquely identify each unit, but there
+        can be more than one row in the table per unit. These tables give us
+        information in the form of: "For unit X, during time y, feature z had
+        value w"
+
+        For example,
+
+        *Table 2:*
+
+        +------------+------+-------------+-------+
+        | student_id | year |     feature | value |
+        +============+======+=============+=======+
+        |          0 | 2005 |    math_gpa |   2.3 |
+        +------------+------+-------------+-------+
+        |          0 | 2005 | english_gpa |   4.0 |
+        +------------+------+-------------+-------+
+        |          0 | 2005 |    absences |     7 |
+        +------------+------+-------------+-------+
+        |          0 | 2006 |    math_gpa |   2.1 |
+        +------------+------+-------------+-------+
+        |          0 | 2006 | english_gpa |   3.9 |
+        +------------+------+-------------+-------+
+        |          0 | 2006 |    absences |     8 |
+        +------------+------+-------------+-------+
+        |          1 | 2005 |    math_gpa |   3.4 |
+        +------------+------+-------------+-------+
+        |          1 | 2005 |    absenses |     0 |
+        +------------+------+-------------+-------+
+        |          1 | 2006 |    math_gpa |   3.5 |
+        +------------+------+-------------+-------+
+        |          1 | 2007 | english_gpa |   2.4 |
+        +------------+------+-------------+-------+
+        |          2 | 2004 |    math_gpa |   2.4 |
+        +------------+------+-------------+-------+
+        |          2 | 2005 |    math_gpa |   3.4 |
+        +------------+------+-------------+-------+
+        |          2 | 2005 |    absenses |    14 |
+        +------------+------+-------------+-------+
+        |          2 | 2006 |    absenses |    96 |
+        +------------+------+-------------+-------+
+
+        In Table 2, the values of the student_id column each correspond to
+        one student, and, consequently, one row in feature 1. However, each
+        student may have multiple rows on this table corresponding to 
+        multiple features at multiple times. For example, during
+        2005, student 0 had a math_gpa of 2.3 and an english_gpa of 4.0.
+        During 2006, student 0's math_gpa dropped to 2.1, while his or her
+        english_gpa dropped to 3.9.
+
+    **Feature Generation And Subsetting:**
+        
+        In order to construct a structured array, the user must specify
+        a specific time using the 'add_constraint' method. When we specify
+        a constraint, we specify the timeframe which we are interested in
+        and the method by which we aggregate the rows in the log tables that
+        fall into that time table.
+
+        TODO stopped here.
+        
     Parameters
     ----------
     uid_col : str
