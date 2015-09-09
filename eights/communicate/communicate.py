@@ -140,6 +140,7 @@ def plot_box_plot(col, col_name=False, verbose=True):
     return fig
 
 def get_top_features(clf, n):
+    #this is implimented in sorted_top_feat_importance in perabmulate
     raise NotImplementedError
 
 # TODO features form top % of clfs

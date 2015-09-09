@@ -391,7 +391,7 @@ class Run(object):
         return plot_prec_recall(self.__test_y(), self.__pred_proba(), 
                                 verbose=False)
    
-    def sorted_top_feat_importance(self, n):
+    def sorted_top_feat_importance(self, n = 25):
         if not hasattr(self.clf, 'feature_importances_'):
             return [[], []]
         feat_imp = self.clf.feature_importances_
