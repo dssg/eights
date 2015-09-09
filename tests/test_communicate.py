@@ -56,7 +56,7 @@ class TestCommunicate(unittest.TestCase):
         rf = RandomForestClassifier(random_state=0)
         rf.fit(iris.data, iris.target)
         result = feature_pairs_in_rf(rf, [1, 0.5], verbose=False)
-        result = feature_pairs_in_rf(rf, verbose=True)
+        result = feature_pairs_in_rf(rf, verbose=True, n=5)
         
         # TODO make sure these results are actually correct
 #        ctrl = {'Depth 3->4': 
