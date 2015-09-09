@@ -9,7 +9,8 @@ from eights.investigate.investigate import convert_to_sa
 from eights.investigate.investigate import plot_kernel_density
 from eights.investigate.investigate import connect_sql
 from eights.investigate.investigate import cast_list_of_list_to_sa
-from eights.investigate.investigate import open_csv, describe_cols, open_csv_list,cast_list_of_list_to_sa_wrap, print_crosstab
+from eights.investigate.investigate import open_csv, describe_cols, open_csv_list,cast_list_of_list_to_sa_wrap, crosstab
+from eights import utils
 
 import utils_for_tests 
 
@@ -30,13 +31,28 @@ class TestInvestigate(unittest.TestCase):
 
     #3    
     def test_describe_cols(self):
-        test = np.array([[1],[2],[3],[4],[5],[6]])
-        test_list = np.array([1,2,3,4,5,6])
-        test_sa =np.array([(1,), (2,),(3,), (4,),(5,),(6,)],dtype=[('id', '<i8')])
-        correct = [{'Maximal:': 6, 'Standard Dev:': 1.707825127659933, 'Count:': 6, 'Mean:': 3.5, 'Minimal ': 1}]
-        self.assertTrue(np.array_equal(describe_cols(test),correct))
-        self.assertTrue(np.array_equal(describe_cols(test_list),correct))
-        self.assertTrue(np.array_equal(describe_cols(test_sa),correct))           
+        test_list = [[1, 2],[2, 3],[3, 4],[4, 5],[5, 6],[6, 7]]
+        test_nd = np.array(test_list)
+        test_sa = np.array([(1, 2, 'a'), (2, 3, 'b'), (3, 4, 'c'), (4, 5, 'd'), 
+                            (5, 6, 'e'), (6, 7, 'f')], 
+                           dtype=[('id', int), ('val', float), ('name', 'S1')])
+        ctrl_list = np.array([('f0', 6, 3.5, 1.707825127659933, 1, 6),
+                              ('f1', 6, 4.5, 1.707825127659933, 2, 7)],
+                             dtype=[('Column Name', 'S2'), ('Count', int),
+                                    ('Mean', float), ('Standard Dev', float),
+                                    ('Minimum', int), ('Maximum', int)])
+        self.assertTrue(utils_for_tests.array_equal(ctrl_list, 
+                                                    describe_cols(test_list)))
+        self.assertTrue(utils_for_tests.array_equal(ctrl_list, 
+                                                    describe_cols(test_nd)))
+        ctrl_sa = np.array([('id', 6, 3.5, 1.707825127659933, 1, 6),
+                            ('val', 6, 4.5, 1.707825127659933, 2, 7),
+                            ('name', np.nan, np.nan, np.nan, np.nan, np.nan)],
+                           dtype=[('Column Name', 'S4'), ('Count', float),
+                                  ('Mean', float), ('Standard Dev', float),
+                                  ('Minimum', float), ('Maximum', float)])
+        self.assertTrue(utils_for_tests.array_equal(ctrl_sa, 
+                                                    describe_cols(test_sa)))
 
     #4
     def test_cast_list_of_list_to_sa_wrap(self):
@@ -48,11 +64,19 @@ class TestInvestigate(unittest.TestCase):
         self.assertTrue(np.array_equal(correct_2, cast_list_of_list_to_sa_wrap(test, names)))
 
     #5
-    def test_print_crosstab(self):
-        l1= [1,2,3,3,2,1]
-        l2= [1,2,3,3,2,1]
-        correct = {1: Counter({1: 2}), 2: Counter({2: 2}), 3: Counter({3: 2})}
-        self.assertTrue(np.array_equal(correct, print_crosstab(l1,l2,False)))
+    def test_crosstab(self):
+        l1= [1, 2, 7, 7, 2, 1, 2, 1, 1]
+        l2= [1, 3, 2, 6, 6, 3, 6, 4, 4]
+        correct = np.array([('1', 1, 0, 1, 2, 0),
+                            ('2', 0, 0, 1, 0, 2),
+                            ('7', 0, 1, 0, 0, 1)],
+                           dtype=[('col1_value', 'S1'),
+                                  ('1', int),
+                                  ('2', int),
+                                  ('3', int),
+                                  ('4', int),
+                                  ('6', int)])
+        self.assertTrue(np.array_equal(correct, crosstab(l1,l2)))
         
     def test_plot_correlation_scatter_plot(self):
         data = rand(100, 3)
