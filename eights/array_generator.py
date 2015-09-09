@@ -101,14 +101,58 @@ class ArrayGenerator(object):
         english_gpa dropped to 3.9.
 
     **Feature Generation And Subsetting:**
-        
-        In order to construct a structured array, the user must specify
-        a specific time using the 'add_constraint' method. When we specify
-        a constraint, we specify the timeframe which we are interested in
-        and the method by which we aggregate the rows in the log tables that
-        fall into that time table.
 
-        TODO stopped here.
+        In the structured array that ultimately results, for each unit, 
+        there will be at most one column corresponding to each unique entry 
+        of the 'feature' column in each log table. For example, if we 
+        confederate Table 1 and Table 2, we will have columns for:
+
+        * student_id
+        * grad_year
+        * address
+        * absences
+        * math_pga
+        * english_gpa
+
+        Each row in the resulting structured array will represent one student 
+        and will have a unique student_id.
+        
+        In order to decide what value appears in the columns originating from 
+        the log-format table, we:
+
+        1. Optionally select an aggregation method with set_aggregation
+        2. Select a timeframe with to_sa
+
+        When creating the structured array, we first take only entries of log
+        tables that fall within the timeframe, then we aggregate those entries
+        using the user_specified aggretation method. If an aggreagation method
+        is not specified, ArrayGenerator will take the mean. For example:
+
+        >>> ag = ArrayGenerator(...)
+        >>> ... # Populate ag with Table 1 and Table 2
+        >>> ag.set_aggregation('math_gpa', 'mean')
+        >>> ag.set_aggregation('absences', 'max')
+        >>> sa = ag.to_sa(2005, 2006)
+
+        Gives us Table 3:
+
+        +------------+-----------+----------------+----------+-------------+----------+
+        | student_id | grad_year |        address | math_gpa | english_gpa | absences |
+        +============+===========+================+==========+=============+==========+
+        |          0 |      2007 | 1234 N Halsted |      2.2 |        3.95 |        8 |
+        +------------+-----------+----------------+----------+-------------+----------+
+        |          1 |      2008 | 5555 W Addison |     3.45 |         nan |        0 |
+        +------------+-----------+----------------+----------+-------------+----------+
+        |          2 |      2007 |   2726 N Clark |      3.4 |         nan |       94 |
+        +------------+-----------+----------------+----------+-------------+----------+
+
+        Notice that math_gpa and english_gpa are the average for 2005 and 2006
+        per student, while absenses is the max over 2005 and 2006. Also notice
+        that english_gpa for student 1 is nan, since the only english_gpa for
+        student 1 is from 2007, which is outside of our range. For student 2,
+        english_gpa is nan because student 2 has no entries in the table for
+        english_gpa.
+
         
     Parameters
     ----------
