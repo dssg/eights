@@ -2,6 +2,7 @@ import unittest
 import eights.communicate as comm
 from eights.communicate.communicate import feature_pairs_in_tree
 from eights.communicate.communicate import feature_pairs_in_rf
+from eights import utils
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 from utils_for_tests import rerout_stdout
@@ -31,6 +32,15 @@ class TestCommunicate(unittest.TestCase):
         with rerout_stdout() as get_stdout:
             comm.print_matrix_row_col(M, row_labels=row_labels)
             self.assertEqual(get_stdout().strip(), ctrl)
+
+    def test_plot_correlation_scatter_plot(self):
+        col1 = range(10)
+        col2 = [cell * 3 + 1 for cell in col1]
+        col3 = [1, 5, 8, 4, 1, 8, 5, 9, 0, 1]
+        sa = utils.convert_to_sa(
+                zip(col1, col2, col3), 
+                col_names=['base', 'linear_trans', 'no_correlation'])
+        comm.plot_correlation_scatter_plot(sa)
 
     def test_feature_pairs_in_tree(self):
         iris = datasets.load_iris()

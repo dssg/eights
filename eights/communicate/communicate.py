@@ -184,13 +184,11 @@ def plot_correlation_scatter_plot(M, verbose=True):
     # adapted from the excellent 
     # http://stackoverflow.com/questions/7941207/is-there-a-function-to-make-scatterplot-matrices-in-matplotlib
     
-    if is_sa(M):
-        names = M.dtype.names
-        M = cast_np_sa_to_nd(M)
-    else:
-        names = ['f{}'.format(i) for i in xrange(M.shape[1])]    
+    M = convert_to_sa(M)
 
-    numdata, numvars = M.shape
+    numdata = M.shape[0]
+    numvars = len(M.dtype)
+    names = M.dtype.names
     fig, axes = plt.subplots(numvars, numvars)
     fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
@@ -212,7 +210,7 @@ def plot_correlation_scatter_plot(M, verbose=True):
     # Plot the M.
     for i, j in zip(*np.triu_indices_from(axes, k=1)):
         for x, y in [(i,j), (j,i)]: 
-            axes[x,y].plot(M[x], M[y], '.')
+            axes[x,y].plot(M[M.dtype.names[x]], M[M.dtype.names[y]], '.')
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
