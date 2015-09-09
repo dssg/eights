@@ -100,7 +100,7 @@ class ArrayGenerator(object):
         During 2006, student 0's math_gpa dropped to 2.1, while his or her
         english_gpa dropped to 3.9.
 
-    **Feature Generation And Subsetting:**
+    **Feature Generation And Subsetting features:**
 
         In the structured array that ultimately results, for each unit, 
         there will be at most one column corresponding to each unique entry 
@@ -134,7 +134,9 @@ class ArrayGenerator(object):
         >>> ag.set_aggregation('absences', 'max')
         >>> sa = ag.to_sa(2005, 2006)
 
-        Gives us Table 3:
+        Gives us 
+        
+        *Table 3:*
 
         +------------+-----------+----------------+----------+-------------+----------+
         | student_id | grad_year |        address | math_gpa | english_gpa | absences |
@@ -153,120 +155,136 @@ class ArrayGenerator(object):
         english_gpa is nan because student 2 has no entries in the table for
         english_gpa.
 
+    **Taking subsets of units**
+
+        In addition to taking subsets of items in log tables, we might also 
+        want to take subsets of units (i.e. rows in static tables) according
+        to some perameter. For example, we might want to consider only 
+        students with grad_year of 2007. In order to subset units, we use the
+        add_constraint function. For example:
+
+        >>> ag = ArrayGenerator(...)
+        >>> ... # Populate ag with Table 1 and Table 2
+        >>> ag.set_aggregation('math_gpa', 'mean')
+        >>> ag.set_aggregation('absences', 'max')
+        >>> ag = ag.set_constraint('grad_year == 2007')
+        >>> sa = ag.to_sa(2005, 2006)
+
+        Gives us 
+        
+        *Table 4:*
+
+        +------------+-----------+----------------+----------+-------------+----------+
+        | student_id | grad_year |        address | math_gpa | english_gpa | absences |
+        +============+===========+================+==========+=============+==========+
+        |          0 |      2007 | 1234 N Halsted |      2.2 |        3.95 |        8 |
+        +------------+-----------+----------------+----------+-------------+----------+
+        |          2 |      2007 |   2726 N Clark |      3.4 |         nan |       94 |
+        +------------+-----------+----------------+----------+-------------+----------+
+
         
     Parameters
     ----------
-    uid_col : str
-        The name of the column that is the unique ID across queries.
-        All queries must contain a column with the provided for 
-        uid_col.
     conn_string : str or None
         SQLAlchemy connection string used to connect.
-        If None, conn_string must be specified for each query
+        If None, conn_string must be specified for each SQL query
 
     """"
 
-    def __init__(self, uid_col, conn_string=None):
+    def __init__(self, conn_string=None):
         pass
 
-    def add_query(self, query, transpose_on=None, conn_string=None):
+    def import_from_SQL(self, query, unit_id_col, table_type='static', 
+                        conn_string=None):
        """
-       Add column(s) to the arrays that will be constructed.
+       Add tables that will be confederated into structured arrays from
+       SQL.
        
         Parameters
         ----------
         query : str
-            An SQL query that returns at least two columns. One must have the
-            name provided as uid_col on initialization
-        transpose_on : str or list of str or None
-            For queries in "log format," this is the column that will be used
-            to create multiple columns per row.
+            An SQL query that returns at least two columns. One column must
+            have the name passed to unit_id_col
 
-            By log format, we mean that the same value may appear multiple 
-            times in the column named uid_col, but, if there is a value that
-            appears multiple times in the uid_col, there will be a value in
-            a secondary column which disambiguates the entries. For example,
-            consider the following tables:
+        unit_id_col : str
+            The name of the column containing unique unit IDs. For example,
+            in Table 1:
 
-            Table 1:            
-            
-            +------+-----------------+-------------+
-            | ID   | Date of Birth   | Graduated   |
-            +======+=================+=============+
-            | 1    | 1988-09-22      | 1           |
-            +------+-----------------+-------------+
-            | 2    | 1989-08-08      | 0           |
-            +------+-----------------+-------------+
+            *Table 1:*
 
-            Table 2: 
+            +------------+-----------+----------------+
+            | student_id | grad_year |        address |
+            +============+===========+================+
+            |          0 |      2007 | 1234 N Halsted |
+            +------------+-----------+----------------+
+            |          1 |      2008 | 5555 W Addison |
+            +------------+-----------+----------------+
+            |          2 |      2007 |   2726 N Clark |
+            +------------+-----------+----------------+
 
-            +------+---------+-------+
-            | ID   | Grade   | GPA   |
-            +======+=========+=======+
-            | 1    | 9       | 3.2   |
-            +------+---------+-------+
-            | 1    | 10      | 3.4   |
-            +------+---------+-------+
-            | 1    | 11      | 4.0   |
-            +------+---------+-------+
-            | 2    | 9       | 2.1   |
-            +------+---------+-------+
-            | 2    | 10      | 2.0   |
-            +------+---------+-------+
-            | 2    | 11      | 2.3   |
-            +------+---------+-------+
-            | 2    | 12      | 2.5   |
-            +------+---------+-------+
+            unit_id_col should be 'student_id'
 
-            Table 2 is in log format while table 1 is not necessarily in log
-            format. In table 2, Values in The ID column are non-unique.
-            (Our value for uid_col would be "ID"). Instead, there is one
-            entry per Grade. When we call to_sa, we would want one row per ID
-            and one column per grade. Something like:
-
-            Table 3:
-
-            +------+-----------------+-------------+----------+-----------+-----------+-----------+
-            | ID   | Date of Birth   | Graduated   | GPA\_9   | GPA\_10   | GPA\_11   | GPA\_12   |
-            +======+=================+=============+==========+===========+===========+===========+
-            | 1    | 1988-09-22      | 1           | 3.2      | 3.4       | 4.0       |           |
-            +------+-----------------+-------------+----------+-----------+-----------+-----------+
-            | 2    | 1989-08-08      | 0           | 2.1      | 2.0       | 2.3       | 2.5       |
-            +------+-----------------+-------------+----------+-----------+-----------+-----------+
-
-            To get this result, we set transpose_on='Grade' for the query
-            that returns Table 2. For the query that returns Table 1, 
-            we set transpose_on=None, because Table 1 has a single row per
-            ID, so this transpose is unnecessary.
-
-            We also support multiple transpose_on columns, for example if 
-            table 2 also had a column for "subject" like:
-
-            Table 4:
-
-            +------+---------+-----------+-------+
-            | ID   | Grade   | Subject   | GPA   |
-            +======+=========+===========+=======+
-            | 1    | 9       | Math      | 3.2   |
-            +------+---------+-----------+-------+
-            | 1    | 10      | Math      | 3.4   |
-            +------+---------+-----------+-------+
-            | 2    | 9       | Math      | 2.1   |
-            +------+---------+-----------+-------+
-            | 2    | 9       | History   | 2.0   |
-            +------+---------+-----------+-------+
-            | 2    | 10      | Math      | 2.3   |
-            +------+---------+-----------+-------+
-            | 2    | 10      | History   | 2.5   |
-            +------+---------+-----------+-------+
-
-            then we could set transpose_on=['Grade', 'Subject'] to generate
-            columns like GPA_9_Math, GPA_9_Histor, GPA_10_Math etc.
+        table_type : 'static' or 'log'
+            Specifies whether the table is static or log format. See 
+            the doc string for ArrayGenerator for an explanation
 
         conn_str : str or None
             SQLAlchemy connection string to connect to the database and run
             the query. If None, the conn_str used to initialize the ArrayGenerator
             will be used
+            
+        Examples
+        --------
+        >>> conn_str = ...
+        >>> ag = ArrayGenerator()
+        >>> ag.import_from_SQL('SELECT * FROM table_1', 'student_id', 
+        ...                    table_type='static', conn_str=conn_str)
+        >>> ag.import_from_SQL('SELECT * FROM table_2', 'student_id',
+                               table_type='log', conn_str=conn_str)
+
+        """
+        pass
+
+    def import_from_csv(self, csv_file_path, unit_id_col, table_type='static')
+       """
+       Add tables that will be confederated into structured arrays from
+       a csv file.
+       
+        Parameters
+        ----------
+        csv_file_path : str
+            Path of the csv file to import table from
+
+        unit_id_col : str
+            The name of the column containing unique unit IDs. For example,
+            in Table 1:
+
+            *Table 1:*
+
+            +------------+-----------+----------------+
+            | student_id | grad_year |        address |
+            +============+===========+================+
+            |          0 |      2007 | 1234 N Halsted |
+            +------------+-----------+----------------+
+            |          1 |      2008 | 5555 W Addison |
+            +------------+-----------+----------------+
+            |          2 |      2007 |   2726 N Clark |
+            +------------+-----------+----------------+
+
+            unit_id_col should be 'student_id'
+
+        col_type : 'static' or 'log'
+            Specifies whether the table is static or log format. See 
+            the doc string for ArrayGenerator for an explanation
+
+        Examples
+        --------
+            
+        >>> ag = ArrayGenerator()
+        >>> ag.import_from_csv('table_1.csv', 'student_id', 
+        ...                    table_type='static')
+        >>> ag.import_from_csv('table_2.csv', 'student_id',
+                               table_type='log')
             
         """
         pass
