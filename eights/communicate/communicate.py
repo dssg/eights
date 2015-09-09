@@ -33,15 +33,6 @@ def print_matrix_row_col(M, row_labels=None, col_labels=None):
     for row_name, row in zip(row_labels, M):
         print row_format.format(row_name, *row)
 
-    
-def print_describe_all(a_dict):
-    row_labels = a_dict.keys()
-    rows = a_dict.values()
-    row_format ="{:>15}" * (2)
-    print row_format.format("", *a_dict.keys())
-    for row_label, row in zip(row_labels, rows):
-        print row_format.format(row_label, row)
-    
 def plot_simple_histogram(col, verbose=True):
     hist, bins = np.histogram(col, bins=50)
     width = 0.7 * (bins[1] - bins[0])
