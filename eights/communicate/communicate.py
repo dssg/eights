@@ -274,7 +274,7 @@ def plot_on_timeline(col):
     """
     raise NotImplementedError
 
-def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
+def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True, n=10):
     """Describes the frequency of features appearing subsequently in each tree
     in a random forest"""
     # weight be depth is a vector. The 0th entry is the weight of being at
@@ -282,6 +282,7 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
     # If not provided, weights are linear with negative depth. If 
     # the provided vector is not as long as the number of depths, then 
     # remaining depths are weighted with 0
+    # If verbose, will only print the first n results
 
 
     pairs_by_est = [feature_pairs_in_tree(est) for est in rf.estimators_]
@@ -319,25 +320,29 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
         _feature_pair_report(
                 counts_by_pair.most_common(), 
                 'Overall Occurrences', 
-                'occurrences')
+                'occurrences',
+                n=n)
         _feature_pair_report(
                 sorted([item for item in average_depth_by_pair.iteritems()], 
                        key=lambda item: item[1]),
                 'Average depth',
                 'average depth',
-                'Max depth was {}'.format(depth_len - 1))
+                'Max depth was {}'.format(depth_len - 1),
+                n=n)
         _feature_pair_report(
                 sorted([item for item in weighted.iteritems()], 
                        key=lambda item: item[1]),
                 'Occurrences weighted by depth',
                 'sum weight',
-                'Weights for depth 0, 1, 2, ... were: {}'.format(weights))
+                'Weights for depth 0, 1, 2, ... were: {}'.format(weights),
+                n=n)
 
         for depth, pairs in enumerate(count_pairs_by_depth):
             _feature_pair_report(
                     pairs.most_common(), 
                     'Occurrences at depth {}'.format(depth), 
-                    'occurrences')
+                    'occurrences',
+                    n=n)
 
 
     return (counts_by_pair, count_pairs_by_depth, average_depth_by_pair, 
