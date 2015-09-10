@@ -124,8 +124,9 @@ def plot_box_plot(col, col_name=None, verbose=True):
         plt.show()
     return fig
 
-def get_top_features(clf, n):
+def get_top_features(clf, M=None, n=10, verbose=True):
     raise NotImplementedError
+    
 
 # TODO features form top % of clfs
 

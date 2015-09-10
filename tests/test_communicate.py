@@ -9,6 +9,7 @@ from sklearn.cross_validation import train_test_split
 from utils_for_tests import rerout_stdout
 from utils_for_tests import path_of_data
 from utils_for_tests import generate_correlated_test_matrix
+from utils_for_tests import generate_test_matrix
 import numpy as np
 
 REPORT_PATH=path_of_data('test_communicate.pdf')
@@ -99,6 +100,18 @@ class TestCommunicate(unittest.TestCase):
         data = np.random.normal(size=(1000,))
         fig = comm.plot_box_plot(data, col_name='box', verbose=False)
         self.add_fig_to_report(fig, 'plot_box_plot')
+
+    def test_get_top_features(self):
+        M, labels = generate_test_matrix(1000, 10)
+        M = utils.cast_np_sa_to_nd(M)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        scores = clf.feature_importances_
+
+    # TODO stopped at get_top_features
 
     def xtest_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
