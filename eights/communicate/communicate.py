@@ -101,7 +101,7 @@ def plot_roc(labels, score, title='ROC', verbose=True):
         fig.show()
     return fig
 
-def plot_box_plot(col, col_name=False, verbose=True):
+def plot_box_plot(col, col_name=None, verbose=True):
     """Makes a box plot for a feature
     comment
     
@@ -115,7 +115,10 @@ def plot_box_plot(col, col_name=False, verbose=True):
     
     """
 
-    fig = boxplot(col)
+    fig = plt.figure()
+    boxplot(col)
+    if col_name:
+        plt.title(col_name)
     #add col_name to graphn
     if verbose:
         plt.show()

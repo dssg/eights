@@ -83,6 +83,23 @@ class TestCommunicate(unittest.TestCase):
         fig = comm.plot_prec_recall(labels_test, score, verbose=False)
         self.add_fig_to_report(fig, 'plot_prec_recall')
 
+    def test_plot_roc(self):
+        M, labels = generate_correlated_test_matrix(1000)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        score = clf.predict_proba(M_test)[:,-1]
+        fig = comm.plot_roc(labels_test, score, verbose=False)
+        self.add_fig_to_report(fig, 'plot_roc')
+
+    def test_plot_box_plot(self):
+        np.random.seed(0)
+        data = np.random.normal(size=(1000,))
+        fig = comm.plot_box_plot(data, col_name='box', verbose=False)
+        self.add_fig_to_report(fig, 'plot_box_plot')
+
     def xtest_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
