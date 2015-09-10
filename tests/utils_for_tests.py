@@ -4,7 +4,7 @@ import itertools as it
 import numpy as np
 import string
 import eights.utils
-from numpy.random import rand
+from numpy.random import rand, seed
 from contextlib import contextmanager
 from StringIO import StringIO
 
@@ -32,6 +32,7 @@ def generate_test_matrix(rows, cols, n_classes=2, types=[], random_state=None):
     return M, labels
 
 def generate_correlated_test_matrix(n_rows):
+    seed(0)
     M = rand(n_rows, 1)
     y = rand(n_rows) < M[:,0]
     return M, y

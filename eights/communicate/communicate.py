@@ -37,7 +37,7 @@ def plot_simple_histogram(col, verbose=True):
     hist, bins = np.histogram(col, bins=50)
     width = 0.7 * (bins[1] - bins[0])
     center = (bins[:-1] + bins[1:]) / 2
-    f = figure()
+    f = plt.figure()
     plt.bar(center, hist, align='center', width=width)
     if verbose:
         plt.show()
@@ -382,15 +382,16 @@ def np_to_html_table(sa, fout, show_shape=False):
     fout.write('\n')
     fout.write('</table></p>')
 
+class ReportError(Exception):
+    pass
+
 class Report(object):
 
-    class ReportObject(object):
-        __metaclass__ = abc.ABCMeta
-
-    def __init__(self, exp, report_path='report.pdf'):
-        self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
-        self.__objects = []
+    def __init__(self, exp=None, report_path='report.pdf'):
         self.__exp = exp
+        if exp is not None:
+            self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
+        self.__objects = []
         self.__tmp_folder = 'eights_temp'
         if not os.path.exists(self.__tmp_folder):
             os.mkdir(self.__tmp_folder)
@@ -404,7 +405,10 @@ class Report(object):
             html_out.write('\n'.join(self.__objects))
             html_out.write(self.__get_footer())
         pdfkit.from_url(self.__html_src_path, self.__report_path)
-        return self.__report_path
+        return self.get_report_path()
+
+    def get_report_path(self):
+        return os.path.abspath(self.__report_path)
 
     def __get_header(self):
         # Thanks to http://stackoverflow.com/questions/13516534/how-to-avoid-page-break-inside-table-row-for-wkhtmltopdf
@@ -438,7 +442,7 @@ class Report(object):
     def __get_footer(self):
         return '\n</body>\n</html>\n'
 
-    def add_heading(self, heading, level):
+    def add_heading(self, heading, level=2):
         self.__objects.append(html_format(
             '<h{}>{}</h{}>',
             level,
@@ -455,7 +459,7 @@ class Report(object):
         np_to_html_table(M, sio)
         self.__objects.append(sio.getvalue())
 
-    def __add_fig(self, fig):
+    def add_fig(self, fig):
         # So we don't get pages with nothing but one figure on them
         fig.set_figheight(5.0)
         filename = 'fig_{}.png'.format(str(uuid.uuid4()))
@@ -464,6 +468,9 @@ class Report(object):
         self.__objects.append('<img src="{}">'.format(filename))
 
     def add_summary_graph(self, measure):
+        if self.__exp is None:
+            raise ReportError('No experiment provided for this report. '
+                              'Cannot add summary graphs.')
         results = [(trial, score, self.__back_indices[trial]) for 
                    trial, score in getattr(self.__exp, measure)().iteritems()]
         results_sorted = sorted(
@@ -478,7 +485,7 @@ class Report(object):
         for rank, result in enumerate(results_sorted):
             plt.text(rank, result[1], '{}'.format(result[2]))
         plt.ylabel(measure)
-        self.__add_fig(fig)
+        self.add_fig(fig)
 
     def add_summary_graph_roc_auc(self):
         self.add_summary_graph('roc_auc')
@@ -487,11 +494,14 @@ class Report(object):
         self.add_summary_graph('average_score')
 
     def add_graph_for_best(self, func_name):
+        if self.__exp is None:
+            raise ReportError('No experiment provided for this report. '
+                              'Cannot add graph for best trial.')
         best_trial = max(
             self.__exp.trials, 
             key=lambda trial: trial.average_score())
         fig = getattr(best_trial, func_name)()
-        self.__add_fig(fig)
+        self.add_fig(fig)
         self.add_text('Best trial is trial {} ({})]'.format(
             self.__back_indices[best_trial],
             best_trial))
@@ -503,6 +513,9 @@ class Report(object):
         self.add_graph_for_best('prec_recall_curve')
 
     def add_legend(self):
+        if self.__exp is None:
+            raise ReportError('No experiment provided for this report. '
+                              'Cannot add legend.')
         list_of_tuple = [(str(i), str(trial)) for i, trial in 
                          enumerate(self.__exp.trials)]
         table = cast_list_of_list_to_sa(list_of_tuple, col_names=('Id', 'Trial'))
