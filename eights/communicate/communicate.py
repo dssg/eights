@@ -168,11 +168,12 @@ def plot_correlation_matrix(M, verbose=True):
     if is_sa(M):
         names = M.dtype.names
         M = cast_np_sa_to_nd(M)
+        n_cols = M.shape[1]
     else: 
         if is_nd(M):
             n_cols = M.shape[1]
         else: # list of arrays
-            n_cols = len(M)
+            n_cols = len(M[0])
         names = ['f{}'.format(i) for i in xrange(n_cols)]
     
     #set rowvar =0 for rows are items, cols are features

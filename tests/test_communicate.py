@@ -55,15 +55,6 @@ class TestCommunicate(unittest.TestCase):
             self.assertEqual(get_stdout().strip(), ctrl)
 
 
-    def test_plot_correlation_scatter_plot(self):
-        col1 = range(10)
-        col2 = [cell * 3 + 1 for cell in col1]
-        col3 = [1, 5, 8, 4, 1, 8, 5, 9, 0, 1]
-        sa = utils.convert_to_sa(
-                zip(col1, col2, col3), 
-                col_names=['base', 'linear_trans', 'no_correlation'])
-        fig = comm.plot_correlation_scatter_plot(sa, verbose=False)
-        self.add_fig_to_report(fig, 'plot_correlation_scatter_plot')
 
     def test_plot_simple_histogram(self):
         np.random.seed(0)
@@ -122,7 +113,6 @@ class TestCommunicate(unittest.TestCase):
                 col_names=('feat_name', 'score'))
         self.assertTrue(uft.array_equal(ctrl, res))
 
-    # TODO stopped at get_top_features
     def test_get_roc_auc(self):
         M, labels = uft.generate_correlated_test_matrix(1000)
         M_train, M_test, labels_train, labels_test = train_test_split(
@@ -134,6 +124,26 @@ class TestCommunicate(unittest.TestCase):
         self.assertTrue(np.allclose(
             comm.get_roc_auc(labels_test, score, verbose=False),
             roc_auc_score(labels_test, score)))
+
+    def test_plot_correlation_matrix(self):
+        col1 = range(10)
+        col2 = [cell * 3 + 1 for cell in col1]
+        col3 = [1, 5, 8, 4, 1, 8, 5, 9, 0, 1]
+        sa = utils.convert_to_sa(
+                zip(col1, col2, col3), 
+                col_names=['base', 'linear_trans', 'no_correlation'])
+        fig = comm.plot_correlation_matrix(sa, verbose=False)
+        self.add_fig_to_report(fig, 'plot_correlation_matrix')
+
+    def test_plot_correlation_scatter_plot(self):
+        col1 = range(10)
+        col2 = [cell * 3 + 1 for cell in col1]
+        col3 = [1, 5, 8, 4, 1, 8, 5, 9, 0, 1]
+        sa = utils.convert_to_sa(
+                zip(col1, col2, col3), 
+                col_names=['base', 'linear_trans', 'no_correlation'])
+        fig = comm.plot_correlation_scatter_plot(sa, verbose=False)
+        self.add_fig_to_report(fig, 'plot_correlation_scatter_plot')
 
     def xtest_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
