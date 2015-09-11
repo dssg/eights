@@ -1,37 +1,143 @@
 import unittest
+from datetime import datetime
+from collections import Counter
 import eights.communicate as comm
 from eights.communicate.communicate import feature_pairs_in_tree
 from eights.communicate.communicate import feature_pairs_in_rf
 from eights import utils
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
-from utils_for_tests import rerout_stdout
+from sklearn.cross_validation import train_test_split
+from sklearn.metrics import roc_auc_score
+import utils_for_tests as uft
 import numpy as np
+import matplotlib.pyplot as plt
+
+REPORT_PATH=uft.path_of_data('test_communicate.pdf')
+SUBREPORT_PATH=uft.path_of_data('test_communicate_sub.pdf')
+REFERENCE_REPORT_PATH=uft.path_of_data('test_communicate_ref.pdf')
 
 class TestCommunicate(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.report = comm.Report(report_path=REPORT_PATH)
+
+    @classmethod
+    def tearDownClass(cls):
+        report_path = cls.report.to_pdf()
+        print 'Test Communicate visual regression tests:'
+        print '-----------------------------------------'
+        print 'graphical output available at: {}.'.format(report_path)
+        print 'Reference available at: {}.'.format(REFERENCE_REPORT_PATH)
+
+    def add_fig_to_report(self, fig, heading):
+        self.report.add_heading(heading)
+        self.report.add_fig(fig)
+
     def test_print_matrix_row_col(self):
         M = [(1, 2, 3), (4, 5, 6), (7, 8, 'STRING')]
         ctrl = """
-                            f0             f1             f2
-              0              1              2              3
-              1              4              5              6
-              2              7              8         STRING
+                             f0              f1              f2
+              0               1               2               3
+              1               4               5               6
+              2               7               8          STRING
         """.strip()
-        with rerout_stdout() as get_stdout:
+        with uft.rerout_stdout() as get_stdout:
             comm.print_matrix_row_col(M)
             self.assertEqual(get_stdout().strip(), ctrl)
         M = np.array([(1000, 'Bill'), (2000, 'Sam'), (3000, 'James')],
                      dtype=[('number', float), ('name', 'S5')])
         row_labels = [name[0] for name in M['name']]
         ctrl = """
-                        number           name
-              B         1000.0           Bill
-              S         2000.0            Sam
-              J         3000.0          James
+                         number            name
+              B          1000.0            Bill
+              S          2000.0             Sam
+              J          3000.0           James
         """.strip()
-        with rerout_stdout() as get_stdout:
+        with uft.rerout_stdout() as get_stdout:
             comm.print_matrix_row_col(M, row_labels=row_labels)
             self.assertEqual(get_stdout().strip(), ctrl)
+
+
+
+    def test_plot_simple_histogram(self):
+        np.random.seed(0)
+        data = np.random.normal(size=(1000,))
+        fig = comm.plot_simple_histogram(data, verbose=False)
+        self.add_fig_to_report(fig, 'plot_simple_histogram')
+
+    def test_plot_prec_recall(self):
+        M, labels = uft.generate_correlated_test_matrix(1000)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        score = clf.predict_proba(M_test)[:,-1]
+        fig = comm.plot_prec_recall(labels_test, score, verbose=False)
+        self.add_fig_to_report(fig, 'plot_prec_recall')
+
+    def test_plot_roc(self):
+        M, labels = uft.generate_correlated_test_matrix(1000)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        score = clf.predict_proba(M_test)[:,-1]
+        fig = comm.plot_roc(labels_test, score, verbose=False)
+        self.add_fig_to_report(fig, 'plot_roc')
+
+    def test_plot_box_plot(self):
+        np.random.seed(0)
+        data = np.random.normal(size=(1000,))
+        fig = comm.plot_box_plot(data, col_name='box', verbose=False)
+        self.add_fig_to_report(fig, 'plot_box_plot')
+
+    def test_get_top_features(self):
+        M, labels = uft.generate_test_matrix(1000, 15, random_state=0)
+        M = utils.cast_np_sa_to_nd(M)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        res = comm.get_top_features(clf, M, verbose=False)
+        ctrl = utils.convert_to_sa(
+                [('f5',  0.0773838526068), 
+                 ('f13',   0.0769596713039),
+                 ('f8',  0.0751584839431),
+                 ('f6',  0.0730815879102),
+                 ('f11',   0.0684456133071),
+                 ('f9',  0.0666747414603),
+                 ('f10',   0.0659621889608),
+                 ('f7',  0.0657988099065),
+                 ('f2',  0.0634000069218),
+                 ('f0',  0.0632912268319)],
+                col_names=('feat_name', 'score'))
+        self.assertTrue(uft.array_equal(ctrl, res))
+
+    def test_get_roc_auc(self):
+        M, labels = uft.generate_correlated_test_matrix(1000)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        score = clf.predict_proba(M_test)[:,-1]
+        self.assertTrue(np.allclose(
+            comm.get_roc_auc(labels_test, score, verbose=False),
+            roc_auc_score(labels_test, score)))
+
+    def test_plot_correlation_matrix(self):
+        col1 = range(10)
+        col2 = [cell * 3 + 1 for cell in col1]
+        col3 = [1, 5, 8, 4, 1, 8, 5, 9, 0, 1]
+        sa = utils.convert_to_sa(
+                zip(col1, col2, col3), 
+                col_names=['base', 'linear_trans', 'no_correlation'])
+        fig = comm.plot_correlation_matrix(sa, verbose=False)
+        self.add_fig_to_report(fig, 'plot_correlation_matrix')
 
     def test_plot_correlation_scatter_plot(self):
         col1 = range(10)
@@ -40,8 +146,54 @@ class TestCommunicate(unittest.TestCase):
         sa = utils.convert_to_sa(
                 zip(col1, col2, col3), 
                 col_names=['base', 'linear_trans', 'no_correlation'])
-        comm.plot_correlation_scatter_plot(sa)
+        fig = comm.plot_correlation_scatter_plot(sa, verbose=False)
+        self.add_fig_to_report(fig, 'plot_correlation_scatter_plot')
 
+    def test_plot_kernel_density(self):
+        np.random.seed(0)
+        data = np.random.normal(size=(1000,))
+        fig = comm.plot_kernel_density(data, verbose=False)
+        self.add_fig_to_report(fig, 'plot_kernel_density')
+
+    def test_plot_on_map(self):
+        # TODO
+        pass
+
+    def test_plot_on_timeline(self):
+        dates = [datetime(2015, 1, 1),
+                 datetime(2015, 2, 1),
+                 datetime(2015, 6, 1),
+                 datetime(2015, 6, 15),
+                 datetime(2015, 9, 2),
+                 datetime(2016, 1, 5)]
+        fig1 = comm.plot_on_timeline(dates, verbose=False)
+        self.add_fig_to_report(fig1, 'plot_on_timeline_1')
+        dates = np.array(dates, dtype='M8[us]')
+        fig2 = comm.plot_on_timeline(dates, verbose=False)
+        self.add_fig_to_report(fig1, 'plot_on_timeline_2')
+
+    def test_report(self):
+        subrep = comm.Report(report_path=SUBREPORT_PATH)
+        self.assertEqual(subrep.get_report_path(), SUBREPORT_PATH)
+        subrep.add_heading('Subreport', level=3)
+        subrep.add_text(
+            (u'Sample text.\n'
+             u'<p>HTML tags should render literally</p>\n'))
+        subrep.add_heading('Sample table', level=4)
+        sample_table  = np.array(
+            [(1, datetime(2015, 1, 1), 'New Years Day'),
+             (2, datetime(2015, 2, 14), 'Valentines Day'),
+             (3, datetime(2015, 3, 15), 'The Ides of March')],
+            dtype=[('idx', int), ('day', 'M8[us]'), ('Name', 'S17')])
+        subrep.add_table(sample_table)
+        sample_fig = plt.figure()
+        plt.plot([1, 2, 3], [1, 2, 3])
+        plt.title('Sample fig')
+        subrep.add_heading('Sample figure', level=4)
+        subrep.add_fig(sample_fig)
+        self.report.add_heading('report')
+        self.report.add_subreport(subrep)
+        
     def test_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
@@ -55,34 +207,36 @@ class TestCommunicate(unittest.TestCase):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
         rf.fit(iris.data, iris.target)
-        result = feature_pairs_in_rf(rf, [1, 0.5], verbose=False)
-        result = feature_pairs_in_rf(rf, verbose=True, n=5)
-        
+        results = feature_pairs_in_rf(rf, [1, 0.5], verbose=False)
         # TODO make sure these results are actually correct
-#        ctrl = {'Depth 3->4': 
-#                Counter({(0, 3): 3, (1, 2): 2, (2, 3): 2, (0, 1): 1, 
-#                         (1, 3): 1, (3, 3): 1}), 
-#                'Depth 4->5': 
-#                Counter({(0, 1): 1, (1, 3): 1, (3, 3): 1, (0, 2): 1}), 
-#                'Depth 6->7': 
-#                Counter({(0, 3): 1}), 
-#                'Depth 2->3': 
-#                Counter({(2, 3): 5, (0, 2): 5, (2, 2): 2, (0, 3): 2, 
-#                         (1, 2): 1, (0, 1): 1, (1, 3): 1, (3, 3): 1, 
-#                         (0, 0): 1}), 
-#                'Overall': 
-#                Counter({(2, 3): 16, (0, 2): 14, (0, 3): 12, (3, 3): 7, 
-#                         (2, 2): 6, (0, 1): 4, (1, 2): 3, (1, 3): 3, 
-#                         (0, 0): 2, (1, 1): 1}), 
-#                'Depth 0->1': 
-#                Counter({(2, 3): 3, (0, 3): 3, (3, 3): 2, (2, 2): 2, 
-#                         (0, 1): 1, (0, 0): 1}), 
-#                'Depth 1->2': 
-#                Counter({(0, 2): 7, (2, 3): 5, (3, 3): 2, (2, 2): 2, 
-#                         (0, 3): 2, (1, 1): 1}), 'Depth 5->6': 
-#                Counter({(0, 3): 1, (2, 3): 1, (0, 2): 1})}
-#        self.assertEqual(result, ctrl)
-         # TODO Alter to deal w/ new output format
+        ctrl_cts_by_pair = Counter(
+            {(2, 3): 16, (0, 2): 14, (0, 3): 12, (3, 3): 7, (2, 2): 6, 
+             (0, 1): 4, (1, 2): 3, (1, 3): 3, (0, 0): 2, (1, 1): 1})
+        ctrl_ct_pairs_by_depth = [
+            Counter({(2, 3): 3, (0, 3): 3, (3, 3): 2, (2, 2): 2, (0, 1): 1, 
+                     (0, 0): 1}), 
+            Counter({(0, 2): 7, (2, 3): 5, (3, 3): 2, (2, 2): 2, (0, 3): 2, 
+                     (1, 1): 1}), 
+            Counter({(2, 3): 5, (0, 2): 5, (2, 2): 2, (0, 3): 2, (1, 2): 1, 
+                     (0, 1): 1, (1, 3): 1, (3, 3): 1, (0, 0): 1}), 
+            Counter({(0, 3): 3, (1, 2): 2, (2, 3): 2, (0, 1): 1, (1, 3): 1, 
+                     (3, 3): 1}), 
+            Counter({(0, 1): 1, (1, 3): 1, (3, 3): 1, (0, 2): 1}), 
+            Counter({(0, 3): 1, (2, 3): 1, (0, 2): 1}), 
+            Counter({(0, 3): 1})]
+        ctrl_av_depth_by_pair = {
+            (0, 1): 2.25, (1, 2): 2.6666666666666665, (0, 0): 1.0, 
+            (3, 3): 1.5714285714285714, (0, 2): 1.8571428571428572, 
+            (1, 3): 3.0, (2, 3): 1.625, (2, 2): 1.0, 
+            (0, 3): 2.1666666666666665, (1, 1): 1.0}
+        ctrl_weighted= {
+            (0, 1): 1.0, (1, 2): 0.0, (0, 0): 1.0, (3, 3): 3.0, (0, 2): 3.5, 
+            (1, 3): 0.0, (2, 3): 5.5, (2, 2): 3.0, (0, 3): 4.0, (1, 1): 0.5}
+        for result, ctrl in zip(
+            results, 
+            (ctrl_cts_by_pair, ctrl_ct_pairs_by_depth,
+             ctrl_av_depth_by_pair, ctrl_weighted)):
+            self.assertEqual(result, ctrl)       
 
 if __name__ == '__main__':
     unittest.main()
