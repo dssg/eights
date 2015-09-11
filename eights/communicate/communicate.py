@@ -250,6 +250,8 @@ def plot_correlation_scatter_plot(M, verbose=True):
 
 def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
     #address pass entire matrix
+    # TODO respect missing_val
+    # TODO what does n do?
     x_grid = np.linspace(min(col), max(col), 1000)
 
     grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation

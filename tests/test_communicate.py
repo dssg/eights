@@ -145,6 +145,12 @@ class TestCommunicate(unittest.TestCase):
         fig = comm.plot_correlation_scatter_plot(sa, verbose=False)
         self.add_fig_to_report(fig, 'plot_correlation_scatter_plot')
 
+    def test_plot_kernel_density(self):
+        np.random.seed(0)
+        data = np.random.normal(size=(1000,))
+        fig = comm.plot_kernel_density(data, verbose=False)
+        self.add_fig_to_report(fig, 'plot_kernel_density')
+
     def xtest_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
