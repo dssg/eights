@@ -143,7 +143,6 @@ def get_top_features(clf, M=None, col_names=None, n=10, verbose=True):
         print_matrix_row_col(ranked_name_and_score)
     return ranked_name_and_score
 
-
 # TODO features form top % of clfs
 
 def get_roc_auc(labels, score, verbose=True):
