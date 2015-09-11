@@ -6,14 +6,11 @@ from eights import utils
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.cross_validation import train_test_split
-from utils_for_tests import rerout_stdout
-from utils_for_tests import path_of_data
-from utils_for_tests import generate_correlated_test_matrix
-from utils_for_tests import generate_test_matrix
+import utils_for_tests as uft
 import numpy as np
 
-REPORT_PATH=path_of_data('test_communicate.pdf')
-REFERENCE_REPORT_PATH=path_of_data('test_communicate_ref.pdf')
+REPORT_PATH=uft.path_of_data('test_communicate.pdf')
+REFERENCE_REPORT_PATH=uft.path_of_data('test_communicate_ref.pdf')
 
 class TestCommunicate(unittest.TestCase):
     @classmethod
@@ -40,7 +37,7 @@ class TestCommunicate(unittest.TestCase):
               1               4               5               6
               2               7               8          STRING
         """.strip()
-        with rerout_stdout() as get_stdout:
+        with uft.rerout_stdout() as get_stdout:
             comm.print_matrix_row_col(M)
             self.assertEqual(get_stdout().strip(), ctrl)
         M = np.array([(1000, 'Bill'), (2000, 'Sam'), (3000, 'James')],
@@ -52,7 +49,7 @@ class TestCommunicate(unittest.TestCase):
               S          2000.0             Sam
               J          3000.0           James
         """.strip()
-        with rerout_stdout() as get_stdout:
+        with uft.rerout_stdout() as get_stdout:
             comm.print_matrix_row_col(M, row_labels=row_labels)
             self.assertEqual(get_stdout().strip(), ctrl)
 
@@ -74,7 +71,7 @@ class TestCommunicate(unittest.TestCase):
         self.add_fig_to_report(fig, 'plot_simple_histogram')
 
     def test_plot_prec_recall(self):
-        M, labels = generate_correlated_test_matrix(1000)
+        M, labels = uft.generate_correlated_test_matrix(1000)
         M_train, M_test, labels_train, labels_test = train_test_split(
                 M, 
                 labels)
@@ -85,7 +82,7 @@ class TestCommunicate(unittest.TestCase):
         self.add_fig_to_report(fig, 'plot_prec_recall')
 
     def test_plot_roc(self):
-        M, labels = generate_correlated_test_matrix(1000)
+        M, labels = uft.generate_correlated_test_matrix(1000)
         M_train, M_test, labels_train, labels_test = train_test_split(
                 M, 
                 labels)
@@ -102,16 +99,27 @@ class TestCommunicate(unittest.TestCase):
         self.add_fig_to_report(fig, 'plot_box_plot')
 
     def test_get_top_features(self):
-        M, labels = generate_test_matrix(1000, 15, random_state=0)
+        M, labels = uft.generate_test_matrix(1000, 15, random_state=0)
         M = utils.cast_np_sa_to_nd(M)
         M_train, M_test, labels_train, labels_test = train_test_split(
                 M, 
                 labels)
         clf = RandomForestClassifier(random_state=0)
         clf.fit(M_train, labels_train)
-        scores = clf.feature_importances_
-        print scores
-        comm.get_top_features(clf, M)
+        res = comm.get_top_features(clf, M, verbose=False)
+        ctrl = utils.convert_to_sa(
+                [('f5',  0.0773838526068), 
+                 ('f13',   0.0769596713039),
+                 ('f8',  0.0751584839431),
+                 ('f6',  0.0730815879102),
+                 ('f11',   0.0684456133071),
+                 ('f9',  0.0666747414603),
+                 ('f10',   0.0659621889608),
+                 ('f7',  0.0657988099065),
+                 ('f2',  0.0634000069218),
+                 ('f0',  0.0632912268319)],
+                col_names=('feat_name', 'score'))
+        self.assertTrue(uft.array_equal(ctrl, res))
 
     # TODO stopped at get_top_features
 

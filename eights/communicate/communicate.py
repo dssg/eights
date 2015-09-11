@@ -133,7 +133,9 @@ def get_top_features(clf, M=None, col_names=None, n=10, verbose=True):
             col_names = ['f{}'.format(i) for i in xrange(len(scores))]
     ranked_name_and_score = [(col_names[x], scores[x]) for x in 
                              scores.argsort()[::-1]]
-    ranked_name_and_score = ranked_name_and_score[:n]
+    ranked_name_and_score = convert_to_sa(
+            ranked_name_and_score[:n], 
+            col_names=('feat_name', 'score'))
     if verbose:
         print_matrix_row_col(ranked_name_and_score)
     return ranked_name_and_score
