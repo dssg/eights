@@ -1,4 +1,6 @@
 import unittest
+from datetime import datetime
+from collections import Counter
 import eights.communicate as comm
 from eights.communicate.communicate import feature_pairs_in_tree
 from eights.communicate.communicate import feature_pairs_in_rf
@@ -9,8 +11,10 @@ from sklearn.cross_validation import train_test_split
 from sklearn.metrics import roc_auc_score
 import utils_for_tests as uft
 import numpy as np
+import matplotlib.pyplot as plt
 
 REPORT_PATH=uft.path_of_data('test_communicate.pdf')
+SUBREPORT_PATH=uft.path_of_data('test_communicate_sub.pdf')
 REFERENCE_REPORT_PATH=uft.path_of_data('test_communicate_ref.pdf')
 
 class TestCommunicate(unittest.TestCase):
@@ -151,7 +155,46 @@ class TestCommunicate(unittest.TestCase):
         fig = comm.plot_kernel_density(data, verbose=False)
         self.add_fig_to_report(fig, 'plot_kernel_density')
 
-    def xtest_feature_pairs_in_tree(self):
+    def test_plot_on_map(self):
+        # TODO
+        pass
+
+    def test_plot_on_timeline(self):
+        dates = [datetime(2015, 1, 1),
+                 datetime(2015, 2, 1),
+                 datetime(2015, 6, 1),
+                 datetime(2015, 6, 15),
+                 datetime(2015, 9, 2),
+                 datetime(2016, 1, 5)]
+        fig1 = comm.plot_on_timeline(dates, verbose=False)
+        self.add_fig_to_report(fig1, 'plot_on_timeline_1')
+        dates = np.array(dates, dtype='M8[us]')
+        fig2 = comm.plot_on_timeline(dates, verbose=False)
+        self.add_fig_to_report(fig1, 'plot_on_timeline_2')
+
+    def test_report(self):
+        subrep = comm.Report(report_path=SUBREPORT_PATH)
+        self.assertEqual(subrep.get_report_path(), SUBREPORT_PATH)
+        subrep.add_heading('Subreport', level=3)
+        subrep.add_text(
+            (u'Sample text.\n'
+             u'<p>HTML tags should render literally</p>\n'))
+        subrep.add_heading('Sample table', level=4)
+        sample_table  = np.array(
+            [(1, datetime(2015, 1, 1), 'New Years Day'),
+             (2, datetime(2015, 2, 14), 'Valentines Day'),
+             (3, datetime(2015, 3, 15), 'The Ides of March')],
+            dtype=[('idx', int), ('day', 'M8[us]'), ('Name', 'S17')])
+        subrep.add_table(sample_table)
+        sample_fig = plt.figure()
+        plt.plot([1, 2, 3], [1, 2, 3])
+        plt.title('Sample fig')
+        subrep.add_heading('Sample figure', level=4)
+        subrep.add_fig(sample_fig)
+        self.report.add_heading('report')
+        self.report.add_subreport(subrep)
+        
+    def test_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
         rf.fit(iris.data, iris.target)
@@ -160,38 +203,40 @@ class TestCommunicate(unittest.TestCase):
         ctrl = [[(2, 3)], [(2, 3), (0, 2)], [(0, 2), (1, 3)]]
         self.assertEqual(result, ctrl)
 
-    def xtest_feature_pairs_in_rf(self):
+    def test_feature_pairs_in_rf(self):
         iris = datasets.load_iris()
         rf = RandomForestClassifier(random_state=0)
         rf.fit(iris.data, iris.target)
-        result = feature_pairs_in_rf(rf, [1, 0.5], verbose=False)
-        result = feature_pairs_in_rf(rf, verbose=True, n=5)
-        
+        results = feature_pairs_in_rf(rf, [1, 0.5], verbose=False)
         # TODO make sure these results are actually correct
-#        ctrl = {'Depth 3->4': 
-#                Counter({(0, 3): 3, (1, 2): 2, (2, 3): 2, (0, 1): 1, 
-#                         (1, 3): 1, (3, 3): 1}), 
-#                'Depth 4->5': 
-#                Counter({(0, 1): 1, (1, 3): 1, (3, 3): 1, (0, 2): 1}), 
-#                'Depth 6->7': 
-#                Counter({(0, 3): 1}), 
-#                'Depth 2->3': 
-#                Counter({(2, 3): 5, (0, 2): 5, (2, 2): 2, (0, 3): 2, 
-#                         (1, 2): 1, (0, 1): 1, (1, 3): 1, (3, 3): 1, 
-#                         (0, 0): 1}), 
-#                'Overall': 
-#                Counter({(2, 3): 16, (0, 2): 14, (0, 3): 12, (3, 3): 7, 
-#                         (2, 2): 6, (0, 1): 4, (1, 2): 3, (1, 3): 3, 
-#                         (0, 0): 2, (1, 1): 1}), 
-#                'Depth 0->1': 
-#                Counter({(2, 3): 3, (0, 3): 3, (3, 3): 2, (2, 2): 2, 
-#                         (0, 1): 1, (0, 0): 1}), 
-#                'Depth 1->2': 
-#                Counter({(0, 2): 7, (2, 3): 5, (3, 3): 2, (2, 2): 2, 
-#                         (0, 3): 2, (1, 1): 1}), 'Depth 5->6': 
-#                Counter({(0, 3): 1, (2, 3): 1, (0, 2): 1})}
-#        self.assertEqual(result, ctrl)
-         # TODO Alter to deal w/ new output format
+        ctrl_cts_by_pair = Counter(
+            {(2, 3): 16, (0, 2): 14, (0, 3): 12, (3, 3): 7, (2, 2): 6, 
+             (0, 1): 4, (1, 2): 3, (1, 3): 3, (0, 0): 2, (1, 1): 1})
+        ctrl_ct_pairs_by_depth = [
+            Counter({(2, 3): 3, (0, 3): 3, (3, 3): 2, (2, 2): 2, (0, 1): 1, 
+                     (0, 0): 1}), 
+            Counter({(0, 2): 7, (2, 3): 5, (3, 3): 2, (2, 2): 2, (0, 3): 2, 
+                     (1, 1): 1}), 
+            Counter({(2, 3): 5, (0, 2): 5, (2, 2): 2, (0, 3): 2, (1, 2): 1, 
+                     (0, 1): 1, (1, 3): 1, (3, 3): 1, (0, 0): 1}), 
+            Counter({(0, 3): 3, (1, 2): 2, (2, 3): 2, (0, 1): 1, (1, 3): 1, 
+                     (3, 3): 1}), 
+            Counter({(0, 1): 1, (1, 3): 1, (3, 3): 1, (0, 2): 1}), 
+            Counter({(0, 3): 1, (2, 3): 1, (0, 2): 1}), 
+            Counter({(0, 3): 1})]
+        ctrl_av_depth_by_pair = {
+            (0, 1): 2.25, (1, 2): 2.6666666666666665, (0, 0): 1.0, 
+            (3, 3): 1.5714285714285714, (0, 2): 1.8571428571428572, 
+            (1, 3): 3.0, (2, 3): 1.625, (2, 2): 1.0, 
+            (0, 3): 2.1666666666666665, (1, 1): 1.0}
+        ctrl_weighted= {
+            (0, 1): 1.0, (1, 2): 0.0, (0, 0): 1.0, (3, 3): 3.0, (0, 2): 3.5, 
+            (1, 3): 0.0, (2, 3): 5.5, (2, 2): 3.0, (0, 3): 4.0, (1, 1): 0.5}
+        for result, ctrl in zip(
+            results, 
+            (ctrl_cts_by_pair, ctrl_ct_pairs_by_depth,
+             ctrl_av_depth_by_pair, ctrl_weighted)):
+            self.assertEqual(result, ctrl)       
 
 if __name__ == '__main__':
     unittest.main()

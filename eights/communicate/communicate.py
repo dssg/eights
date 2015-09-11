@@ -4,8 +4,10 @@ import StringIO
 import cgi
 import uuid
 import abc
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates
 from matplotlib.pylab import boxplot 
 
 
@@ -17,7 +19,7 @@ from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
-from ..utils import is_sa, cast_np_sa_to_nd, convert_to_sa
+from ..utils import is_sa, is_nd, cast_np_sa_to_nd, convert_to_sa
 from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 from communicate_helper import _feature_pair_report
@@ -285,7 +287,7 @@ def plot_on_map(lat_col, lng_col):
     """
     raise NotImplementedError
 
-def plot_on_timeline(col):
+def plot_on_timeline(col, verbose=True):
     """Plots points on a timeline
     
     Parameters
@@ -296,7 +298,15 @@ def plot_on_timeline(col):
     -------
     matplotlib.figure.Figure
     """
-    raise NotImplementedError
+    # http://stackoverflow.com/questions/1574088/plotting-time-in-python-with-matplotlib
+    if is_nd(col):
+        col = col.astype(datetime)
+    dates = matplotlib.dates.date2num(col)
+    fig = plt.figure()
+    plt.plot_date(dates, [0] * len(dates))
+    if verbose:
+        plt.show()
+    return fig
 
 def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True, n=10):
     """Describes the frequency of features appearing subsequently in each tree
