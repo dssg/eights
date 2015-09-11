@@ -102,7 +102,7 @@ class TestCommunicate(unittest.TestCase):
         self.add_fig_to_report(fig, 'plot_box_plot')
 
     def test_get_top_features(self):
-        M, labels = generate_test_matrix(1000, 10)
+        M, labels = generate_test_matrix(1000, 15, random_state=0)
         M = utils.cast_np_sa_to_nd(M)
         M_train, M_test, labels_train, labels_test = train_test_split(
                 M, 
@@ -110,6 +110,8 @@ class TestCommunicate(unittest.TestCase):
         clf = RandomForestClassifier(random_state=0)
         clf.fit(M_train, labels_train)
         scores = clf.feature_importances_
+        print scores
+        comm.get_top_features(clf, M)
 
     # TODO stopped at get_top_features
 

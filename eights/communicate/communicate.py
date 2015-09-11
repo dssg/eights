@@ -124,9 +124,20 @@ def plot_box_plot(col, col_name=None, verbose=True):
         plt.show()
     return fig
 
-def get_top_features(clf, M=None, n=10, verbose=True):
-    raise NotImplementedError
-    
+def get_top_features(clf, M=None, col_names=None, n=10, verbose=True):
+    scores = clf.feature_importances_
+    if col_names is None:
+        if is_sa(M):
+            col_names = M.dtype.names
+        else:
+            col_names = ['f{}'.format(i) for i in xrange(len(scores))]
+    ranked_name_and_score = [(col_names[x], scores[x]) for x in 
+                             scores.argsort()[::-1]]
+    ranked_name_and_score = ranked_name_and_score[:n]
+    if verbose:
+        print_matrix_row_col(ranked_name_and_score)
+    return ranked_name_and_score
+
 
 # TODO features form top % of clfs
 
