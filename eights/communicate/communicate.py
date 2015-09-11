@@ -14,6 +14,7 @@ from sklearn.neighbors.kde import KernelDensity
 import pdfkit
 
 from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
 from ..utils import is_sa, cast_np_sa_to_nd, convert_to_sa
@@ -143,8 +144,11 @@ def get_top_features(clf, M=None, col_names=None, n=10, verbose=True):
 
 # TODO features form top % of clfs
 
-def get_roc_auc(labels, score):
-    raise NotImplementedError
+def get_roc_auc(labels, score, verbose=True):
+    auc_score = roc_auc_score(labels, score)
+    if verbose:
+        print 'ROC AUC: {}'.format(auc_score)
+    return auc_score
 
 def plot_correlation_matrix(M, verbose=True):
     """Plot correlation between variables in M
@@ -152,6 +156,7 @@ def plot_correlation_matrix(M, verbose=True):
     Parameters
     ----------
     M : numpy structured array
+
     Returns
     -------
     matplotlib.figure.Figure

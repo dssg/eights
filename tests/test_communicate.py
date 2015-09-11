@@ -6,6 +6,7 @@ from eights import utils
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.cross_validation import train_test_split
+from sklearn.metrics import roc_auc_score
 import utils_for_tests as uft
 import numpy as np
 
@@ -122,6 +123,17 @@ class TestCommunicate(unittest.TestCase):
         self.assertTrue(uft.array_equal(ctrl, res))
 
     # TODO stopped at get_top_features
+    def test_get_roc_auc(self):
+        M, labels = uft.generate_correlated_test_matrix(1000)
+        M_train, M_test, labels_train, labels_test = train_test_split(
+                M, 
+                labels)
+        clf = RandomForestClassifier(random_state=0)
+        clf.fit(M_train, labels_train)
+        score = clf.predict_proba(M_test)[:,-1]
+        self.assertTrue(np.allclose(
+            comm.get_roc_auc(labels_test, score, verbose=False),
+            roc_auc_score(labels_test, score)))
 
     def xtest_feature_pairs_in_tree(self):
         iris = datasets.load_iris()
