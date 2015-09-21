@@ -434,7 +434,7 @@ class Report(object):
         self.__report_path = report_path
 
     def to_pdf(self, options={}, verbose=True):
-        # Options are dpfkit.from_url options. See
+        # Options are pdfkit.from_url options. See
         # https://pypi.python.org/pypi/pdfkit
         if verbose:
             print 'Generating report...'

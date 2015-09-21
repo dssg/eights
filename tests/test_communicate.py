@@ -25,10 +25,12 @@ class TestCommunicate(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         report_path = cls.report.to_pdf(verbose=False)
-        print 'Test Communicate visual regression tests:'
-        print '-----------------------------------------'
-        print 'graphical output available at: {}.'.format(report_path)
-        print 'Reference available at: {}.'.format(REFERENCE_REPORT_PATH)
+        uft.print_in_box(
+            'Test communicate visual regression tests',
+            ['graphical output available at:',
+             report_path,
+             'Reference available at:',
+             REFERENCE_REPORT_PATH])
 
     def add_fig_to_report(self, fig, heading):
         self.report.add_heading(heading)
