@@ -5,6 +5,7 @@ from sklearn.svm import SVC
 from sklearn import datasets
 
 from eights.perambulate.perambulate import *
+import eights.communicate as comm
 
 REPORT_PATH=uft.path_of_data('test_perambulate.pdf')
 SUBREPORT_PATH=uft.path_of_data('test_perambulate_sub.pdf')
@@ -19,10 +20,12 @@ class TestPerambulate(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         report_path = cls.report.to_pdf()
-        print 'Test Perambulate visual regression tests:'
-        print '-----------------------------------------'
-        print 'graphical output available at: {}.'.format(report_path)
-        print 'Reference available at: {}.'.format(REFERENCE_REPORT_PATH)
+        uft.print_in_box(
+                'Test Perambulate visual regression tests',
+                ['graphical output available at:',
+                 report_path,
+                 'Reference available at:',
+                 REFERENCE_REPORT_PATH])
 
     def test_run_experiment(self):
         iris = datasets.load_iris()
