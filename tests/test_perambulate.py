@@ -1,12 +1,28 @@
 import unittest
-import utils_for_tests
+import utils_for_tests as uft
 from sklearn.svm import SVC 
 
 from sklearn import datasets
 
 from eights.perambulate.perambulate import *
 
+REPORT_PATH=uft.path_of_data('test_perambulate.pdf')
+SUBREPORT_PATH=uft.path_of_data('test_perambulate_sub.pdf')
+REFERENCE_REPORT_PATH=uft.path_of_data('test_perambulate_ref.pdf')
+
 class TestPerambulate(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.report = comm.Report(report_path=REPORT_PATH)
+
+    @classmethod
+    def tearDownClass(cls):
+        report_path = cls.report.to_pdf()
+        print 'Test Perambulate visual regression tests:'
+        print '-----------------------------------------'
+        print 'graphical output available at: {}.'.format(report_path)
+        print 'Reference available at: {}.'.format(REFERENCE_REPORT_PATH)
 
     def test_run_experiment(self):
         iris = datasets.load_iris()
@@ -61,7 +77,7 @@ class TestPerambulate(unittest.TestCase):
             print trial, trial.average_score()
 
     def test_report_simple(self):
-        M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
+        M, y = uft.generate_test_matrix(100, 5, 2)
         clfs = [{'clf': RandomForestClassifier, 
                  'n_estimators': [10, 100, 1000]}]
         cvs = [{'cv': StratifiedKFold}]
@@ -69,8 +85,8 @@ class TestPerambulate(unittest.TestCase):
         exp.make_report()
 
     def test_make_csv(self):
-        M, y = utils_for_tests.generate_test_matrix(1000, 15, 2)
-        #M, y = utils_for_tests.generate_correlated_test_matrix(10000)
+        M, y = uft.generate_test_matrix(1000, 15, 2)
+        #M, y = uft.generate_correlated_test_matrix(10000)
         clfs = [{'clf': RandomForestClassifier, 
                  'n_estimators': [10, 100, 1000], 
                  'max_depth': [5, 25]},
@@ -85,7 +101,7 @@ class TestPerambulate(unittest.TestCase):
         exp.make_csv()
 
     def test_subsetting(self):
-        M, y = utils_for_tests.generate_test_matrix(1000, 5, 2)
+        M, y = uft.generate_test_matrix(1000, 5, 2)
         subsets = [{'subset': SubsetRandomRowsEvenDistribution, 
                     'subset_size': [20]},
                    {'subset': SubsetRandomRowsActualDistribution, 
@@ -133,7 +149,7 @@ class TestPerambulate(unittest.TestCase):
         exp.make_csv()
 
     def test_report_complex(self):
-        M, y = utils_for_tests.generate_test_matrix(100, 5, 2)
+        M, y = uft.generate_test_matrix(100, 5, 2)
         clfs = [{'clf': RandomForestClassifier, 
                  'n_estimators': [10, 100], 
                  'max_depth': [1, 10]}, 

@@ -15,19 +15,19 @@ EIGHTS_PATH = os.path.join(TESTS_PATH, '..')
 def path_of_data(filename):
     return os.path.join(DATA_PATH, filename)
 
-def generate_test_matrix(rows, cols, n_classes=2, types=[], random_state=None):
-    full_types = list(it.chain(types, it.repeat(float, cols - len(types))))
+def generate_test_matrix(n_rows, n_cols=1, n_classes=2, types=[], random_state=None):
+    full_types = list(it.chain(types, it.repeat(float, n_cols - len(types))))
     np.random.seed(random_state)
     cols = []
     for col_type in full_types:
         if col_type is int:
             col = np.random.randint(100, size=rows)
         elif issubclass(col_type, basestring):
-            col = np.random.choice(list(string.uppercase), size=rows)
+            col = np.random.choice(list(string.uppercase), size=n_rows)
         else:
-            col = np.random.random(size=rows)
+            col = np.random.random(size=n_rows)
         cols.append(col)
-    labels = np.random.randint(n_classes, size=rows)
+    labels = np.random.randint(n_classes, size=n_rows)
     M = eights.utils.sa_from_cols(cols)
     return M, labels
 
