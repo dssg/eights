@@ -1,4 +1,8 @@
-import numpy as np class ArrayEmitter(object):
+import numpy as np 
+import sqlalchemy as sqla
+from investigate import open_csv
+
+class ArrayEmitter(object):
     """
     Array emitter is a tool that accepts tables from either SQL or CSVs in the 
     RG format, then generates Numpy structured arrays in the M format based on 
@@ -155,26 +159,48 @@ import numpy as np class ArrayEmitter(object):
     Notice that Table 3 is identical to Table 2, except student 1 has been
     omitted because his/her GPA is higher than 3.4.
    
-    Parameters
-    ----------
-    conn_string : str or None
-        SQLAlchemy connection string used to connect.
-        If None, conn_string must be specified for each SQL query
-
     """
 
-    def __init__(self, conn_string=None):
-        pass
+    def __init__(self):
+        self.__conn = None
+        self.__rg_query = None
+        self.__selections = []
+        self.__aggregations = []
+        self.__default_aggregation = 'mean'
+        self.__unit_id_col = None
+        self.__start_time_col=None
+        self.__stop_time_col=None
+        self.__feature_col=None
+        self.__val_col=None
 
-    def get_rg_from_SQL(self, query, unit_id_col=None, start_time_col=None,
-                        stop_time_col=None, feature_col=None, val_col=None):
-                        conn_string=None):
+    def __copy(self):
+        cp = ArrayEmitter()
+        cp.__conn = self.__conn
+        cp.__rg_query = self.__rg_query
+        cp.__selections = list(self.__selections)
+        cp.__aggregations = list(self.__aggregations)
+        cp.__default_aggregation = self.__default_aggregation
+        cp.__unit_id_col = self.__unit_id_col
+        cp.__start_time_col = self.__start_time_col
+        cp.__stop_time_col = self.__stop_time_col
+        cp.__feature_col = self.__feature_col
+        cp.__val_col = self.__val_col
+        return cp
+
+    def get_rg_from_SQL(self, query, conn_string, unit_id_col=None, 
+                        start_time_col=None, stop_time_col=None, 
+                        feature_col=None, val_col=None): 
         """ Gets an RG-formatted matrix from a CSV file
            
         Parameters
         ----------
         query : str
             An SQL query that returns the RG-formatted table.
+
+        conn_str : str or None
+            SQLAlchemy connection string to connect to the database and run
+            the query. If None, the conn_str used to initialize the ArrayGenerator
+            will be used
 
         unit_id_col : str or None
             The name of the column containing unique unit IDs. For example,
@@ -202,10 +228,6 @@ import numpy as np class ArrayEmitter(object):
             this is 'value'. If None, ArrayEmitter will pick the fifth
             column.
 
-        conn_str : str or None
-            SQLAlchemy connection string to connect to the database and run
-            the query. If None, the conn_str used to initialize the ArrayGenerator
-            will be used
             
         Examples
         --------
@@ -215,7 +237,14 @@ import numpy as np class ArrayEmitter(object):
         ...                    conn_str=conn_str)
 
         """
-        pass
+        self.__conn = sqla.create_engine(conn_str)
+        self.__rg_query = rg_query
+        self.__unit_id_col = unit_id_col
+        self.__start_time_col = start_time_col
+        self.__stop_time_col = stop_time_col
+        self.__feature_col = feature_col
+        self.__val_col = val_col
+        return self
 
     def get_rg_from_csv(self, csv_file_path, unit_id_col=None, 
                         start_time_col=None, stop_time_col=None, 
@@ -260,7 +289,19 @@ import numpy as np class ArrayEmitter(object):
         >>> ag = ArrayGenerator()
         >>> ag.get_rg_from_csv('table_1.csv')             
         """
-        pass
+        # in-memory db
+        conn = sqla.create_engine('sqlite://')
+        rg = open_csv(csv_file_path)
+        # TODO lalala dump the CSV to SQL somehow...
+        raise NotImplementedError()
+        self.__conn = conn
+        self.__rg_query = rg_query
+        self.__unit_id_col = unit_id_col
+        self.__start_time_col = start_time_col
+        self.__stop_time_col = stop_time_col
+        self.__feature_col = feature_col
+        self.__val_col = val_col
+        return self
 
     def set_aggregation(self, feature_name, method):
         """Sets the method used to aggregate across dates in a RG table.
@@ -293,11 +334,15 @@ import numpy as np class ArrayEmitter(object):
         >>> ag.set_aggregation('math_gpa', 'mean')
         >>> ag.set_aggregation('absences', 'max')
         >>> sa = ag.to_sa(2005, 2006)
+
         """
-        pass
+        # TODO make sure method is valid
+        self.__aggragations.append((feature_name, method))
+        return self
 
     def set_default_aggregation(self, method):
-        pass
+        self.__default_aggregation = method
+        return self
     
     def select_rows_in_M(self, where):
         """
@@ -324,7 +369,7 @@ import numpy as np class ArrayEmitter(object):
         >>> ... # Populate ag with Table 1 and Table 2
         >>> ag.set_aggregation('math_gpa', 'mean')
         >>> ag.set_aggregation('absences', 'max')
-        >>> ag = ag.set_rows_in_M('grad_year == 2007')
+        >>> ag = ag.select_rows_in_M('grad_year == 2007')
         >>> sa = ag.to_sa(2005, 2006)
         """
         # Note that this copies the original rather than mutating it, so
@@ -332,10 +377,12 @@ import numpy as np class ArrayEmitter(object):
 
         # We can recycle the mini-language from UPSG Query
         # https://github.com/dssg/UPSG/blob/master/upsg/transform/split.py#L210
-        return self
+        cp = self.__copy()
+        cp.__selections.append(where)
+        return cp
 
     def select_cols_in_M(self, where):
-        pass
+        raise NotImplementedError()
         
     def emit_M(self, start_time, stop_time):
         """Creates a structured array in M-format
@@ -354,6 +401,7 @@ import numpy as np class ArrayEmitter(object):
             Numpy structured array constructed using the specified queries and
             subsets
         """
+        
         return np.array([0], dtype=[('f0', int)])
 
     def subset_over(self, directive):
@@ -368,4 +416,4 @@ import numpy as np class ArrayEmitter(object):
         -------
         ?
         """
-        pass
+        raise NotImplementedError()
