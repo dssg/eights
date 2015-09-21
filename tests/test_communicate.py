@@ -24,7 +24,7 @@ class TestCommunicate(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        report_path = cls.report.to_pdf()
+        report_path = cls.report.to_pdf(verbose=False)
         print 'Test Communicate visual regression tests:'
         print '-----------------------------------------'
         print 'graphical output available at: {}.'.format(report_path)

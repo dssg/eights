@@ -433,13 +433,23 @@ class Report(object):
                                             '{}.html'.format(uuid.uuid4()))
         self.__report_path = report_path
 
-    def to_pdf(self):
+    def to_pdf(self, options={}, verbose=True):
+        # Options are dpfkit.from_url options. See
+        # https://pypi.python.org/pypi/pdfkit
+        if verbose:
+            print 'Generating report...'
         with open(self.__html_src_path, 'w') as html_out:
             html_out.write(self.__get_header())
             html_out.write('\n'.join(self.__objects))
             html_out.write(self.__get_footer())
-        pdfkit.from_url(self.__html_src_path, self.__report_path)
-        return self.get_report_path()
+        if not verbose:
+            options['quiet'] = ''
+        pdfkit.from_url(self.__html_src_path, self.__report_path, 
+                        options=options)
+        report_path = self.get_report_path()
+        if verbose:
+            print 'Report written to {}'.format(report_path)
+        return report_path
 
     def get_report_path(self):
         return os.path.abspath(self.__report_path)
