@@ -5,12 +5,13 @@ import itertools as it
 def _feature_pair_report(pair_and_values,
                          description='pairs', 
                          measurement='value',
-                         note=None):
+                         note=None,
+                         n=10):
     print '-' * 80
     print description
     print '-' * 80
     print 'feature pair : {}'.format(measurement)
-    for pair, value in pair_and_values:
+    for pair, value in it.islice(pair_and_values, n):
         print '{} : {}'.format(pair, value)
     if note is not None:
         print '* {}'.format(note)

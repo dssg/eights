@@ -4,8 +4,10 @@ import StringIO
 import cgi
 import uuid
 import abc
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates
 from matplotlib.pylab import boxplot 
 
 
@@ -14,9 +16,10 @@ from sklearn.neighbors.kde import KernelDensity
 import pdfkit
 
 from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_curve
 from ..perambulate import Experiment
-from ..utils import is_sa, cast_np_sa_to_nd, convert_to_sa
+from ..utils import is_sa, is_nd, cast_np_sa_to_nd, convert_to_sa
 from ..utils import cast_list_of_list_to_sa
 from communicate_helper import *
 from communicate_helper import _feature_pair_report
@@ -28,25 +31,16 @@ def print_matrix_row_col(M, row_labels=None, col_labels=None):
         row_labels = xrange(M.shape[0])
     col_labels = M.dtype.names
     # From http://stackoverflow.com/questions/9535954/python-printing-lists-as-tabular-data
-    row_format ="{:>15}" * (len(col_labels) + 1)
+    row_format =' '.join(['{:>15}' for _ in xrange(len(col_labels) + 1)])
     print row_format.format("", *col_labels)
     for row_name, row in zip(row_labels, M):
         print row_format.format(row_name, *row)
 
-    
-def print_describe_all(a_dict):
-    row_labels = a_dict.keys()
-    rows = a_dict.values()
-    row_format ="{:>15}" * (2)
-    print row_format.format("", *a_dict.keys())
-    for row_label, row in zip(row_labels, rows):
-        print row_format.format(row_label, row)
-    
 def plot_simple_histogram(col, verbose=True):
     hist, bins = np.histogram(col, bins=50)
     width = 0.7 * (bins[1] - bins[0])
     center = (bins[:-1] + bins[1:]) / 2
-    f = figure()
+    f = plt.figure()
     plt.bar(center, hist, align='center', width=width)
     if verbose:
         plt.show()
@@ -110,7 +104,7 @@ def plot_roc(labels, score, title='ROC', verbose=True):
         fig.show()
     return fig
 
-def plot_box_plot(col, col_name=False, verbose=True):
+def plot_box_plot(col, col_name=None, verbose=True):
     """Makes a box plot for a feature
     comment
     
@@ -124,19 +118,38 @@ def plot_box_plot(col, col_name=False, verbose=True):
     
     """
 
-    fig = boxplot(col)
+    fig = plt.figure()
+    boxplot(col)
+    if col_name:
+        plt.title(col_name)
     #add col_name to graphn
     if verbose:
         plt.show()
     return fig
 
-def get_top_features(clf, n):
-    raise NotImplementedError
+def get_top_features(clf, M=None, col_names=None, n=10, verbose=True):
+    scores = clf.feature_importances_
+    if col_names is None:
+        if is_sa(M):
+            col_names = M.dtype.names
+        else:
+            col_names = ['f{}'.format(i) for i in xrange(len(scores))]
+    ranked_name_and_score = [(col_names[x], scores[x]) for x in 
+                             scores.argsort()[::-1]]
+    ranked_name_and_score = convert_to_sa(
+            ranked_name_and_score[:n], 
+            col_names=('feat_name', 'score'))
+    if verbose:
+        print_matrix_row_col(ranked_name_and_score)
+    return ranked_name_and_score
 
 # TODO features form top % of clfs
 
-def get_roc_auc(labels, score):
-    raise NotImplementedError
+def get_roc_auc(labels, score, verbose=True):
+    auc_score = roc_auc_score(labels, score)
+    if verbose:
+        print 'ROC AUC: {}'.format(auc_score)
+    return auc_score
 
 def plot_correlation_matrix(M, verbose=True):
     """Plot correlation between variables in M
@@ -144,6 +157,7 @@ def plot_correlation_matrix(M, verbose=True):
     Parameters
     ----------
     M : numpy structured array
+
     Returns
     -------
     matplotlib.figure.Figure
@@ -155,11 +169,12 @@ def plot_correlation_matrix(M, verbose=True):
     if is_sa(M):
         names = M.dtype.names
         M = cast_np_sa_to_nd(M)
+        n_cols = M.shape[1]
     else: 
         if is_nd(M):
             n_cols = M.shape[1]
         else: # list of arrays
-            n_cols = len(M)
+            n_cols = len(M[0])
         names = ['f{}'.format(i) for i in xrange(n_cols)]
     
     #set rowvar =0 for rows are items, cols are features
@@ -193,13 +208,11 @@ def plot_correlation_scatter_plot(M, verbose=True):
     # adapted from the excellent 
     # http://stackoverflow.com/questions/7941207/is-there-a-function-to-make-scatterplot-matrices-in-matplotlib
     
-    if is_sa(M):
-        names = M.dtype.names
-        M = cast_np_sa_to_nd(M)
-    else:
-        names = ['f{}'.format(i) for i in xrange(M.shape[1])]    
+    M = convert_to_sa(M)
 
-    numdata, numvars = M.shape
+    numdata = M.shape[0]
+    numvars = len(M.dtype)
+    names = M.dtype.names
     fig, axes = plt.subplots(numvars, numvars)
     fig.subplots_adjust(hspace=0.05, wspace=0.05)
 
@@ -221,7 +234,7 @@ def plot_correlation_scatter_plot(M, verbose=True):
     # Plot the M.
     for i, j in zip(*np.triu_indices_from(axes, k=1)):
         for x, y in [(i,j), (j,i)]: 
-            axes[x,y].plot(M[x], M[y], '.')
+            axes[x,y].plot(M[M.dtype.names[x]], M[M.dtype.names[y]], '.')
 
     # Label the diagonal subplots...
     for i, label in enumerate(names):
@@ -238,6 +251,8 @@ def plot_correlation_scatter_plot(M, verbose=True):
 
 def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True): 
     #address pass entire matrix
+    # TODO respect missing_val
+    # TODO what does n do?
     x_grid = np.linspace(min(col), max(col), 1000)
 
     grid = GridSearchCV(KernelDensity(), {'bandwidth': np.linspace(0.1,1.0,30)}, cv=20) # 20-fold cross-validation
@@ -271,7 +286,7 @@ def plot_on_map(lat_col, lng_col):
     """
     raise NotImplementedError
 
-def plot_on_timeline(col):
+def plot_on_timeline(col, verbose=True):
     """Plots points on a timeline
     
     Parameters
@@ -282,9 +297,17 @@ def plot_on_timeline(col):
     -------
     matplotlib.figure.Figure
     """
-    raise NotImplementedError
+    # http://stackoverflow.com/questions/1574088/plotting-time-in-python-with-matplotlib
+    if is_nd(col):
+        col = col.astype(datetime)
+    dates = matplotlib.dates.date2num(col)
+    fig = plt.figure()
+    plt.plot_date(dates, [0] * len(dates))
+    if verbose:
+        plt.show()
+    return fig
 
-def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
+def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True, n=10):
     """Describes the frequency of features appearing subsequently in each tree
     in a random forest"""
     # weight be depth is a vector. The 0th entry is the weight of being at
@@ -292,6 +315,7 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
     # If not provided, weights are linear with negative depth. If 
     # the provided vector is not as long as the number of depths, then 
     # remaining depths are weighted with 0
+    # If verbose, will only print the first n results
 
 
     pairs_by_est = [feature_pairs_in_tree(est) for est in rf.estimators_]
@@ -329,25 +353,29 @@ def feature_pairs_in_rf(rf, weight_by_depth=None, verbose=True):
         _feature_pair_report(
                 counts_by_pair.most_common(), 
                 'Overall Occurrences', 
-                'occurrences')
+                'occurrences',
+                n=n)
         _feature_pair_report(
                 sorted([item for item in average_depth_by_pair.iteritems()], 
                        key=lambda item: item[1]),
                 'Average depth',
                 'average depth',
-                'Max depth was {}'.format(depth_len - 1))
+                'Max depth was {}'.format(depth_len - 1),
+                n=n)
         _feature_pair_report(
                 sorted([item for item in weighted.iteritems()], 
                        key=lambda item: item[1]),
                 'Occurrences weighted by depth',
                 'sum weight',
-                'Weights for depth 0, 1, 2, ... were: {}'.format(weights))
+                'Weights for depth 0, 1, 2, ... were: {}'.format(weights),
+                n=n)
 
         for depth, pairs in enumerate(count_pairs_by_depth):
             _feature_pair_report(
                     pairs.most_common(), 
                     'Occurrences at depth {}'.format(depth), 
-                    'occurrences')
+                    'occurrences',
+                    n=n)
 
 
     return (counts_by_pair, count_pairs_by_depth, average_depth_by_pair, 
@@ -388,15 +416,16 @@ def np_to_html_table(sa, fout, show_shape=False):
     fout.write('\n')
     fout.write('</table></p>')
 
+class ReportError(Exception):
+    pass
+
 class Report(object):
 
-    class ReportObject(object):
-        __metaclass__ = abc.ABCMeta
-
-    def __init__(self, exp, report_path='report.pdf'):
-        self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
-        self.__objects = []
+    def __init__(self, exp=None, report_path='report.pdf'):
         self.__exp = exp
+        if exp is not None:
+            self.__back_indices = {trial: i for i, trial in enumerate(exp.trials)}
+        self.__objects = []
         self.__tmp_folder = 'eights_temp'
         if not os.path.exists(self.__tmp_folder):
             os.mkdir(self.__tmp_folder)
@@ -410,7 +439,10 @@ class Report(object):
             html_out.write('\n'.join(self.__objects))
             html_out.write(self.__get_footer())
         pdfkit.from_url(self.__html_src_path, self.__report_path)
-        return self.__report_path
+        return self.get_report_path()
+
+    def get_report_path(self):
+        return os.path.abspath(self.__report_path)
 
     def __get_header(self):
         # Thanks to http://stackoverflow.com/questions/13516534/how-to-avoid-page-break-inside-table-row-for-wkhtmltopdf
@@ -444,7 +476,7 @@ class Report(object):
     def __get_footer(self):
         return '\n</body>\n</html>\n'
 
-    def add_heading(self, heading, level):
+    def add_heading(self, heading, level=2):
         self.__objects.append(html_format(
             '<h{}>{}</h{}>',
             level,
@@ -461,7 +493,7 @@ class Report(object):
         np_to_html_table(M, sio)
         self.__objects.append(sio.getvalue())
 
-    def __add_fig(self, fig):
+    def add_fig(self, fig):
         # So we don't get pages with nothing but one figure on them
         fig.set_figheight(5.0)
         filename = 'fig_{}.png'.format(str(uuid.uuid4()))
@@ -470,6 +502,9 @@ class Report(object):
         self.__objects.append('<img src="{}">'.format(filename))
 
     def add_summary_graph(self, measure):
+        if self.__exp is None:
+            raise ReportError('No experiment provided for this report. '
+                              'Cannot add summary graphs.')
         results = [(trial, score, self.__back_indices[trial]) for 
                    trial, score in getattr(self.__exp, measure)().iteritems()]
         results_sorted = sorted(
@@ -484,7 +519,7 @@ class Report(object):
         for rank, result in enumerate(results_sorted):
             plt.text(rank, result[1], '{}'.format(result[2]))
         plt.ylabel(measure)
-        self.__add_fig(fig)
+        self.add_fig(fig)
 
     def add_summary_graph_roc_auc(self):
         self.add_summary_graph('roc_auc')
@@ -493,11 +528,14 @@ class Report(object):
         self.add_summary_graph('average_score')
 
     def add_graph_for_best(self, func_name):
+        if self.__exp is None:
+            raise ReportError('No experiment provided for this report. '
+                              'Cannot add graph for best trial.')
         best_trial = max(
             self.__exp.trials, 
             key=lambda trial: trial.average_score())
         fig = getattr(best_trial, func_name)()
-        self.__add_fig(fig)
+        self.add_fig(fig)
         self.add_text('Best trial is trial {} ({})]'.format(
             self.__back_indices[best_trial],
             best_trial))
@@ -509,6 +547,9 @@ class Report(object):
         self.add_graph_for_best('prec_recall_curve')
 
     def add_legend(self):
+        if self.__exp is None:
+            raise ReportError('No experiment provided for this report. '
+                              'Cannot add legend.')
         list_of_tuple = [(str(i), str(trial)) for i, trial in 
                          enumerate(self.__exp.trials)]
         table = cast_list_of_list_to_sa(list_of_tuple, col_names=('Id', 'Trial'))
