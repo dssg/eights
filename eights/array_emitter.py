@@ -2,6 +2,7 @@ import numpy as np
 import sqlalchemy as sqla
 from investigate import open_csv
 from uuid import uuid4
+from eights import utils
 
 class ArrayEmitter(object):
     """
@@ -436,10 +437,11 @@ class ArrayEmitter(object):
                                 col_specs['unit_id'],
                                 table_name)
         # TODO handle datetimes
+        # TODO handle FIRST and LAST aggregations
         sql_from_clause_features = 'LEFT JOIN '.join(
             [("(SELECT {unit_id_col} AS id, {aggr}({val_col}) AS val FROM "
               "{table_name} WHERE {start_time_col} >= '{start_time}' AND "
-              "{stop_time_col} <= '{stop_time}' "#ORDER BY {start_time_col} "
+              "{stop_time_col} <= '{stop_time}' "
               "GROUP BY id) {feat_name}_tbl ON "
               "id_tbl.id = {feat_name}_tbl.id) ").format(
                   unit_id_col=col_specs['unit_id'],
@@ -454,10 +456,10 @@ class ArrayEmitter(object):
 
         sql_select = '{} {} {}'.format(sql_select_clause, sql_from_clause_top,
                                        sql_from_clause_features)
-        query_result = conn.execute(sql_select).fetchall()
-        print query_result
+        query_result = conn.execute(sql_select)
+        return utils.cast_list_of_list_to_sa(query_result.fetchall(), 
+                                             col_names=query_result.keys())        
 
-        return np.array([(0,)], dtype=[('f0', int)])
 
     def subset_over(self, directive):
         """
