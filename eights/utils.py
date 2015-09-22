@@ -234,14 +234,15 @@ def cast_np_nd_to_sa(nd, dtype=None, names=None):
         nd = nd.reshape(nd.size, 1)
     if dtype is None:
         n_cols = nd.shape[1]
-        if names is None: names = map('f{}'.format, xrange(n_cols))
-        dtype2 = np.dtype({'names': names,'formats': [nd_dtype for i in xrange(n_cols)]})
+        if names is None: 
+            names = map('f{}'.format, xrange(n_cols))
+        dtype = np.dtype({'names': names,'formats': [nd_dtype for i in xrange(n_cols)]})
         return nd.reshape(nd.size).view(dtype)
     type_len = nd_dtype.itemsize
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     if all(dtype[i] == nd_dtype for i in xrange(len(dtype))):
         return nd.reshape(nd.size).view(dtype)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     # if the user requests an incompatible type, we have to convert
     cols = (nd[:,i].astype(dtype[i]) for i in xrange(len(dtype))) 
     return np.array(it.izip(*cols), dtype=dtype)
