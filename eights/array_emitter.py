@@ -1,4 +1,5 @@
-import numpy as np import sqlalchemy as sqla
+import numpy as np 
+import sqlalchemy as sqla
 from investigate import open_csv
 from uuid import uuid4
 from eights import utils
