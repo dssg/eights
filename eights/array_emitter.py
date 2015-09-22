@@ -114,10 +114,10 @@ class ArrayEmitter(object):
     method is not specified, ArrayGenerator will take the mean. For example, if
     we have Table 1 stored in table1.csv, and run the following:
 
-    >>> ag = ArrayGenerator()
-    >>> ag.get_rg_from_csv('table1.csv')
-    >>> ag.set_aggregation('math_gpa', 'mean')
-    >>> ag.set_aggregation('absences', 'max')
+    >>> ae = ArrayEmitter()
+    >>> ae.get_rg_from_csv('table1.csv')
+    >>> ae.set_aggregation('math_gpa', 'mean')
+    >>> ae.set_aggregation('absences', 'max')
     >>> table2 = ag.emit_M(2005, 2006)
 
     we end up with Table 2
@@ -137,11 +137,11 @@ class ArrayEmitter(object):
     students with a math_gpa at or below 3.4. In order to subset units, we use 
     the select_rows_in_M function. For example:
 
-    >>> ag = ArrayGenerator()
-    >>> ag.get_rg_from_csv('table1.csv')
-    >>> ag.set_aggregation('math_gpa', 'mean')
-    >>> ag.set_aggregation('absences', 'max')
-    >>> ag = ag.select_rows_in_M('math_gpa <= 3.4')
+    >>> ae = ArrayEmitter()
+    >>> ae.get_rg_from_csv('table1.csv')
+    >>> ae.set_aggregation('math_gpa', 'mean')
+    >>> ae.set_aggregation('absences', 'max')
+    >>> ae = ag.select_rows_in_M('math_gpa <= 3.4')
     >>> table3 = ag.to_sa(2005, 2006)
 
     Gives us 
@@ -187,20 +187,20 @@ class ArrayEmitter(object):
         cp.__val_col = self.__val_col
         return cp
 
-    def get_rg_from_SQL(self, query, conn_string, unit_id_col=None, 
+    def get_rg_from_sql(self, conn_string, query, unit_id_col=None, 
                         start_time_col=None, stop_time_col=None, 
                         feature_col=None, val_col=None): 
         """ Gets an RG-formatted matrix from a CSV file
            
         Parameters
         ----------
+        conn_str : str
+            SQLAlchemy connection string to connect to the database and run
+            the query. 
+
         query : str
             An SQL query that returns the RG-formatted table.
 
-        conn_str : str or None
-            SQLAlchemy connection string to connect to the database and run
-            the query. If None, the conn_str used to initialize the ArrayGenerator
-            will be used
 
         unit_id_col : str or None
             The name of the column containing unique unit IDs. For example,
