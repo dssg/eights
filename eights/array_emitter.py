@@ -33,7 +33,7 @@ class ArrayEmitter(object):
     +------------+------------+----------+-------------+-------+
     |          1 |       2005 |     2006 |    math_gpa |   3.4 |
     +------------+------------+----------+-------------+-------+
-    |          1 |       2005 |     2006 |    absenses |     0 |
+    |          1 |       2005 |     2006 |    absences |     0 |
     +------------+------------+----------+-------------+-------+
     |          1 |       2006 |     2007 |    math_gpa |   3.5 |
     +------------+------------+----------+-------------+-------+
@@ -43,9 +43,9 @@ class ArrayEmitter(object):
     +------------+------------+----------+-------------+-------+
     |          2 |       2005 |     2006 |    math_gpa |   3.4 |
     +------------+------------+----------+-------------+-------+
-    |          2 |       2005 |     2006 |    absenses |    14 |
+    |          2 |       2005 |     2006 |    absences |    14 |
     +------------+------------+----------+-------------+-------+
-    |          2 |       2006 |     2007 |    absenses |    96 |
+    |          2 |       2006 |     2007 |    absences |    96 |
     +------------+------------+----------+-------------+-------+
 
     In an RG-formatted table, there are five columns:
@@ -123,7 +123,7 @@ class ArrayEmitter(object):
     we end up with Table 2
 
     Notice that math_gpa and english_gpa are the average for 2005 and 2006
-    per student, while absenses is the max over 2005 and 2006. Also notice
+    per student, while absences is the max over 2005 and 2006. Also notice
     that english_gpa for student 1 is nan, since the only english_gpa for
     student 1 is from 2007, which is outside of our range. For student 2,
     english_gpa is nan because student 2 has no entries in the table for
@@ -167,11 +167,7 @@ class ArrayEmitter(object):
         self.__selections = []
         self.__aggregations = []
         self.__default_aggregation = 'mean'
-        self.__unit_id_col = None
-        self.__start_time_col=None
-        self.__stop_time_col=None
-        self.__feature_col=None
-        self.__val_col=None
+        self.__col_specs = {}
 
     def __copy(self):
         cp = ArrayEmitter()
@@ -180,14 +176,10 @@ class ArrayEmitter(object):
         cp.__selections = list(self.__selections)
         cp.__aggregations = list(self.__aggregations)
         cp.__default_aggregation = self.__default_aggregation
-        cp.__unit_id_col = self.__unit_id_col
-        cp.__start_time_col = self.__start_time_col
-        cp.__stop_time_col = self.__stop_time_col
-        cp.__feature_col = self.__feature_col
-        cp.__val_col = self.__val_col
+        cp.__col_specs = self.__col_specs.copy()
         return cp
 
-    def get_rg_from_sql(self, conn_string, query, unit_id_col=None, 
+    def get_rg_from_sql(self, conn_str, query, unit_id_col=None, 
                         start_time_col=None, stop_time_col=None, 
                         feature_col=None, val_col=None): 
         """ Gets an RG-formatted matrix from a CSV file
@@ -205,28 +197,28 @@ class ArrayEmitter(object):
         unit_id_col : str or None
             The name of the column containing unique unit IDs. For example,
             in Table 1, this is 'student_id'. If None, ArrayEmitter will
-            pick the first column
+            pick the first otherwise unspecified column
 
         start_time_col : str or None
             The name of the column containing start time. In Table 1,
             this is 'start_year'. If None, ArrayEmitter will pick the second
-            column.
+            otherwise unspecified column.
 
         end_time_col : str or None
             The name of the column containing the stop time. In Table 1,
             this is 'end_year'. If None, ArrayEmitter will pick the third
-            column.
+            otherwise unspecified column.
 
         feature_col : str or None
             The name of the column containing the feature name. In Table 1,
             this is 'feature'. If None, ArrayEmitter will pick the fourth
-            column.
+            otherwise unspecified column.
 
         val_col : str or None
             The name of the column containing the value for the given
             feature for the given user at the given time. In Table 1,
             this is 'value'. If None, ArrayEmitter will pick the fifth
-            column.
+            otherwise unspecified column.
 
             
         Examples
@@ -238,12 +230,12 @@ class ArrayEmitter(object):
 
         """
         self.__conn = sqla.create_engine(conn_str)
-        self.__rg_query = rg_query
-        self.__unit_id_col = unit_id_col
-        self.__start_time_col = start_time_col
-        self.__stop_time_col = stop_time_col
-        self.__feature_col = feature_col
-        self.__val_col = val_col
+        self.__rg_query = query
+        self.__col_specs['unit_id'] = unit_id_col
+        self.__col_specs['start_time'] = start_time_col
+        self.__col_specs['stop_time'] = stop_time_col
+        self.__col_specs['feature'] = feature_col
+        self.__col_specs['val'] = val_col
         return self
 
     def get_rg_from_csv(self, csv_file_path, unit_id_col=None, 
@@ -259,28 +251,28 @@ class ArrayEmitter(object):
         unit_id_col : str or None
             The name of the column containing unique unit IDs. For example,
             in Table 1, this is 'student_id'. If None, ArrayEmitter will
-            pick the first column
+            pick the first otherwise unspecified column
 
         start_time_col : str or None
             The name of the column containing start time. In Table 1,
             this is 'start_year'. If None, ArrayEmitter will pick the second
-            column.
+            otherwise unspecified column.
 
         end_time_col : str or None
             The name of the column containing the stop time. In Table 1,
             this is 'end_year'. If None, ArrayEmitter will pick the third
-            column.
+            otherwise unspecified column.
 
         feature_col : str or None
             The name of the column containing the feature name. In Table 1,
             this is 'feature'. If None, ArrayEmitter will pick the fourth
-            column.
+            otherwise unspecified column.
 
         val_col : str or None
             The name of the column containing the value for the given
             feature for the given user at the given time. In Table 1,
             this is 'value'. If None, ArrayEmitter will pick the fifth
-            column.
+            otherwise unspecified column.
 
 
         Examples
@@ -296,11 +288,11 @@ class ArrayEmitter(object):
         raise NotImplementedError()
         self.__conn = conn
         self.__rg_query = rg_query
-        self.__unit_id_col = unit_id_col
-        self.__start_time_col = start_time_col
-        self.__stop_time_col = stop_time_col
-        self.__feature_col = feature_col
-        self.__val_col = val_col
+        self.__col_specs['unit_id'] = unit_id_col
+        self.__col_specs['start_time'] = start_time_col
+        self.__col_specs['stop_time'] = stop_time_col
+        self.__col_specs['feature'] = feature_col
+        self.__col_specs['val'] = val_col
         return self
 
     def set_aggregation(self, feature_name, method):
@@ -402,7 +394,31 @@ class ArrayEmitter(object):
             subsets
         """
         
-        return np.array([0], dtype=[('f0', int)])
+        col_specs = self.__col_specs
+        rg_query = self.__rg_query
+        conn = self.__conn
+
+        # figure out which column is which
+        sql_col_name = 'SELECT * FROM ({}) LIMIT 0'.format(rg_query)
+        col_names = conn.execute(sql_col_name).keys()
+        specified_col_names = [col_name for col_name in 
+                               col_specs.itervalues() if col_name
+                               is not None]
+        unspecified_col_names = [col_name for col_name in col_names if col_name 
+                                 not in specified_col_names]
+        for spec in ('unit_id', 'start_time', 'stop_time', 'feature', 'val'):
+            if col_specs[spec] is None:
+                col_specs[spec] = unspecified_col_names.pop(0)
+        
+        # get all features
+        sql_features = 'SELECT DISTINCT {} FROM ({})'.format(
+                col_specs['feature'], 
+                rg_query)
+        feat_names = conn.execute(sql_features).fetchall()
+
+        print feat_names
+
+        return np.array([(0,)], dtype=[('f0', int)])
 
     def subset_over(self, directive):
         """
