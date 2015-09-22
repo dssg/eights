@@ -23,7 +23,7 @@ labels = np.array([0 if x < av else 1 for x in labels])
 dtype = np.dtype({'names':  col_names,'formats': [float] * len(col_names)+1})
 
 M = cast_np_nd_to_sa(np.array([x[:-1] for x in data[1:]],dtype='float'), dtype)
-
+import pdb; pdb.set_trace()
 if False:
     for x in describe_cols(M):
         print x
