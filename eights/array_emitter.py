@@ -1,6 +1,7 @@
 import numpy as np 
 import sqlalchemy as sqla
 from investigate import open_csv
+from uuid import uuid4
 
 class ArrayEmitter(object):
     """
@@ -116,8 +117,8 @@ class ArrayEmitter(object):
 
     >>> ae = ArrayEmitter()
     >>> ae.get_rg_from_csv('table1.csv')
-    >>> ae.set_aggregation('math_gpa', 'mean')
-    >>> ae.set_aggregation('absences', 'max')
+    >>> ae.set_aggregation('math_gpa', 'AVG')
+    >>> ae.set_aggregation('absences', 'MAX')
     >>> table2 = ag.emit_M(2005, 2006)
 
     we end up with Table 2
@@ -139,8 +140,8 @@ class ArrayEmitter(object):
 
     >>> ae = ArrayEmitter()
     >>> ae.get_rg_from_csv('table1.csv')
-    >>> ae.set_aggregation('math_gpa', 'mean')
-    >>> ae.set_aggregation('absences', 'max')
+    >>> ae.set_aggregation('math_gpa', 'AVG')
+    >>> ae.set_aggregation('absences', 'MAX')
     >>> ae = ag.select_rows_in_M('math_gpa <= 3.4')
     >>> table3 = ag.to_sa(2005, 2006)
 
@@ -163,23 +164,23 @@ class ArrayEmitter(object):
 
     def __init__(self):
         self.__conn = None
-        self.__rg_query = None
+        self.__rg_table_name = None
         self.__selections = []
-        self.__aggregations = []
-        self.__default_aggregation = 'mean'
+        self.__aggregations = {}
+        self.__default_aggregation = 'AVG'
         self.__col_specs = {}
 
     def __copy(self):
         cp = ArrayEmitter()
         cp.__conn = self.__conn
-        cp.__rg_query = self.__rg_query
+        cp.__rg_table_name = self.__rg_table_name
         cp.__selections = list(self.__selections)
         cp.__aggregations = list(self.__aggregations)
         cp.__default_aggregation = self.__default_aggregation
         cp.__col_specs = self.__col_specs.copy()
         return cp
 
-    def get_rg_from_sql(self, conn_str, query, unit_id_col=None, 
+    def get_rg_from_sql(self, conn_str, table_name, unit_id_col=None, 
                         start_time_col=None, stop_time_col=None, 
                         feature_col=None, val_col=None): 
         """ Gets an RG-formatted matrix from a CSV file
@@ -190,8 +191,8 @@ class ArrayEmitter(object):
             SQLAlchemy connection string to connect to the database and run
             the query. 
 
-        query : str
-            An SQL query that returns the RG-formatted table.
+        table_name : str
+            The name of the RG-formatted table in the database
 
 
         unit_id_col : str or None
@@ -230,7 +231,7 @@ class ArrayEmitter(object):
 
         """
         self.__conn = sqla.create_engine(conn_str)
-        self.__rg_query = query
+        self.__rg_table_name = table_name
         self.__col_specs['unit_id'] = unit_id_col
         self.__col_specs['start_time'] = start_time_col
         self.__col_specs['stop_time'] = stop_time_col
@@ -287,7 +288,7 @@ class ArrayEmitter(object):
         # TODO lalala dump the CSV to SQL somehow...
         raise NotImplementedError()
         self.__conn = conn
-        self.__rg_query = rg_query
+        self.__rg_table_name = rg_table_name
         self.__col_specs['unit_id'] = unit_id_col
         self.__col_specs['start_time'] = start_time_col
         self.__col_specs['stop_time'] = stop_time_col
@@ -299,7 +300,7 @@ class ArrayEmitter(object):
         """Sets the method used to aggregate across dates in a RG table.
 
         If set_aggregation is not called for a given feature, the method will
-        default to 'mean'
+        default to 'AVG'
         
         Parameters
         ----------
@@ -309,13 +310,16 @@ class ArrayEmitter(object):
             Method used to aggregate the feature across year. If a str, must
             be one of:
 
-                * 'mean'
-                * 'median'
-                * 'mode'
-                * 'min'
-                * 'max'
-                * 'latest'
-                * 'earliest'
+                * 'AVG'
+                * 'COUNT'
+                * 'MAX'
+                * 'MIN'
+                * 'SUM'
+                * 'FIRST'
+                * 'LAST'
+
+            Note that 'FIRST' will yield the value with the earliest start 
+            time and 'LAST' will yield the value with the latest start time
 
             If a function, must take a list and return a float
 
@@ -329,7 +333,7 @@ class ArrayEmitter(object):
 
         """
         # TODO make sure method is valid
-        self.__aggragations.append((feature_name, method))
+        self.__aggregations[feature_name] = method
         return self
 
     def set_default_aggregation(self, method):
@@ -395,11 +399,11 @@ class ArrayEmitter(object):
         """
         
         col_specs = self.__col_specs
-        rg_query = self.__rg_query
         conn = self.__conn
+        table_name = self.__rg_table_name
 
         # figure out which column is which
-        sql_col_name = 'SELECT * FROM ({}) LIMIT 0'.format(rg_query)
+        sql_col_name = 'SELECT * FROM {} LIMIT 0;'.format(table_name)
         col_names = conn.execute(sql_col_name).keys()
         specified_col_names = [col_name for col_name in 
                                col_specs.itervalues() if col_name
@@ -411,12 +415,47 @@ class ArrayEmitter(object):
                 col_specs[spec] = unspecified_col_names.pop(0)
         
         # get all features
-        sql_features = 'SELECT DISTINCT {} FROM ({})'.format(
+        sql_features = 'SELECT DISTINCT {} FROM {};'.format(
                 col_specs['feature'], 
-                rg_query)
-        feat_names = conn.execute(sql_features).fetchall()
+                table_name)
+        feat_names = [row[0] for row in conn.execute(sql_features)]
 
-        print feat_names
+        # figure out aggregations
+        aggregations = {feat_name: self.__aggregations[feat_name] if 
+                        self.__aggregations.has_key(feat_name) else
+                        self.__default_aggregation for feat_name in
+                        feat_names}
+
+        # Now we build the complicated sql query
+        sql_select_clause = 'SELECT id_tbl.id, {} '.format(
+                ', '.join(['{0}_tbl.val AS {0}'.format(feat) for feat in 
+                           feat_names]))
+        sql_from_clause_top = ('FROM ({}SELECT DISTINCT {} AS id FROM {}) id_tbl '
+                               'LEFT JOIN ').format(
+                                '(' * len(feat_names),
+                                col_specs['unit_id'],
+                                table_name)
+        # TODO handle datetimes
+        sql_from_clause_features = 'LEFT JOIN '.join(
+            [("(SELECT {unit_id_col} AS id, {aggr}({val_col}) AS val FROM "
+              "{table_name} WHERE {start_time_col} >= '{start_time}' AND "
+              "{stop_time_col} <= '{stop_time}' "#ORDER BY {start_time_col} "
+              "GROUP BY id) {feat_name}_tbl ON "
+              "id_tbl.id = {feat_name}_tbl.id) ").format(
+                  unit_id_col=col_specs['unit_id'],
+                  aggr=aggregations[feat_name],
+                  val_col=col_specs['val'],
+                  table_name=table_name,
+                  start_time_col=col_specs['start_time'],
+                  start_time=start_time,
+                  stop_time_col=col_specs['stop_time'],
+                  stop_time=stop_time,
+                  feat_name=feat_name) for feat_name in feat_names])
+
+        sql_select = '{} {} {}'.format(sql_select_clause, sql_from_clause_top,
+                                       sql_from_clause_features)
+        query_result = conn.execute(sql_select).fetchall()
+        print query_result
 
         return np.array([(0,)], dtype=[('f0', int)])
 
