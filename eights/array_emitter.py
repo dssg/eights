@@ -440,7 +440,9 @@ class ArrayEmitter(object):
         # TODO handle FIRST and LAST aggregations
         sql_from_clause_features = 'LEFT JOIN '.join(
             [("(SELECT {unit_id_col} AS id, {aggr}({val_col}) AS val FROM "
-              "{table_name} WHERE {start_time_col} >= '{start_time}' AND "
+              "{table_name} WHERE "
+              "{feature_col} = '{feat_name}' AND "
+              "{start_time_col} >= '{start_time}' AND "
               "{stop_time_col} <= '{stop_time}' "
               "GROUP BY id) {feat_name}_tbl ON "
               "id_tbl.id = {feat_name}_tbl.id) ").format(
@@ -448,6 +450,7 @@ class ArrayEmitter(object):
                   aggr=aggregations[feat_name],
                   val_col=col_specs['val'],
                   table_name=table_name,
+                  feature_col=col_specs['feature'],
                   start_time_col=col_specs['start_time'],
                   start_time=start_time,
                   stop_time_col=col_specs['stop_time'],
