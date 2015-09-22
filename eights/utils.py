@@ -116,7 +116,7 @@ def __str_col_to_datetime(col):
     return (bool(valid_dtimes), col_dtimes)
 
 def cast_list_of_list_to_sa(L, col_names=None, dtype=None):
-    # TODO utils.cast_list_of_list_to_sa is redundant   J:agreed
+    # TODO utils.cast_list_of_list_to_sa is redundant   J: NOT agreed
     n_cols = len(L[0])
     if col_names is None:
         col_names = ['f{}'.format(i) for i in xrange(n_cols)]

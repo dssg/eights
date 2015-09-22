@@ -17,8 +17,10 @@ url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/win
 response = urllib2.urlopen(url)
 cr = csv.reader(response, delimiter=';')
 
+
+
 data = list(cr)
-col_names = data[0]
+col_names = data[0][:10]
 labels = np.array([int(x[-1]) for x in data[1:]])
 #make this problem binary
 av = np.average(labels)
@@ -26,20 +28,10 @@ labels = np.array([0 if x < av else 1 for x in labels])
 
 
 
+dtype = np.dtype({'names':  col_names,'formats': [float] * len(col_names)+1})
 
-nd = np.array([[1, 2, 3], [4, 5, 6]], dtype=int)
-dtype2 = np.dtype({'names': map('f{}'.format, xrange(3)), 'formats': [int] * 3})
-control = np.array([(1, 2, 3), (4, 5, 6)], dtype=dtype2)
-result = cast_np_nd_to_sa(nd, dtype2)
+M = cast_np_nd_to_sa(np.array([x[:-1] for x in data[1:]],dtype='float'), dtype)
 
-dtype = np.dtype({'names':  col_names,'formats': [float] * len(col_names)})
-tmp = np.array([x[:-1] for x in data[1:]],dtype='float')
-M = cast_np_nd_to_sa(tmp, dtype)
-import pdb; pdb.set_trace()
-
-
-
-import pdb; pdb.set_trace()
 
 if False:
     for x in describe_cols(M):
@@ -52,6 +44,18 @@ if False:
    plot_box_plot(M['f0']) #no designation of col name
 
 from eights.operate import run_std_classifiers, run_alt_classifiers #run_alt_classifiers not working yet
+
+
+
 exp = run_std_classifiers(M,labels)
 exp.make_csv()
+
+import pdb; pdb.set_trace()
+
+
+
+
+
+
+
 import pdb; pdb.set_trace()
