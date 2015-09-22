@@ -11,6 +11,7 @@ class TestArrayEmitter(unittest.TestCase):
         conn_str = 'sqlite:///{}'.format(db_file)
         ae = array_emitter.ArrayEmitter()
         ae.get_rg_from_sql(conn_str, 'rg_students')
+        ae.set_aggregation('absences', 'MAX')
         M = ae.emit_M(2005, 2007)
         print M
         print M.dtype

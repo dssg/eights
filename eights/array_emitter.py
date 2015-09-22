@@ -1,5 +1,4 @@
-import numpy as np 
-import sqlalchemy as sqla
+import numpy as np import sqlalchemy as sqla
 from investigate import open_csv
 from uuid import uuid4
 from eights import utils
@@ -93,7 +92,7 @@ class ArrayEmitter(object):
     +------------+----------+-------------+----------+
     |          1 |     3.45 |         nan |        0 |
     +------------+----------+-------------+----------+
-    |          2 |      3.4 |         nan |       94 |
+    |          2 |      3.4 |         nan |       96 |
     +------------+----------+-------------+----------+
 
     In an M-formatted table, each unit has a single row, and each feature has
@@ -155,7 +154,7 @@ class ArrayEmitter(object):
     +============+==========+=============+==========+
     |          0 |      2.2 |        3.95 |        8 |
     +------------+----------+-------------+----------+
-    |          2 |      3.4 |         nan |       94 |
+    |          2 |      3.4 |         nan |       96 |
     +------------+----------+-------------+----------+
 
     Notice that Table 3 is identical to Table 2, except student 1 has been
