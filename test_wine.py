@@ -25,7 +25,21 @@ av = np.average(labels)
 labels = np.array([0 if x < av else 1 for x in labels])
 
 
-M = cast_np_nd_to_sa(np.array([x[:-1] for x in data[1:]],dtype='float'))
+
+
+nd = np.array([[1, 2, 3], [4, 5, 6]], dtype=int)
+dtype2 = np.dtype({'names': map('f{}'.format, xrange(3)), 'formats': [int] * 3})
+control = np.array([(1, 2, 3), (4, 5, 6)], dtype=dtype2)
+result = cast_np_nd_to_sa(nd, dtype2)
+
+dtype = np.dtype({'names':  col_names,'formats': [float] * len(col_names)})
+tmp = np.array([x[:-1] for x in data[1:]],dtype='float')
+M = cast_np_nd_to_sa(tmp, dtype)
+import pdb; pdb.set_trace()
+
+
+
+import pdb; pdb.set_trace()
 
 if False:
     for x in describe_cols(M):

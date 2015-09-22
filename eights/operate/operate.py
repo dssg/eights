@@ -55,15 +55,15 @@ def simple_clf_cv(M, labels, clfs=[{'clf': RandomForestClassifier}],
     ----------
     M : Structured array
        The matrix you wish to use for training and testing 
-    labels : a one dimenional nd array
+    labels : a one dimensional nd array
        This these are the labels that are assigned to the rows in the matrix M.
     clf : Sklearn Class object
-        This is the type of algorithim you would use. 
+        This is the type of algorithm you would use. 
     clf_params : a dictionary of parameters to assign to your clf
-        The appropriate paramterts to asign to the clf, empty dict if none.
+        The appropriate parameters to assign to the clf, empty dict if none.
     cv : sklearn cv 
         kfold if default
-    cv_parms : dict of paramters to apply to the cv
+    cv_parms : dict of parameters to apply to the cv
         empty if default
            
     Returns
@@ -83,7 +83,7 @@ def simple_clf_cv(M, labels, clfs=[{'clf': RandomForestClassifier}],
     return exp
 
 def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'):
-    """ standard first past sanatity check on the classifiers
+    """ standard first past sanity check on the classifiers
     Parameters
     ----------
     M : type
@@ -103,6 +103,7 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
         clfs = [{'clf': AdaBoostClassifier, 'n_estimators': [20,50,100]}, 
                 {'clf': RandomForestClassifier, 
                  'n_estimators': [10,30,50],
+                 'max_features': ['sqrt','log2'],
                  'max_depth': [None,4,7,15],
                  'n_jobs':[1]}, 
                 {'clf': LogisticRegression, 
@@ -125,59 +126,6 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
         )
     exp.make_report(report_file)
     return exp
-
-def _rg_classifiers(M, labels, report_file='report.pdf'):
-    clfs= [{'clf': RandomForestClassifier,
-          'n_estimators': [1], 
-          'max_depth': [1], 
-          'max_features': ['sqrt'],
-          'min_samples_split': [2],
-          'n_jobs': [1]},
-        {'clf': LogisticRegression,
-         'penalty': ['l1'], 
-         'C': [0.00001]},
-        {'clf': SGDClassifier,
-         'loss':['log'], # hinge doesn't have predict_proba
-         'penalty':['l2']},
-        {'clf': ExtraTreesClassifier,
-         'n_estimators': [1], 
-         'criterion' : ['gini'],
-         'max_depth': [1], 
-         'max_features': ['sqrt'],
-         'min_samples_split': [2],
-         'n_jobs': [1]},
-        {'clf': AdaBoostClassifier,
-         'algorithm' :['SAMME'],
-         'n_estimators': [1],
-         'base_estimator': [DecisionTreeClassifier(max_depth=1)]},
-        {'clf': GradientBoostingClassifier,
-         'n_estimators': [1],
-         'learning_rate' : [0.001],
-         'subsample' : [0.1],
-         'max_depth': [1]},
-        {'clf': GaussianNB },
-        {'clf': DecisionTreeClassifier,
-         'criterion': ['gini'],
-         'max_depth': [1],
-         'max_features': ['sqrt'],
-         'min_samples_split': [2]},
-        {'clf':SVC,
-         'C': [0.00001],
-         'kernel': ['linear'],
-         'probability': [True]},
-        {'clf': KNeighborsClassifier,
-         'n_neighbors':[1],
-         'weights': ['uniform'],
-         'algorithm':['auto']}]     
-    cvs = [{'cv': StratifiedKFold}]
-    exp = Experiment(
-        M, 
-        labels, 
-        clfs=clfs,
-        cvs=cvs
-        )
-    exp.make_report(report_file)
-    return exp    
 
 
 def rg_classifiers(M, labels, report_file='report.pdf'):
@@ -238,6 +186,59 @@ def rg_classifiers(M, labels, report_file='report.pdf'):
 
 
 
+
+def _rg_classifiers(M, labels, report_file='report.pdf'):
+    clfs= [{'clf': RandomForestClassifier,
+          'n_estimators': [1], 
+          'max_depth': [1], 
+          'max_features': ['sqrt'],
+          'min_samples_split': [2],
+          'n_jobs': [1]},
+        {'clf': LogisticRegression,
+         'penalty': ['l1'], 
+         'C': [0.00001]},
+        {'clf': SGDClassifier,
+         'loss':['log'], # hinge doesn't have predict_proba
+         'penalty':['l2']},
+        {'clf': ExtraTreesClassifier,
+         'n_estimators': [1], 
+         'criterion' : ['gini'],
+         'max_depth': [1], 
+         'max_features': ['sqrt'],
+         'min_samples_split': [2],
+         'n_jobs': [1]},
+        {'clf': AdaBoostClassifier,
+         'algorithm' :['SAMME'],
+         'n_estimators': [1],
+         'base_estimator': [DecisionTreeClassifier(max_depth=1)]},
+        {'clf': GradientBoostingClassifier,
+         'n_estimators': [1],
+         'learning_rate' : [0.001],
+         'subsample' : [0.1],
+         'max_depth': [1]},
+        {'clf': GaussianNB },
+        {'clf': DecisionTreeClassifier,
+         'criterion': ['gini'],
+         'max_depth': [1],
+         'max_features': ['sqrt'],
+         'min_samples_split': [2]},
+        {'clf':SVC,
+         'C': [0.00001],
+         'kernel': ['linear'],
+         'probability': [True]},
+        {'clf': KNeighborsClassifier,
+         'n_neighbors':[1],
+         'weights': ['uniform'],
+         'algorithm':['auto']}]     
+    cvs = [{'cv': StratifiedKFold}]
+    exp = Experiment(
+        M, 
+        labels, 
+        clfs=clfs,
+        cvs=cvs
+        )
+    exp.make_report(report_file)
+    return exp    
 
 
 
