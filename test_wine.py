@@ -19,19 +19,25 @@ cr = csv.reader(response, delimiter=';')
 
 data = list(cr)
 col_names = data[0]
-labels = np.array([x[-1] for x in data[1:]])
-M = [x[:-1] for x in data[1:]]
-M = cast_np_nd_to_sa(np.array(M,dtype='float'))
+labels = np.array([int(x[-1]) for x in data[1:]])
+#make this problem binary
+av = np.average(labels)
+labels = np.array([0 if x < av else 1 for x in labels])
 
-if True:
+
+M = cast_np_nd_to_sa(np.array([x[:-1] for x in data[1:]],dtype='float'))
+
+if False:
     for x in describe_cols(M):
         print x
 
-if True:
+if False:
    plot_correlation_scatter_plot(M) 
    plot_correlation_matrix(M)
    plot_kernel_density(M['f0']) #no designation of col name
    plot_box_plot(M['f0']) #no designation of col name
 
-
+from eights.operate import run_std_classifiers, run_alt_classifiers #run_alt_classifiers not working yet
+exp = run_std_classifiers(M,labels)
+exp.make_csv()
 import pdb; pdb.set_trace()

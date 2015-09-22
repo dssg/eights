@@ -110,10 +110,11 @@ def run_std_classifiers(M, labels, clfs=None, cvs=None, report_file='report.pdf'
                  'penalty': ['l1','l2']}, 
                 {'clf': DecisionTreeClassifier, 
                  'max_depth': [None,4,7,15,25]},
-                {'clf': SVC, 'kernel': ['linear','rbf'], 
-                 'probability': [True]},
+               # {'clf': SVC, 'kernel': ['linear','rbf'], 
+                # 'probability': [True]},
                 {'clf': DummyClassifier, 
-                 'strategy': ['stratified','most_frequent','uniform']}]
+                 'strategy': ['stratified','most_frequent','uniform']}
+             ]
     if cvs == None:
         cvs = [{'cv': StratifiedKFold}]
     exp = Experiment(
