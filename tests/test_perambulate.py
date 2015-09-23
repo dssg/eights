@@ -158,22 +158,25 @@ class TestPerambulate(unittest.TestCase):
         self.report.add_subreport(rep)
 
     def test_subsetting(self):
-        M, y = uft.generate_test_matrix(1000, 5, 2)
-        subsets = [{'subset': SubsetRandomRowsEvenDistribution, 
-                    'subset_size': [20]},
-                   {'subset': SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20]},
-                   {'subset': SubsetSweepNumRows, 
-                    'num_rows': [[10, 20, 30]]},
-                   {'subset': SubsetSweepVaryStratification, 
+        M, y = uft.generate_test_matrix(1000, 5, 2, random_state=0)
+        subsets = [{'subset': per.SubsetRandomRowsEvenDistribution, 
+                    'subset_size': [20],
+                    'random_state': [0]},
+                   {'subset': per.SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20],
+                    'random_state': [0]},
+                   {'subset': per.SubsetSweepNumRows, 
+                    'num_rows': [[10, 20, 30]],
+                    'random_state': [0]},
+                   {'subset': per.SubsetSweepVaryStratification, 
                     'proportions_positive': [[.5, .75, .9]],
-                    'subset_size': [10]}]
-        exp = Experiment(M, y, subsets=subsets)
+                    'subset_size': [10],
+                    'random_state': [0]}]
+        exp = per.Experiment(M, y, subsets=subsets)
         exp.run()
-        for trial in exp.trials:
-            print trial
-            for run in trial.runs:
-                print run
+        result = {str(trial) : frozenset([str(run) for run in trial.runs]) for 
+                  trial in exp.trials}
+        self.__compare_to_ref_pkl(result, 'test_subsetting')
 
     def test_sliding_windows(self):
         M = np.array([(0, 2003),
