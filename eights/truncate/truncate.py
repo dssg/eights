@@ -3,6 +3,20 @@ from collections import Counter
 from truncate_helper import *
 from ..utils import remove_cols
 
+def remove_col_where(M, arguments, generated_name=None):
+    to_select = np.ones(M.size, dtype=bool)
+    for arg_set in arguments:
+        lambd, col_name, vals = (arg_set['func'], arg_set['col_name'],
+                                    arg_set['vals'])
+        to_select = np.logical_and(to_select, lambd(M, col_name, vals))
+    return append_cols(M, to_select, generated_name)
+
+
+def all_zero(M, boundary):
+    
+    return M[col_name] == boundary
+
+
 def fewer_then_n_nonzero_in_col(M, boundary):
     col_names = M.dtype.names
     num_rows =M.shape[0]
@@ -32,8 +46,7 @@ from ..generate.generate import val_lt
 from ..generate.generate import val_gt
 from ..generate.generate import val_between
 from ..generate.generate import is_outlier
-#def row_not_within_region(M, col_name, boundar):
-#    raise NotImplementedError
+
 
 def remove_col_where(M, lamd, col_name, vals):
     #std to this later
