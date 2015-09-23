@@ -67,21 +67,22 @@ class TestPerambulate(unittest.TestCase):
         M = iris.data
         clfs = [{'clf': RandomForestClassifier, 
                  'n_estimators': [10, 100], 
-                 'max_depth': [1, 10]}, 
+                 'max_depth': [1, 10],
+                 'random_state': [0]}, 
                  {'clf': SVC, 'kernel': ['linear', 'rbf']}]        
-        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20, 40, 60, 80, 100]}]
+        subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20, 40, 60, 80, 100],
+                    'random_state': [0]}]
         cvs = [{'cv': StratifiedKFold}]
-        exp = Experiment(M, y, clfs, subsets, cvs)
-        for trial in exp.slice_on_dimension(
-                CLF, 
-                RandomForestClassifier).trials:
-            print trial
-        print
-        for trial in exp.slice_on_dimension(
-                SUBSET_PARAMS, 
-                {'subset_size': 60}).trials:
-            print trial
+        exp = per.Experiment(M, y, clfs, subsets, cvs)
+        result = [str(trial) for trial in exp.slice_on_dimension(
+                per.CLF, 
+                RandomForestClassifier).trials]
+        self.__compare_to_ref_pkl(result, 'slice_on_dimension_clf')
+        result = [str(trial) for trial  in exp.slice_on_dimension(
+                per.SUBSET_PARAMS, 
+                {'subset_size': 60}).trials]
+        self.__compare_to_ref_pkl(result, 'slice_on_dimension_subset_params')
 
     def test_slice_by_best_score(self):
         iris = datasets.load_iris()
