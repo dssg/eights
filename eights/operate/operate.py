@@ -17,8 +17,6 @@ from sklearn.svm import SVC
 from sklearn.dummy import DummyClassifier
 
 from ..utils import remove_cols
-from ..investigate.investigate import open_csv
-from .operate_helper import *
 from ..perambulate import Experiment
 
 

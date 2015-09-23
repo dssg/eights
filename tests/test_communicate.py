@@ -155,9 +155,6 @@ class TestCommunicate(unittest.TestCase):
         fig = comm.plot_kernel_density(data, verbose=False)
         self.add_fig_to_report(fig, 'plot_kernel_density')
 
-    def test_plot_on_map(self):
-        # TODO
-        pass
 
     def test_plot_on_timeline(self):
         dates = [datetime(2015, 1, 1),

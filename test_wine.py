@@ -12,17 +12,19 @@ from eights.communicate import (plot_correlation_scatter_plot,
 from eights.operate import run_std_classifiers 
 
 
-data = open_csv_url_as_list('http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv',  delimiter=',')
+data = open_csv_url_as_list(
+            'http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv',  
+            delimiter=';')
 
-col_names = data[0][:10]
+col_names = data[0][:-1]
 labels = np.array([int(x[-1]) for x in data[1:]])
 #make this problem binary
-av = np.average(labels)
-labels = np.array([0 if x < av else 1 for x in labels])
-
-dtype = np.dtype({'names':  col_names,'formats': [float] * len(col_names)+1})
-
+labels = np.array([0 if x < np.average(labels) else 1 for x in labels])
+dtype = np.dtype({'names':  col_names,'formats': [float] * (len(col_names)+1)})
 M = cast_np_nd_to_sa(np.array([x[:-1] for x in data[1:]],dtype='float'), dtype)
+
+
+
 import pdb; pdb.set_trace()
 if False:
     for x in describe_cols(M):

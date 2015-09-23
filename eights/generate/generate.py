@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn import cross_validation
-import generate_helper as gh
 from ..utils import append_cols, distance
 from uuid import uuid4
 

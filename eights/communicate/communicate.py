@@ -271,21 +271,6 @@ def plot_kernel_density(col, n=None, missing_val=np.nan, verbose=True):
         plt.show()
     return fig
 
-def plot_on_map(lat_col, lng_col):
-    """Plots points on a map
-    
-    Parameters
-    ----------
-    lat_col : np.array
-    lng_col : np.array
-    
-    Returns
-    -------
-    matplotlib.figure.Figure
-    
-    """
-    raise NotImplementedError
-
 def plot_on_timeline(col, verbose=True):
     """Plots points on a timeline
     
