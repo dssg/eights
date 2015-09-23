@@ -13,7 +13,6 @@ from eights.truncate.truncate import (remove_col_where,
                                       remove_rows_where,
                                       val_eq)
 
-
 class TestInvestigate(unittest.TestCase):
     def test_are_all_col_equal(self):
         M = cast_list_of_list_to_sa(
