@@ -5,7 +5,8 @@ test_modules = ['test_investigate',
                 'test_decontaminate',
                 'test_generate',
                 'test_utils',
-                'test_communicate']
+                'test_communicate',
+                'test_perambulate']
 
 if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromNames(test_modules)
