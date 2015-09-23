@@ -16,14 +16,6 @@ from ..communicate import *
 from ..utils import is_sa
 
 
-def open_csv_list(file_loc):
-    # Opens a csv as a list
-    return open_simple_csv_as_list(file_loc)
-
-def open_csv(file_loc, delimiter=','):
-    # opens csv as a structured array
-    return open_csv_as_structured_array(file_loc, delimiter)
-
 __describe_cols_metrics = [('Count', len),
                            ('Mean', np.mean),
                            ('Standard Dev', np.std),
@@ -36,7 +28,8 @@ def describe_cols(M):
     """takes a SA or list of Np.rayas and returns the summary statistcs
     Parameters
     ----------
-    M : Structured Array or list of Numpy ND arays.
+    M import numpy as np
+    : Structured Array or list of Numpy ND arays.
        Description 
        
     Returns
@@ -59,11 +52,6 @@ def describe_cols(M):
                                    __describe_cols_metrics]
     return convert_to_sa(descr_rows, col_names=col_names)
 
-
-
-def cast_list_of_list_to_sa_wrap(L, col_names=None, dtype=None):
-# What is this supposed to do?
-    return cast_list_of_list_to_sa(L, col_names, dtype)
 
 def crosstab(col1, col2):
     """
@@ -102,7 +90,6 @@ def connect_sql(con_str, allow_caching=False, cache_dir='.'):
 from ..communicate.communicate import plot_correlation_matrix
 from ..communicate.communicate import plot_correlation_scatter_plot
 from ..communicate.communicate import plot_kernel_density
-from ..communicate.communicate import plot_on_map
 from ..communicate.communicate import plot_on_timeline
 from ..communicate.communicate import plot_box_plot
 

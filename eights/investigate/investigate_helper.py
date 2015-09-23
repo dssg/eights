@@ -1,4 +1,5 @@
 import csv
+import urllib2
 import os
 import cPickle
 from collections import Counter
@@ -33,7 +34,12 @@ def __correct_csv_cell_type(cell):
         pass
     return cell
 
-def open_simple_csv_as_list(file_loc, delimiter=',', return_col_names=False):
+def open_csv_url_as_list(url_loc, delimiter=','):
+    response = urllib2.urlopen(url_loc)
+    cr = csv.reader(response, delimiter=delimiter)
+    return  list(cr)
+
+def open_csv_as_list(file_loc, delimiter=',', return_col_names=False):
     # infers types
     with open(file_loc, 'rU') as f:
         reader = csv.reader(f,  delimiter=delimiter)
@@ -45,7 +51,7 @@ def open_simple_csv_as_list(file_loc, delimiter=',', return_col_names=False):
     return data
     
 def open_csv_as_structured_array(file_loc, delimiter=','):
-    python_list, names = open_simple_csv_as_list(file_loc, delimiter, True)
+    python_list, names = open_csv_as_list(file_loc, delimiter, True)
     return cast_list_of_list_to_sa(python_list, names)
 
 def convert_fixed_width_list_to_CSV_list(data, list_of_widths):

@@ -1,79 +1,78 @@
-#This is the running file.
-#This should obscure as much as possible.
-
 import numpy as np
-#load iris
 import sklearn.datasets
-iris = sklearn.datasets.load_iris()
-M = iris.data
-labels = iris.target
+
+from eights.investigate import (cast_np_nd_to_sa, describe_cols,)
+from eights.communicate import (plot_correlation_scatter_plot,
+                               plot_correlation_matrix, 
+                               plot_kernel_density,
+                               plot_box_plot)
+
+#import numpy array
+M = sklearn.datasets.load_iris().data
+labels = sklearn.datasets.load_iris().target
+
+M = cast_np_nd_to_sa(M)
+
+
+#M is multi class, we want to remove those rows.
+keep_index = np.where(labels!=2)
+
+labels = labels[keep_index]
+M = M[keep_index]
 
 
 
 
+if False:
+    for x in describe_cols(M):
+        print x
 
-####################investigate#######################
-import eights.investigate as  inv
-
-#cast from ND to SA
-M = inv.cast_np_nd_to_sa(M)
-
-for x in inv.describe_cols(M): print x
-
-plot = True
-if plot:
-    inv.plot_correlation_scatter_plot(M) #this is stange
-    inv.plot_correlation_matrix(M)
-    inv.plot_kernel_density(M['f0'])
-    inv.plot_box_plot(M['f0'])    
-
-####################Decontaminate#######################
+if False:
+   plot_correlation_scatter_plot(M) 
+   plot_correlation_matrix(M)
+   plot_kernel_density(M['f0']) #no designation of col name
+   plot_box_plot(M['f0']) #no designation of col name
 
 
+if False:
+    from eights.generate import val_between, where_all_are_true, append_cols  #val_btwn, where
+    #generate a composite rule
+    M = where_all_are_true(M, 
+                          [{'func': val_between, 
+                            'col_name': 'f0', 
+                            'vals': (3.5, 5.0)},
+                           {'func': val_between, 
+                            'col_name': 'f1', 
+                            'vals': (2.7, 3.1)}
+                           ], 
+                           'a new col_name')
 
-
-
-####################generate#######################
-import eights.generate  as gen
-
-#lets generate row of our data
-
-arguments_bt = [{'func': gen.val_between, 'col_name': 'f0', 'vals': (3.5, 5.0)},
-                {'func': gen.val_between, 'col_name': 'f1', 'vals': (2.7, 3.1)}]
-M = gen.where_all_are_true(M, arguments_bt, '4 and(2.7-3.1)')
-M = gen.where_all_are_true(M, arguments_bt, 'bad_rules')
-
-
-
-#new eval function
-def rounds_to_val(M, col_name, boundary):
-    return (np.round(M[col_name]) == boundary)
+    #new eval function
+    def rounds_to_val(M, col_name, boundary):
+        return (np.round(M[col_name]) == boundary)
     
-arguments_rd = [{'func': rounds_to_val, 'col_name': 'f0', 'vals': 5}]
-M = gen.where_all_are_true(M, arguments_rd, 'rounds to 5')
+    M = where_all_are_true(M,
+                          [{'func': rounds_to_val, 
+                            'col_name': 'f0', 
+                            'vals': 5}],
+                            'new_col')
+    
+    from  eights.truncate import (fewer_then_n_nonzero_in_col, 
+                                 remove_rows_where,
+                                 remove_cols,
+                                 val_eq)
+    #remove Useless row
+    M = fewer_then_n_nonzero_in_col(M,1)
+    M = append_cols(M, labels, 'labels')
+    M = remove_rows_where(M, val_eq, 'labels', 2)
+    labels=M['labels']
+    M = remove_cols(M, 'labels')
 
-#making a useless row
-M = gen.where_all_are_true(M, arguments_bt, 'Useless Cols')
 
-import pdb; pdb.set_trace()
-
-####################Truncate#######################
-import eights.truncate  as tr
-#remove Useless row
-M = tr.fewer_then_n_nonzero_in_col(M,1)
-
-#remove class 2
-M = gen.append_cols(M, labels, 'labels')
-M = tr.remove_rows_where(M, tr.val_eq, 'labels', 2)
-labels=M['labels']
-M = tr.remove_cols(M,'labels')
-
-####################Operate/Permabulate#######################
-
-import eights.operate as op
-exp = op.run_std_classifiers(M,labels)
+from eights.operate import run_std_classifiers, run_alt_classifiers #run_alt_classifiers not working yet
+exp = run_std_classifiers(M,labels)
 exp.make_csv()
-
+import pdb; pdb.set_trace()
 
 
 ####################Communicate#######################
