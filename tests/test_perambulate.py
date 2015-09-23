@@ -121,7 +121,7 @@ class TestPerambulate(unittest.TestCase):
                 'n_folds': [2, 3]}]
         exp = per.Experiment(M, y, clfs=clfs, subsets=subsets, cvs=cvs)
         result_path = exp.make_csv()
-        ctrl_path = uft.path_of_data('test_perambulate.csv')
+        ctrl_path = os.path.join(REFERENCE_PKL_PATH, 'make_csv.csv')
         with open(result_path) as result:
             with open(ctrl_path) as ctrl:
                 self.assertEqual(result.read(), ctrl.read())
@@ -192,21 +192,27 @@ class TestPerambulate(unittest.TestCase):
                       (10, 2005)], dtype=[('id', int), ('year', int)])
         y = np.array([True, False, True, False, True, False, True, False,
                       True, False])
-        cvs = [{'cv': SlidingWindowIdx, 
+        clfs = [{'clf': RandomForestClassifier,
+                 'random_state': [0]}]
+        cvs = [{'cv': per.SlidingWindowIdx, 
                 'train_start': [0], 
                 'train_window_size': [2], 
                 'test_start': [2], 
                 'test_window_size': [2],
                 'inc_value': [2]},
-                {'cv': SlidingWindowValue, 
+                {'cv': per.SlidingWindowValue, 
                  'train_start': [1997], 
                  'train_window_size': [2],
                  'test_start': [1999], 
                  'test_window_size': [2],
                  'inc_value': [2], 
                  'col_name': ['year']}]
-        exp = Experiment(M, y, cvs=cvs)
-        exp.make_csv()
+        exp = per.Experiment(M, y, clfs=clfs, cvs=cvs)
+        result_path = exp.make_csv()
+        ctrl_path = os.path.join(REFERENCE_PKL_PATH, 'sliding_windows.csv')
+        with open(result_path) as result:
+            with open(ctrl_path) as ctrl:
+                self.assertEqual(result.read(), ctrl.read())
 
 if __name__ == '__main__':
     unittest.main()
