@@ -15,7 +15,6 @@ import eights.communicate as comm
 import utils_for_tests as uft
 
 REPORT_PATH = uft.path_of_data('test_perambulate.pdf')
-SUBREPORT_PATH = uft.path_of_data('test_perambulate_sub.pdf')
 REFERENCE_REPORT_PATH = uft.path_of_data('test_perambulate_ref.pdf')
 REFERENCE_PKL_PATH = uft.path_of_data('test_perambulate')
 
@@ -142,15 +141,21 @@ class TestPerambulate(unittest.TestCase):
         M, y = uft.generate_test_matrix(100, 5, 2)
         clfs = [{'clf': RandomForestClassifier, 
                  'n_estimators': [10, 100], 
-                 'max_depth': [1, 10]}, 
+                 'max_depth': [1, 10],
+                 'random_state': [0]}, 
                  {'clf': SVC, 
                   'kernel': ['linear', 'rbf'], 
-                  'probability': [True]}]        
-        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20, 40, 60, 80, 100]}]
+                  'probability': [True],
+                  'random_state': [0]}]        
+        subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20, 40, 60, 80, 100],
+                    'random_state': [0]}]
         cvs = [{'cv': StratifiedKFold}]
-        exp = Experiment(M, y, clfs, subsets, cvs)
-        exp.make_report(dimension=CLF)
+        exp = per.Experiment(M, y, clfs, subsets, cvs)
+        _, rep = exp.make_report(dimension=per.CLF, return_report_object=True, 
+                                 verbose=False)
+        self.report.add_heading('test_report_complex', 1)
+        self.report.add_subreport(rep)
 
     def test_subsetting(self):
         M, y = uft.generate_test_matrix(1000, 5, 2)
