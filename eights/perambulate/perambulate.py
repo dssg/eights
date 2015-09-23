@@ -6,6 +6,7 @@ import datetime
 import itertools as it
 import numpy as np
 import csv
+import os
 
 from collections import Counter
 
@@ -201,7 +202,7 @@ class Experiment(object):
             writer.writerow(self.csv_header())
             for trial in self.trials:
                 writer.writerows(trial.csv_rows())
-
+        return os.path.abspath(file_name)
 
 
 def random_subset_of_columns(M, number_to_select):

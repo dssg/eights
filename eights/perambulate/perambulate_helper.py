@@ -103,20 +103,26 @@ class SubsetRandomRowsEvenDistribution(BaseSubsetIter):
 
 class SubsetSweepNumRows(BaseSubsetIter):
         
-    def __init__(self, y, col_names, num_rows):
+    def __init__(self, y, col_names, num_rows, random_state=None):
         super(SubsetSweepNumRows, self).__init__(y, col_names)
         self.__num_rows = num_rows
+        self.__random_state_seed = random_state
 
     def __iter__(self):
         y = self._y
         num_rows = self.__num_rows
+        seed(self.__random_state_seed)
+        random_state = getstate()
         for rows in num_rows:
+            setstate(random_state)
             all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
             yield (all_indices, self._col_names, {'rows': rows})
+            random_state=getstate()
 
     def __repr__(self):
-        return 'SubsetSweepNumRows(num_rows={})'.format(
-                self.__num_rows)
+        return 'SubsetSweepNumRows(num_rows={}, random_state={})'.format(
+                self.__num_rows,
+                self.__random_state_seed)
 
 class SubsetSweepVaryStratification(BaseSubsetIter):
         

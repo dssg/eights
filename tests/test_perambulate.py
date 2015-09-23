@@ -69,7 +69,8 @@ class TestPerambulate(unittest.TestCase):
                  'n_estimators': [10, 100], 
                  'max_depth': [1, 10],
                  'random_state': [0]}, 
-                 {'clf': SVC, 'kernel': ['linear', 'rbf']}]        
+                 {'clf': SVC, 'kernel': ['linear', 'rbf'], 
+                  'random_state': [0]}]        
         subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
                     'subset_size': [20, 40, 60, 80, 100],
                     'random_state': [0]}]
@@ -92,7 +93,8 @@ class TestPerambulate(unittest.TestCase):
                  'n_estimators': [10, 100], 
                  'max_depth': [1, 10],
                  'random_state': [0]}, 
-                 {'clf': SVC, 'kernel': ['linear', 'rbf']}]        
+                 {'clf': SVC, 'kernel': ['linear', 'rbf'],
+                  'random_state': [0]}]        
         subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
                     'subset_size': [20, 40, 60, 80, 100],
                     'random_state': [0]}]
@@ -102,6 +104,28 @@ class TestPerambulate(unittest.TestCase):
         result = {str(trial): trial.average_score() for trial in 
                   exp.slice_by_best_score(per.CLF_PARAMS).trials}
         self.__compare_to_ref_pkl(result, 'slice_by_best_score')
+
+    def test_make_csv(self):
+        M, y = uft.generate_test_matrix(1000, 5, 2, random_state=0)
+        clfs = [{'clf': RandomForestClassifier, 
+                 'n_estimators': [10, 100], 
+                 'max_depth': [5, 25],
+                 'random_state': [0]},
+                {'clf': SVC, 
+                 'kernel': ['linear', 'rbf'], 
+                 'probability': [True],
+                 'random_state': [0]}]        
+        subsets = [{'subset': per.SubsetSweepNumRows, 
+                    'num_rows': [[100, 200]],
+                    'random_state': [0]}]
+        cvs = [{'cv': StratifiedKFold, 
+                'n_folds': [2, 3]}]
+        exp = per.Experiment(M, y, clfs=clfs, subsets=subsets, cvs=cvs)
+        result_path = exp.make_csv()
+        ctrl_path = uft.path_of_data('test_perambulate.csv')
+        with open(result_path) as result:
+            with open(ctrl_path) as ctrl:
+                self.assertEqual(result.read(), ctrl.read())
 
     def test_report_simple(self):
         M, y = uft.generate_test_matrix(100, 5, 2, random_state=0)
@@ -114,21 +138,19 @@ class TestPerambulate(unittest.TestCase):
         self.report.add_heading('test_report_simple', 1)
         self.report.add_subreport(rep)
 
-    def test_make_csv(self):
-        M, y = uft.generate_test_matrix(1000, 15, 2)
-        #M, y = uft.generate_correlated_test_matrix(10000)
+    def test_report_complex(self):
+        M, y = uft.generate_test_matrix(100, 5, 2)
         clfs = [{'clf': RandomForestClassifier, 
-                 'n_estimators': [10, 100, 1000], 
-                 'max_depth': [5, 25]},
-                {'clf': SVC, 
-                 'kernel': ['linear', 'rbf'], 
-                 'probability': [True]}]        
-        subsets = [{'subset': SubsetSweepNumRows, 
-                    'num_rows': [[100, 200, 300]]}]
-        cvs = [{'cv': StratifiedKFold, 
-                'n_folds': [2, 3]}]
-        exp = Experiment(M, y, clfs=clfs, subsets=subsets, cvs=cvs)
-        exp.make_csv()
+                 'n_estimators': [10, 100], 
+                 'max_depth': [1, 10]}, 
+                 {'clf': SVC, 
+                  'kernel': ['linear', 'rbf'], 
+                  'probability': [True]}]        
+        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20, 40, 60, 80, 100]}]
+        cvs = [{'cv': StratifiedKFold}]
+        exp = Experiment(M, y, clfs, subsets, cvs)
+        exp.make_report(dimension=CLF)
 
     def test_subsetting(self):
         M, y = uft.generate_test_matrix(1000, 5, 2)
@@ -177,20 +199,6 @@ class TestPerambulate(unittest.TestCase):
                  'col_name': ['year']}]
         exp = Experiment(M, y, cvs=cvs)
         exp.make_csv()
-
-    def test_report_complex(self):
-        M, y = uft.generate_test_matrix(100, 5, 2)
-        clfs = [{'clf': RandomForestClassifier, 
-                 'n_estimators': [10, 100], 
-                 'max_depth': [1, 10]}, 
-                 {'clf': SVC, 
-                  'kernel': ['linear', 'rbf'], 
-                  'probability': [True]}]        
-        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20, 40, 60, 80, 100]}]
-        cvs = [{'cv': StratifiedKFold}]
-        exp = Experiment(M, y, clfs, subsets, cvs)
-        exp.make_report(dimension=CLF)
 
 if __name__ == '__main__':
     unittest.main()
