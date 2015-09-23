@@ -58,6 +58,7 @@ class TestPerambulate(unittest.TestCase):
         exp = per.Experiment(M, y, clfs, subsets, cvs)
         result = {str(key) : val for key, val in 
                   exp.average_score().iteritems()}
+        print result
         self.__compare_to_ref_pkl(result, 'run_experiment')
 
     def test_slice_on_dimension(self):

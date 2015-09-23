@@ -8,6 +8,7 @@ import numpy as np
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import datasets
+from sklearn.cross_validation import StratifiedKFold
 
 import eights.operate as op
 import eights.utils as utils
@@ -30,15 +31,14 @@ class TestOperate(unittest.TestCase):
 
     def test_operate(self):
         M, y = uft.generate_test_matrix(100, 5, 2, random_state=0)
+        cvs = [{'cv': StratifiedKFold}]
         for label, clfs in zip(('std',), (op.DBG_std_clfs,)):
-            exp = per.Experiment(M, y, clfs)
+            exp = per.Experiment(M, y, clfs=clfs, cvs=cvs)
             result = {str(key) : val for key, val in 
                       exp.average_score().iteritems()}
-            print label
-            print '='*80
-            print result
-            print
-            self.__pkl_store(result, 'test_operate_{}'.format(label))
+            self.__compare_to_ref_pkl(
+                    result, 
+                    'test_operate_{}'.format(label))
 
 if __name__ == '__main__':
     unittest.main()
