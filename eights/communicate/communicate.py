@@ -515,6 +515,7 @@ class Report(object):
             plt.text(rank, result[1], '{}'.format(result[2]))
         plt.ylabel(measure)
         self.add_fig(fig)
+        plt.close()
 
     def add_summary_graph_roc_auc(self):
         self.add_summary_graph('roc_auc')
@@ -534,6 +535,7 @@ class Report(object):
         self.add_text('Best trial is trial {} ({})]'.format(
             self.__back_indices[best_trial],
             best_trial))
+        plt.close()
 
     def add_graph_for_best_roc(self):
         self.add_graph_for_best('roc_curve')
