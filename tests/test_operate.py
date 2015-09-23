@@ -1,6 +1,7 @@
 import os
 
 import unittest
+import cPickle
 from collections import Counter
 
 import numpy as np
@@ -10,21 +11,34 @@ from sklearn import datasets
 
 import eights.operate as op
 import eights.utils as utils
+import eights.perambulate as per
 
-import utils_for_tests
+import utils_for_tests as uft
 
 class TestOperate(unittest.TestCase):
-    def test_load_and_run_rf_cv(self):
-        file_loc = 'test_operate_matrix.csv'
-        M, labels = utils_for_tests.generate_test_matrix(100, 20, 
-                                                         random_state=0)
-        to_write = utils.append_cols(M, labels, 'label')
-        np.savetxt(file_loc, to_write, delimiter=',', 
-                   header=','.join(to_write.dtype.names)) 
-        exp = op.load_and_run_rf_cv(file_loc, -1)
-        print exp.average_score()
-        os.remove(file_loc)
+    def __pkl_store(self, obj, key):
+        with open(uft.path_of_data(key + '.pkl'), 'w') as pkl:
+            cPickle.dump(obj, pkl)
 
+    def __get_ref_pkl(self, key):
+        with open(uft.path_of_data(key + '.pkl')) as pkl:
+            return cPickle.load(pkl)
+
+    def __compare_to_ref_pkl(self, result, key):
+        ref = self.__get_ref_pkl(key)
+        self.assertEqual(ref, result) 
+
+    def test_operate(self):
+        M, y = uft.generate_test_matrix(100, 5, 2, random_state=0)
+        for label, clfs in zip(('std',), (op.DBG_std_clfs,)):
+            exp = per.Experiment(M, y, clfs)
+            result = {str(key) : val for key, val in 
+                      exp.average_score().iteritems()}
+            print label
+            print '='*80
+            print result
+            print
+            self.__pkl_store(result, 'test_operate_{}'.format(label))
 
 if __name__ == '__main__':
     unittest.main()
