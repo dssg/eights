@@ -14,9 +14,7 @@ def remove_these_columns(M, list_of_col_to_remove):
     return M[[col for col in M.dtype.names if col not in list_of_col_to_remove]]
     
     
-def remove_these_rows(M, list_of_rows_to_remove):
-    #given List, remove rows
-    return
+
 
 def col_has_all_same_val(col):
     return np.all(col==col[0])

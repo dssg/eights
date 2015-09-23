@@ -1,3 +1,4 @@
+#files included here are those that you SHOULD be able to do in python syntax but can not.
 import numpy as np
 import numpy.lib.recfunctions as nprf
 import matplotlib.mlab
