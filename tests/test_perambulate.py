@@ -19,7 +19,7 @@ class TestPerambulate(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        report_path = cls.report.to_pdf()
+        report_path = cls.report.to_pdf(verbose=False)
         uft.print_in_box(
                 'Test Perambulate visual regression tests',
                 ['graphical output available at:',
