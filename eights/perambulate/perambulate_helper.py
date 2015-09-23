@@ -4,7 +4,7 @@ import inspect
 import numpy as np
 import itertools as it
 from collections import Counter
-from random import sample
+from random import sample, seed, setstate, getstate
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -41,10 +41,12 @@ class SubsetNoSubset(BaseSubsetIter):
 
 class SubsetRandomRowsActualDistribution(BaseSubsetIter):
         
-    def __init__(self, y, col_names, subset_size, n_subsets=3):
+    def __init__(self, y, col_names, subset_size, n_subsets=3, 
+                 random_state=None):
         super(SubsetRandomRowsActualDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
+        self.__random_state_seed = random_state
 
     def __iter__(self):
         y = self._y
@@ -56,15 +58,21 @@ class SubsetRandomRowsActualDistribution(BaseSubsetIter):
         n_choices = {key: int(proportions[key] * subset_size) for 
                      key in proportions}
         indices = {key: np.where(y == key)[0] for key in count}
+        seed(self.__random_state_seed)
+        random_state = getstate()
         for i in xrange(n_subsets):
+            setstate(random_state)
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
+            random_state = getstate()
             all_indices = np.sort(np.concatenate(samples.values()))
             yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
-        return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
+        return ('SubsetRandomRowsActualDistribution('
+                'subset_size={}, n_subsets={}, random_state={})').format(
                 self.__subset_size,
-                self.__n_subsets)
+                self.__n_subsets,
+                self.__random_state_seed)
 
 class SubsetRandomRowsEvenDistribution(BaseSubsetIter):
         
@@ -462,7 +470,7 @@ all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
 #TODO these really need to be dynamically generated based on the experiment
 all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
                             'proportions_positive', 'cols_to_exclude',
-                            'max_grades'])
+                            'max_grades', 'random_state'])
 
 all_subset_params_backindex = {param: i for i, param in 
                                enumerate(all_subset_params)}

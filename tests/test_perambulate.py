@@ -1,15 +1,23 @@
 import unittest
-import utils_for_tests as uft
+import cPickle
+import os
+
+import numpy as np
+
 from sklearn.svm import SVC 
-
 from sklearn import datasets
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.cross_validation import StratifiedKFold
 
-from eights.perambulate.perambulate import *
+import eights.perambulate as per
 import eights.communicate as comm
 
-REPORT_PATH=uft.path_of_data('test_perambulate.pdf')
-SUBREPORT_PATH=uft.path_of_data('test_perambulate_sub.pdf')
-REFERENCE_REPORT_PATH=uft.path_of_data('test_perambulate_ref.pdf')
+import utils_for_tests as uft
+
+REPORT_PATH = uft.path_of_data('test_perambulate.pdf')
+SUBREPORT_PATH = uft.path_of_data('test_perambulate_sub.pdf')
+REFERENCE_REPORT_PATH = uft.path_of_data('test_perambulate_ref.pdf')
+REFERENCE_PKL_PATH = uft.path_of_data('test_perambulate')
 
 class TestPerambulate(unittest.TestCase):
 
@@ -27,17 +35,31 @@ class TestPerambulate(unittest.TestCase):
                  'Reference available at:',
                  REFERENCE_REPORT_PATH])
 
+    def __pkl_store(self, obj, key):
+        with open(os.path.join(REFERENCE_PKL_PATH, key + '.pkl'), 'w') as pkl:
+            cPickle.dump(obj, pkl)
+
+    def __get_ref_pkl(self, key):
+        with open(os.path.join(REFERENCE_PKL_PATH, key + '.pkl')) as pkl:
+            return cPickle.load(pkl)
+
+    def __compare_to_ref_pkl(self, result, key):
+        ref = self.__get_ref_pkl(key)
+        self.assertEqual(ref, result) 
+        
     def test_run_experiment(self):
         iris = datasets.load_iris()
         y = iris.target
         M = iris.data
-        clfs = [{'clf': RandomForestClassifier}]
-        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20, 40, 60, 80, 100]}]
+        clfs = [{'clf': RandomForestClassifier, 'random_state': [0]}]
+        subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20, 40, 60, 80, 100],
+                    'random_state': [0]}]
         cvs = [{'cv': StratifiedKFold}]
-        exp = Experiment(M, y, clfs, subsets, cvs)
-        for item in exp.average_score():
-            print item
+        exp = per.Experiment(M, y, clfs, subsets, cvs)
+        result = {str(key) : val for key, val in 
+                  exp.average_score().iteritems()}
+        self.__compare_to_ref_pkl(result, 'run_experiment')
 
     def test_slice_on_dimension(self):
         iris = datasets.load_iris()
