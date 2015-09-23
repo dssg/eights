@@ -90,17 +90,19 @@ class TestPerambulate(unittest.TestCase):
         M = iris.data
         clfs = [{'clf': RandomForestClassifier, 
                  'n_estimators': [10, 100], 
-                 'max_depth': [1, 10]}, 
+                 'max_depth': [1, 10],
+                 'random_state': [0]}, 
                  {'clf': SVC, 'kernel': ['linear', 'rbf']}]        
-        subsets = [{'subset': SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20, 40, 60, 80, 100]}]
+        subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
+                    'subset_size': [20, 40, 60, 80, 100],
+                    'random_state': [0]}]
         cvs = [{'cv': StratifiedKFold}]
-        exp = Experiment(M, y, clfs, subsets, cvs)
-        for trial in exp.run():
-            print trial, trial.average_score()
-        print
-        for trial in exp.slice_by_best_score(CLF_PARAMS).trials:
-            print trial, trial.average_score()
+        exp = per.Experiment(M, y, clfs, subsets, cvs)
+        exp.run()
+        result = {str(trial): trial.average_score() for trial in 
+                  exp.slice_by_best_score(per.CLF_PARAMS).trials}
+        #self.__pkl_store(result, 'slice_by_best_score')
+        self.__compare_to_ref_pkl(result, 'slice_by_best_score')
 
     def test_report_simple(self):
         M, y = uft.generate_test_matrix(100, 5, 2)

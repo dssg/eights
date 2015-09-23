@@ -1,0 +1,75 @@
+(dp1
+S"Trial(clf=<class 'sklearn.svm.classes.SVC'>, clf_params={'kernel': 'linear'}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 80, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p2
+cnumpy.core.multiarray
+scalar
+p3
+(cnumpy
+dtype
+p4
+(S'f8'
+I0
+I1
+tRp5
+(I3
+S'<'
+NNNI-1
+I-1
+I0
+tbS')>gj\xb9p\xef?'
+tRp6
+sS"Trial(clf=<class 'sklearn.svm.classes.SVC'>, clf_params={'kernel': 'rbf'}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 60, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p7
+g3
+(g5
+S'K\xfd)\xf5\xa7\xd4\xef?'
+tRp8
+sS"Trial(clf=<class 'sklearn.ensemble.forest.RandomForestClassifier'>, clf_params={'n_estimators': 100, 'random_state': 0, 'max_depth': 10}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 80, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p9
+g3
+(g5
+S'\xbeI\xde_\x07c\xee?'
+tRp10
+sS"Trial(clf=<class 'sklearn.ensemble.forest.RandomForestClassifier'>, clf_params={'n_estimators': 10, 'random_state': 0, 'max_depth': 10}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 100, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p11
+g3
+(g5
+S'\x0b\xbb\xcfwm\x99\xee?'
+tRp12
+sS"Trial(clf=<class 'sklearn.svm.classes.SVC'>, clf_params={'kernel': 'linear'}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 20, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p13
+g3
+(g5
+S'\x8e\xe38\x8e\xe38\xee?'
+tRp14
+sS"Trial(clf=<class 'sklearn.ensemble.forest.RandomForestClassifier'>, clf_params={'n_estimators': 100, 'random_state': 0, 'max_depth': 1}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 60, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p15
+g3
+(g5
+S'\xf9\xe8\xe4\xa3\x93\x8f\xee?'
+tRp16
+sS"Trial(clf=<class 'sklearn.svm.classes.SVC'>, clf_params={'kernel': 'linear'}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 40, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p17
+g3
+(g5
+S'\xde\xdd\xdd\xdd\xdd\xdd\xed?'
+tRp18
+sS"Trial(clf=<class 'sklearn.ensemble.forest.RandomForestClassifier'>, clf_params={'n_estimators': 100, 'random_state': 0, 'max_depth': 1}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 40, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p19
+g3
+(g5
+S'\x8bQ\xc3\xdf\xa6\x18\xed?'
+tRp20
+sS"Trial(clf=<class 'sklearn.svm.classes.SVC'>, clf_params={'kernel': 'linear'}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 100, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p21
+g3
+(g5
+S'\x04\x9cS\x87\xab\x91\xef?'
+tRp22
+sS"Trial(clf=<class 'sklearn.ensemble.forest.RandomForestClassifier'>, clf_params={'n_estimators': 100, 'random_state': 0, 'max_depth': 1}, subset=<class 'eights.perambulate.perambulate_helper.SubsetRandomRowsActualDistribution'>, subset_params={'subset_size': 20, 'random_state': 0}, cv=<class 'sklearn.cross_validation.StratifiedKFold'>, cv_params={})"
+p23
+g3
+(g5
+S'\x0b\xed%\xb4\x97\xd0\xee?'
+tRp24
+s.
