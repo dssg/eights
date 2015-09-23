@@ -101,16 +101,18 @@ class TestPerambulate(unittest.TestCase):
         exp.run()
         result = {str(trial): trial.average_score() for trial in 
                   exp.slice_by_best_score(per.CLF_PARAMS).trials}
-        #self.__pkl_store(result, 'slice_by_best_score')
         self.__compare_to_ref_pkl(result, 'slice_by_best_score')
 
     def test_report_simple(self):
-        M, y = uft.generate_test_matrix(100, 5, 2)
+        M, y = uft.generate_test_matrix(100, 5, 2, random_state=0)
         clfs = [{'clf': RandomForestClassifier, 
-                 'n_estimators': [10, 100, 1000]}]
+                 'n_estimators': [10, 100, 1000],
+                 'random_state': [0]}]
         cvs = [{'cv': StratifiedKFold}]
-        exp = Experiment(M, y, clfs=clfs, cvs=cvs)
-        exp.make_report()
+        exp = per.Experiment(M, y, clfs=clfs, cvs=cvs)
+        _, rep = exp.make_report(return_report_object=True, verbose=False)
+        self.report.add_heading('test_report_simple', 1)
+        self.report.add_subreport(rep)
 
     def test_make_csv(self):
         M, y = uft.generate_test_matrix(1000, 15, 2)

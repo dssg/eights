@@ -160,7 +160,9 @@ class Experiment(object):
     def make_report(
         self, 
         report_file_name='report.pdf',
-        dimension=None):
+        dimension=None,
+        return_report_object=False,
+        verbose=True):
         # TODO make this more flexible
         from ..communicate import Report
         self.run()
@@ -187,7 +189,10 @@ class Experiment(object):
             sub_rep.add_heading('Legend', 3)
             sub_rep.add_legend()
             rep.add_subreport(sub_rep)
-        return rep.to_pdf()
+        returned_report_file_name = rep.to_pdf(verbose=verbose)
+        if return_report_object:
+            return (returned_report_file_name, rep)
+        return returned_report_file_name
 
     def make_csv(self, file_name='report.csv'):
         self.run()
