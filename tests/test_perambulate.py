@@ -95,7 +95,7 @@ class TestPerambulate(unittest.TestCase):
                  {'clf': SVC, 'kernel': ['linear', 'rbf'],
                   'random_state': [0]}]        
         subsets = [{'subset': per.SubsetRandomRowsActualDistribution, 
-                    'subset_size': [20, 40, 60, 80, 100],
+                    'subset_size': [20, 40],
                     'random_state': [0]}]
         cvs = [{'cv': StratifiedKFold}]
         exp = per.Experiment(M, y, clfs, subsets, cvs)
