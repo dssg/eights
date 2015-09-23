@@ -4,7 +4,7 @@ import inspect
 import numpy as np
 import itertools as it
 from collections import Counter
-from random import sample
+from random import sample, seed, setstate, getstate
 from sklearn.cross_validation import _PartitionIterator
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -41,10 +41,12 @@ class SubsetNoSubset(BaseSubsetIter):
 
 class SubsetRandomRowsActualDistribution(BaseSubsetIter):
         
-    def __init__(self, y, col_names, subset_size, n_subsets=3):
+    def __init__(self, y, col_names, subset_size, n_subsets=3, 
+                 random_state=None):
         super(SubsetRandomRowsActualDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
+        self.__random_state_seed = random_state
 
     def __iter__(self):
         y = self._y
@@ -56,22 +58,30 @@ class SubsetRandomRowsActualDistribution(BaseSubsetIter):
         n_choices = {key: int(proportions[key] * subset_size) for 
                      key in proportions}
         indices = {key: np.where(y == key)[0] for key in count}
+        seed(self.__random_state_seed)
+        random_state = getstate()
         for i in xrange(n_subsets):
+            setstate(random_state)
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
+            random_state = getstate()
             all_indices = np.sort(np.concatenate(samples.values()))
             yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
-        return 'SubsetRandomRowsActualDistribution(subset_size={}, n_subsets={})'.format(
+        return ('SubsetRandomRowsActualDistribution('
+                'subset_size={}, n_subsets={}, random_state={})').format(
                 self.__subset_size,
-                self.__n_subsets)
+                self.__n_subsets,
+                self.__random_state_seed)
 
 class SubsetRandomRowsEvenDistribution(BaseSubsetIter):
         
-    def __init__(self, y, col_names, subset_size, n_subsets=3):
+    def __init__(self, y, col_names, subset_size, n_subsets=3, 
+                 random_state=None):
         super(SubsetRandomRowsEvenDistribution, self).__init__(y, col_names)
         self.__subset_size = subset_size
         self.__n_subsets = n_subsets
+        self.__random_state_seed = random_state
 
     def __iter__(self):
         y = self._y
@@ -83,57 +93,78 @@ class SubsetRandomRowsEvenDistribution(BaseSubsetIter):
         n_choices = {key: int(proportions[key] * subset_size) for 
                      key in proportions}
         indices = {key: np.where(y == key)[0] for key in count}
+        seed(self.__random_state_seed)
+        random_state = getstate()
         for i in xrange(n_subsets):
+            setstate(random_state)
             samples = {key: sample(indices[key], n_choices[key]) for key in count}
+            random_state = getstate()
             all_indices = np.sort(np.concatenate(samples.values()))
             yield (all_indices, self._col_names, {'sample_num': i})
 
     def __repr__(self):
-        return 'SubsetRandomRowsEvenDistribution(subset_size={}, n_subsets={})'.format(
+        return ('SubsetRandomRowsEvenDistribution('
+                'subset_size={}, n_subsets={}, random_state={})').format(
                 self.__subset_size,
-                self.__n_subsets)
+                self.__n_subsets,
+                self.__random_state_seed)
 
 class SubsetSweepNumRows(BaseSubsetIter):
         
-    def __init__(self, y, col_names, num_rows):
+    def __init__(self, y, col_names, num_rows, random_state=None):
         super(SubsetSweepNumRows, self).__init__(y, col_names)
         self.__num_rows = num_rows
+        self.__random_state_seed = random_state
 
     def __iter__(self):
         y = self._y
         num_rows = self.__num_rows
+        seed(self.__random_state_seed)
+        random_state = getstate()
         for rows in num_rows:
+            setstate(random_state)
             all_indices = np.sort(sample(np.arange(0, y.shape[0]), rows))
             yield (all_indices, self._col_names, {'rows': rows})
+            random_state=getstate()
 
     def __repr__(self):
-        return 'SubsetSweepNumRows(num_rows={})'.format(
-                self.__num_rows)
+        return 'SubsetSweepNumRows(num_rows={}, random_state={})'.format(
+                self.__num_rows,
+                self.__random_state_seed)
 
 class SubsetSweepVaryStratification(BaseSubsetIter):
         
-    def __init__(self, y, col_names, proportions_positive, subset_size):
+    def __init__(self, y, col_names, proportions_positive, subset_size, 
+                 random_state=None):
         super(SubsetSweepVaryStratification, self).__init__(y, col_names)
         self.__proportions_positive = proportions_positive
         self.__subset_size = subset_size
+        self.__random_state_seed = random_state
 
     def __iter__(self):
         y = self._y
         subset_size = self.__subset_size
         positive_cases = np.where(y)[0]
         negative_cases = np.where(np.logical_not(y))[0]
+        seed(self.__random_state_seed)
+        random_state = getstate()
         for prop_pos in self.__proportions_positive:
+            setstate(random_state)
             positive_sample = sample(positive_cases, int(subset_size * prop_pos))
             negative_sample = sample(negative_cases, int(subset_size * (1 - prop_pos)))
+            random_state = getstate()
             # If one of these sets is empty, concatentating them casts to float, so we have
             # to cast it back (hence the astype)
             all_indices = np.sort(np.concatenate([positive_sample, negative_sample])).astype(int)
             yield (all_indices, self._col_names, 'prop_positive={}'.format(prop_pos))
 
     def __repr__(self):
-        return 'SubsetSweepVaryStratification(proportions_positive={}, subset_size={})'.format(
+        return ('SubsetSweepVaryStratification('
+                'proportions_positive={}, subset_size={}, '
+                'random_state={})').format(
                 self.__proportions_positive,
-                self.__subset_size)
+                self.__subset_size,
+                self.__random_state_seed)
 
 
 class SubsetSweepExcludeColumns(BaseSubsetIter):
@@ -462,7 +493,7 @@ all_clf_params_backindex = {param: i for i, param in enumerate(all_clf_params)}
 #TODO these really need to be dynamically generated based on the experiment
 all_subset_params = sorted(['subset_size', 'n_subsets', 'num_rows', 
                             'proportions_positive', 'cols_to_exclude',
-                            'max_grades'])
+                            'max_grades', 'random_state'])
 
 all_subset_params_backindex = {param: i for i, param in 
                                enumerate(all_subset_params)}

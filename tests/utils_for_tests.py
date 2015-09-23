@@ -15,19 +15,19 @@ EIGHTS_PATH = os.path.join(TESTS_PATH, '..')
 def path_of_data(filename):
     return os.path.join(DATA_PATH, filename)
 
-def generate_test_matrix(rows, cols, n_classes=2, types=[], random_state=None):
-    full_types = list(it.chain(types, it.repeat(float, cols - len(types))))
+def generate_test_matrix(n_rows, n_cols=1, n_classes=2, types=[], random_state=None):
+    full_types = list(it.chain(types, it.repeat(float, n_cols - len(types))))
     np.random.seed(random_state)
     cols = []
     for col_type in full_types:
         if col_type is int:
             col = np.random.randint(100, size=rows)
         elif issubclass(col_type, basestring):
-            col = np.random.choice(list(string.uppercase), size=rows)
+            col = np.random.choice(list(string.uppercase), size=n_rows)
         else:
-            col = np.random.random(size=rows)
+            col = np.random.random(size=n_rows)
         cols.append(col)
-    labels = np.random.randint(n_classes, size=rows)
+    labels = np.random.randint(n_classes, size=n_rows)
     M = eights.utils.sa_from_cols(cols)
     return M, labels
 
@@ -68,7 +68,7 @@ def rerout_stdout():
     >>> print 'This text appears in the console'
     This text appears in the console
     >>> with rerout_stdout() as get_rerouted_stdout:
-    ...    print 'This text does not appear in the console'
+    ...     print 'This text does not appear in the console'
     ...     # get_rerouted_stdout is a function that gets our rerouted output
     ...     assert(get_rerouted_stdout().strip() == 'This text does not appear in the console')
     >>> print 'This text also appears in the console'
@@ -82,3 +82,43 @@ def rerout_stdout():
         yield out.getvalue
     finally:
         sys.stdout = saved_stdout
+
+def print_in_box(heading, text):
+    """ Prints text in a nice box. 
+
+    Parameters
+    ----------
+    heading : str
+    text : str or list of str
+        if a list of str, each item of the list gets its own line
+    """
+    if isinstance(text, basestring):
+        text = text.split('\n')
+    str_len = max(len(heading), max([len(line) for line in text]))
+    meta_fmt = ('{{border}}{{space}}'
+                '{{{{content:{{fill}}{{align}}{str_len}}}}}'
+                '{{space}}{{border}}\n').format(str_len=str_len)
+    boundary = meta_fmt.format(
+            fill='-', 
+            align='^',
+            border='+',
+            space='-').format(
+                    content='')
+    heading_line = meta_fmt.format(
+            fill='',
+            align='^',
+            border='|',
+            space=' ').format(
+                    content=heading)
+    line_fmt = meta_fmt.format(
+            fill='',
+            align='<',
+            border='|',
+            space=' ')
+    sys.stdout.write('\n')
+    sys.stdout.write(boundary)
+    sys.stdout.write(heading_line)
+    sys.stdout.write(boundary.replace('-', '='))
+    sys.stdout.write(''.join([line_fmt.format(content=line) for line in text]))
+    sys.stdout.write(boundary)
+    sys.stdout.write('\n')
