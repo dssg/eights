@@ -312,15 +312,19 @@ class ArrayEmitter(object):
             be one of:
 
                 * 'AVG'
-                * 'COUNT'
-                * 'MAX'
-                * 'MIN'
-                * 'SUM'
-                * 'FIRST'
-                * 'LAST'
+                    Mean average
 
-            Note that 'FIRST' will yield the value with the earliest start 
-            time and 'LAST' will yield the value with the latest start time
+                * 'COUNT'
+                    Number of results
+
+                * 'MAX'
+                    Largest result
+
+                * 'MIN'
+                    Smallest result 
+
+                * 'SUM'
+                    Sum of results
 
             If a function, must take a list and return a float
 
@@ -437,7 +441,6 @@ class ArrayEmitter(object):
                                 col_specs['unit_id'],
                                 table_name)
         # TODO handle datetimes
-        # TODO handle FIRST and LAST aggregations
         sql_from_clause_features = 'LEFT JOIN '.join(
             [("(SELECT {unit_id_col} AS id, {aggr}({val_col}) AS val FROM "
               "{table_name} WHERE "
