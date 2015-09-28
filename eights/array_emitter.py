@@ -163,13 +163,14 @@ class ArrayEmitter(object):
    
     """
 
-    def __init__(self):
+    def __init__(self, convert_to_unix_time=False):
         self.__conn = None
         self.__rg_table_name = None
         self.__selections = []
         self.__aggregations = {}
         self.__default_aggregation = 'AVG'
         self.__col_specs = {}
+        self.__convert_to_unix_time = convert_to_unix_time
 
     def __copy(self):
         cp = ArrayEmitter()
@@ -402,6 +403,9 @@ class ArrayEmitter(object):
             Numpy structured array constructed using the specified queries and
             subsets
         """
+        if self.__convert_to_unix_time:
+            start_time = utils.to_unix_time(start_time)
+            stop_time = utils.to_unit_time(stop_time)
         
         col_specs = self.__col_specs
         conn = self.__conn
@@ -445,8 +449,10 @@ class ArrayEmitter(object):
             [("(SELECT {unit_id_col} AS id, {aggr}({val_col}) AS val FROM "
               "{table_name} WHERE "
               "{feature_col} = '{feat_name}' AND "
-              "{start_time_col} >= '{start_time}' AND "
-              "{stop_time_col} <= '{stop_time}' "
+              "({start_time_col} >= '{start_time}' "
+              " OR {start_time_col} IS NULL) AND "
+              "({stop_time_col} <= '{stop_time}' "
+              " OR {stop_time_col} IS NULL) "
               "GROUP BY id) {feat_name}_tbl ON "
               "id_tbl.id = {feat_name}_tbl.id) ").format(
                   unit_id_col=col_specs['unit_id'],

@@ -477,3 +477,16 @@ def join(left, right, how, left_on, right_on, suffixes=('_x', '_y')):
 
     return np.array(rows_new_table, dtype={'names': col_names, 
                                            'formats': col_dtypes})
+
+EPOCH = datetime.utcfromtimestamp(0)
+def to_unix_time(dt):
+    # TODO test this
+    # from
+    # http://stackoverflow.com/questions/6999726/how-can-i-convert-a-datetime-object-to-milliseconds-since-epoch-unix-time-in-p
+    # and
+    # http://stackoverflow.com/questions/29753060/how-to-convert-numpy-datetime64-into-datetime
+    if isinstance(dt, np.datetime64):
+        dt = dt.astype('O')
+    if isinstance(dt, datetime):
+        return (dt - EPOCH).total_seconds()
+    raise ValueError('Expected np.datetime64 or datetime.datetime')
