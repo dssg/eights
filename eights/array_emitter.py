@@ -117,10 +117,11 @@ class ArrayEmitter(object):
     we have Table 1 stored in table1.csv, and run the following:
 
     >>> ae = ArrayEmitter()
-    >>> ae.get_rg_from_csv('table1.csv')
-    >>> ae.set_aggregation('math_gpa', 'AVG')
-    >>> ae.set_aggregation('absences', 'MAX')
-    >>> table2 = ag.emit_M(2005, 2006)
+    >>> ae = ae.get_rg_from_csv('table1.csv')
+    >>> ae = ae.set_aggregation('math_gpa', 'AVG')
+    >>> ae = ae.set_aggregation('absences', 'MAX')
+    >>> ae = ae.set_interval(2005, 2006)
+    >>> table2 = ae.emit_M()
 
     we end up with Table 2
 
@@ -140,11 +141,12 @@ class ArrayEmitter(object):
     the select_rows_in_M function. For example:
 
     >>> ae = ArrayEmitter()
-    >>> ae.get_rg_from_csv('table1.csv')
-    >>> ae.set_aggregation('math_gpa', 'AVG')
-    >>> ae.set_aggregation('absences', 'MAX')
-    >>> ae = ag.select_rows_in_M('math_gpa <= 3.4')
-    >>> table3 = ag.to_sa(2005, 2006)
+    >>> ae = ae.get_rg_from_csv('table1.csv')
+    >>> ae = ae.set_aggregation('math_gpa', 'AVG')
+    >>> ae = ae.set_aggregation('absences', 'MAX')
+    >>> ae = ae.select_rows_in_M('math_gpa <= 3.4')
+    >>> ae = ae.set_interval(2005, 2006)
+    >>> table3 = ae.to_sa()
 
     Gives us 
     
@@ -171,15 +173,20 @@ class ArrayEmitter(object):
         self.__default_aggregation = 'AVG'
         self.__col_specs = {}
         self.__convert_to_unix_time = convert_to_unix_time
+        self.__start_time = None
+        self.__stop_time = None
 
     def __copy(self):
         cp = ArrayEmitter()
         cp.__conn = self.__conn
         cp.__rg_table_name = self.__rg_table_name
         cp.__selections = list(self.__selections)
-        cp.__aggregations = list(self.__aggregations)
+        cp.__aggregations = self.__aggregations.copy()
         cp.__default_aggregation = self.__default_aggregation
         cp.__col_specs = self.__col_specs.copy()
+        cp.__convert_to_unix_time = self.__convert_to_unix_time 
+        cp.__start_time = self.__start_time
+        cp.__stop_time = self.__stop_time
         return cp
 
     def get_rg_from_sql(self, conn_str, table_name, unit_id_col=None, 
@@ -227,19 +234,20 @@ class ArrayEmitter(object):
         Examples
         --------
         >>> conn_str = ...
-        >>> ag = ArrayGenerator()
-        >>> ag.get_rg_from_SQL('SELECT * FROM table_1', 'student_id', 
-        ...                    conn_str=conn_str)
+        >>> ae = ArrayEmitter()
+        >>> ae = ae.get_rg_from_SQL('SELECT * FROM table_1', 'student_id', 
+        ...                         conn_str=conn_str)
 
         """
-        self.__conn = sqla.create_engine(conn_str)
-        self.__rg_table_name = table_name
-        self.__col_specs['unit_id'] = unit_id_col
-        self.__col_specs['start_time'] = start_time_col
-        self.__col_specs['stop_time'] = stop_time_col
-        self.__col_specs['feature'] = feature_col
-        self.__col_specs['val'] = val_col
-        return self
+        cp = self.__copy()
+        cp.__conn = sqla.create_engine(conn_str)
+        cp.__rg_table_name = table_name
+        cp.__col_specs['unit_id'] = unit_id_col
+        cp.__col_specs['start_time'] = start_time_col
+        cp.__col_specs['stop_time'] = stop_time_col
+        cp.__col_specs['feature'] = feature_col
+        cp.__col_specs['val'] = val_col
+        return cp
 
     def get_rg_from_csv(self, csv_file_path, unit_id_col=None, 
                         start_time_col=None, stop_time_col=None, 
@@ -281,22 +289,23 @@ class ArrayEmitter(object):
         Examples
         --------
             
-        >>> ag = ArrayGenerator()
-        >>> ag.get_rg_from_csv('table_1.csv')             
+        >>> ae = ArrayEmitter()
+        >>> ae = ae.get_rg_from_csv('table_1.csv')             
         """
         # in-memory db
+        cp = self.__copy()
         conn = sqla.create_engine('sqlite://')
-        self.__rg_table_name = utils.csv_to_sqlite(conn, csv_file_path)
-        self.__conn = conn
-        self.__col_specs['unit_id'] = unit_id_col
-        self.__col_specs['start_time'] = start_time_col
-        self.__col_specs['stop_time'] = stop_time_col
-        self.__col_specs['feature'] = feature_col
-        self.__col_specs['val'] = val_col
+        cp.__rg_table_name = utils.csv_to_sqlite(conn, csv_file_path)
+        cp.__conn = conn
+        cp.__col_specs['unit_id'] = unit_id_col
+        cp.__col_specs['start_time'] = start_time_col
+        cp.__col_specs['stop_time'] = stop_time_col
+        cp.__col_specs['feature'] = feature_col
+        cp.__col_specs['val'] = val_col
         # SQLite doesn't really have datetimes, so we transparently translate
         # to unix times.
-        self.__convert_to_unix_time = True
-        return self
+        cp.__convert_to_unix_time = True
+        return cp
 
     def set_aggregation(self, feature_name, method):
         """Sets the method used to aggregate across dates in a RG table.
@@ -331,20 +340,23 @@ class ArrayEmitter(object):
 
         Examples
         --------
-        >>> ag = ArrayGenerator(...)
+        >>> ae = ArrayEmitter()
         >>> ... # Populate ag with Table 1 and Table 2
-        >>> ag.set_aggregation('math_gpa', 'mean')
-        >>> ag.set_aggregation('absences', 'max')
-        >>> sa = ag.to_sa(2005, 2006)
+        >>> ae = ae.set_aggregation('math_gpa', 'mean')
+        >>> ae = ae.set_aggregation('absences', 'max')
+        >>> ae = ae.set_interval(2005, 2006)
+        >>> sa = ae.emit_M()
 
         """
         # TODO make sure method is valid
-        self.__aggregations[feature_name] = method
-        return self
+        cp = self.__copy()
+        cp.__aggregations[feature_name] = method
+        return cp
 
     def set_default_aggregation(self, method):
-        self.__default_aggregation = method
-        return self
+        cp = self.__copy()
+        cp.__default_aggregation = method
+        return cp
     
     def select_rows_in_M(self, where):
         """
@@ -367,12 +379,13 @@ class ArrayEmitter(object):
 
         Examples
         --------
-        >>> ag = ArrayGenerator(...)
+        >>> ae = ArrayEmitter()
         >>> ... # Populate ag with Table 1 and Table 2
-        >>> ag.set_aggregation('math_gpa', 'mean')
-        >>> ag.set_aggregation('absences', 'max')
-        >>> ag = ag.select_rows_in_M('grad_year == 2007')
-        >>> sa = ag.to_sa(2005, 2006)
+        >>> ae = ae.set_aggregation('math_gpa', 'mean')
+        >>> ae = ae.set_aggregation('absences', 'max')
+        >>> ae = ae.select_rows_in_M('grad_year == 2007')
+        >>> ae = ae.set_interval(2005, 2006)
+        >>> sa = ae.emit_M()
         """
         # Note that this copies the original rather than mutating it, so
         # taking a subset does not permanently lose data.
@@ -385,10 +398,9 @@ class ArrayEmitter(object):
 
     def select_cols_in_M(self, where):
         raise NotImplementedError()
-        
-    def emit_M(self, start_time, stop_time):
-        """Creates a structured array in M-format
 
+    def set_interval(self, start_time, stop_time):
+        """
         Start times and stop times are inclusive
 
         Parameters
@@ -397,12 +409,23 @@ class ArrayEmitter(object):
             Start time of log tables to include in this sa
         stop_time : number or datetime.datetime
             Stop time of log tables to include in this sa
+        """
+        cp = self.__copy()
+        cp.__start_time = start_time
+        cp.__stop_time = stop_time
+        return cp
+        
+    def emit_M(self):
+        """Creates a structured array in M-format
+
         Returns
         -------
         np.ndarray
             Numpy structured array constructed using the specified queries and
             subsets
         """
+        start_time = self.__start_time
+        stop_time = self.__stop_time
         if self.__convert_to_unix_time:
             start_time = utils.to_unix_time(start_time)
             stop_time = utils.to_unix_time(stop_time)
@@ -444,7 +467,6 @@ class ArrayEmitter(object):
                                 '(' * len(feat_names),
                                 col_specs['unit_id'],
                                 table_name)
-        # TODO handle datetimes
         sql_from_clause_features = 'LEFT JOIN '.join(
             [("(SELECT {unit_id_col} AS id, {aggr}({val_col}) AS val FROM "
               "{table_name} WHERE "

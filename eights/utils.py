@@ -491,7 +491,7 @@ def to_unix_time(dt):
         dt = dt.astype('O')
     if isinstance(dt, datetime):
         return (dt - EPOCH).total_seconds()
-    raise ValueError('Expected np.datetime64 or datetime.datetime')
+    return dt
 
 def __sqlite_type(np_descr):
     if 'b' in np_descr:

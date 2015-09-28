@@ -11,9 +11,10 @@ class TestArrayEmitter(unittest.TestCase):
         db_file = uft.path_of_data('rg_students.db')
         conn_str = 'sqlite:///{}'.format(db_file)
         ae = array_emitter.ArrayEmitter()
-        ae.get_rg_from_sql(conn_str, 'rg_students')
-        ae.set_aggregation('absences', 'MAX')
-        res = ae.emit_M(2005, 2007)
+        ae = ae.get_rg_from_sql(conn_str, 'rg_students')
+        ae = ae.set_aggregation('absences', 'MAX')
+        ae = ae.set_interval(2005, 2007)
+        res = ae.emit_M()
         ctrl = np.array([(0, 2.2, 3.95, 8.0),
                          (1, 3.45, np.nan, 0.0),
                          (2, 3.4, np.nan, 96.0)],
@@ -26,14 +27,21 @@ class TestArrayEmitter(unittest.TestCase):
         db_file = uft.path_of_data('rg_complex_dates.db')
         conn_str = 'sqlite:///{}'.format(db_file)
         ae = array_emitter.ArrayEmitter(convert_to_unix_time=True)
-        ae.set_aggregation('bounded', 'SUM')
-        ae.set_aggregation('no_start', 'SUM')
-        ae.set_aggregation('no_stop', 'SUM')
-        ae.set_aggregation('unbounded', 'SUM')
-        ae.get_rg_from_sql(conn_str, 'rg_complex_dates', feature_col='feature')
-        res1 = ae.emit_M(datetime(2010, 1, 1), datetime(2010, 6, 30))
-        res2 = ae.emit_M(datetime(2010, 7, 1), datetime(2010, 12, 31))
-        res3 = ae.emit_M(datetime(2010, 1, 1), datetime(2010, 12, 31))
+        ae = ae.set_aggregation('bounded', 'SUM')
+        ae = ae.set_aggregation('no_start', 'SUM')
+        ae = ae.set_aggregation('no_stop', 'SUM')
+        ae = ae.set_aggregation('unbounded', 'SUM')
+        ae = ae.get_rg_from_sql(conn_str, 'rg_complex_dates', 
+                                feature_col='feature')
+        res1 = ae.set_interval(
+            datetime(2010, 1, 1), 
+            datetime(2010, 6, 30)).emit_M()
+        res2 = ae.set_interval(
+            datetime(2010, 7, 1), 
+            datetime(2010, 12, 31)).emit_M()
+        res3 = ae.set_interval(
+            datetime(2010, 1, 1), 
+            datetime(2010, 12, 31)).emit_M()
         ctrl_dtype = [('id', '<i8'), ('bounded', '<f8'), 
                       ('no_start', '<f8'), ('no_stop', '<f8'), 
                       ('unbounded', '<f8')]
@@ -55,14 +63,20 @@ class TestArrayEmitter(unittest.TestCase):
     def test_from_csv(self):
         db_file = uft.path_of_data('rg_complex_dates.csv')
         ae = array_emitter.ArrayEmitter()
-        ae.set_aggregation('bounded', 'SUM')
-        ae.set_aggregation('no_start', 'SUM')
-        ae.set_aggregation('no_stop', 'SUM')
-        ae.set_aggregation('unbounded', 'SUM')
-        ae.get_rg_from_csv(db_file, feature_col='feature')
-        res1 = ae.emit_M(datetime(2010, 1, 1), datetime(2010, 6, 30))
-        res2 = ae.emit_M(datetime(2010, 7, 1), datetime(2010, 12, 31))
-        res3 = ae.emit_M(datetime(2010, 1, 1), datetime(2010, 12, 31))
+        ae = ae.set_aggregation('bounded', 'SUM')
+        ae = ae.set_aggregation('no_start', 'SUM')
+        ae = ae.set_aggregation('no_stop', 'SUM')
+        ae = ae.set_aggregation('unbounded', 'SUM')
+        ae = ae.get_rg_from_csv(db_file, feature_col='feature')
+        res1 = ae.set_interval(
+            datetime(2010, 1, 1), 
+            datetime(2010, 6, 30)).emit_M()
+        res2 = ae.set_interval(
+            datetime(2010, 7, 1), 
+            datetime(2010, 12, 31)).emit_M()
+        res3 = ae.set_interval(
+            datetime(2010, 1, 1), 
+            datetime(2010, 12, 31)).emit_M()
         ctrl_dtype = [('id', '<i8'), ('bounded', '<f8'), 
                       ('no_start', '<f8'), ('no_stop', '<f8'), 
                       ('unbounded', '<f8')]
