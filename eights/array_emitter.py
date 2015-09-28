@@ -286,9 +286,7 @@ class ArrayEmitter(object):
         """
         # in-memory db
         conn = sqla.create_engine('sqlite://')
-        rg = open_csv(csv_file_path)
-        # TODO lalala dump the CSV to SQL somehow...
-        raise NotImplementedError()
+        self.__rg_table_name = utils.csv_to_sqlite(conn, csv_file_path)
         self.__conn = conn
         self.__rg_table_name = rg_table_name
         self.__col_specs['unit_id'] = unit_id_col
@@ -296,6 +294,9 @@ class ArrayEmitter(object):
         self.__col_specs['stop_time'] = stop_time_col
         self.__col_specs['feature'] = feature_col
         self.__col_specs['val'] = val_col
+        # SQLite doesn't really have datetimes, so we transparently translate
+        # to unix times.
+        self.__convert_to_unix_time = True
         return self
 
     def set_aggregation(self, feature_name, method):
