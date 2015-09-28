@@ -95,6 +95,9 @@ class TestArrayEmitter(unittest.TestCase):
                 res, 
                 np.array(ctrl_dat, dtype=ctrl_dtype)))  
 
+    def test_select_rows_in_M(self):
+        self.assertTrue(False)
+
 if __name__ == '__main__':
     unittest.main()
 

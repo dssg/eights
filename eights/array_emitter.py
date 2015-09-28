@@ -489,9 +489,17 @@ class ArrayEmitter(object):
                   stop_time_col=col_specs['stop_time'],
                   stop_time=stop_time,
                   feat_name=feat_name) for feat_name in feat_names])
-
-        sql_select = '{} {} {}'.format(sql_select_clause, sql_from_clause_top,
-                                       sql_from_clause_features)
+        # TODO we can probably do something more sophisticated than just 
+        # throwing the user's directives in here
+        sql_where_clause = ''
+        if self.__selections:
+            sql_where_clause = "WHERE " + "AND ".join(
+                ['({})'.format(sel) for sel in self.__selections]) 
+        sql_select = '{} {} {} {}'.format(
+            sql_select_clause, 
+            sql_from_clause_top,
+            sql_from_clause_features, 
+            sql_where_clause)
         query_result = conn.execute(sql_select)
         return utils.cast_list_of_list_to_sa(query_result.fetchall(), 
                                              col_names=query_result.keys())        
