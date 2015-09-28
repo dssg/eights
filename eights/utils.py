@@ -5,6 +5,8 @@ import itertools as it
 from datetime import datetime
 from dateutil.parser import parse
 
+import os
+
 NOT_A_TIME = np.datetime64('NaT')
 
 def utf_to_ascii(s):
@@ -516,12 +518,13 @@ def __make_digestible_list_of_list(sa):
                              col])
         elif 'm' in dtype or 'M' in dtype:
             res_cols.append([None if cell == NOT_A_TIME else
-                             np_time_to_unix_time(cell) for cell in col])
+                             to_unix_time(cell) for cell in col])
         else:
             res_cols.append(col)
     return it.izip(*res_cols)
 
 def csv_to_sqlite(conn, csv_path, table_name=None):
+    from eights.investigate import open_csv
     if table_name is None:
         table_name = os.path.splitext(os.path.basename(csv_path))[0]
     sql_drop = 'DROP TABLE IF exists "{}"'.format(table_name)
@@ -539,6 +542,6 @@ def csv_to_sqlite(conn, csv_path, table_name=None):
     sql_insert = 'INSERT INTO "{}" VALUES ({})'.format(
             table_name,
             ', '.join('?' * len(col_names)))
-    conn.executemany(sql_insert, data)
-    conn.commit()
+    for row in data:
+        conn.execute(sql_insert, row)
     return table_name

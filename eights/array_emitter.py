@@ -288,7 +288,6 @@ class ArrayEmitter(object):
         conn = sqla.create_engine('sqlite://')
         self.__rg_table_name = utils.csv_to_sqlite(conn, csv_file_path)
         self.__conn = conn
-        self.__rg_table_name = rg_table_name
         self.__col_specs['unit_id'] = unit_id_col
         self.__col_specs['start_time'] = start_time_col
         self.__col_specs['stop_time'] = stop_time_col
