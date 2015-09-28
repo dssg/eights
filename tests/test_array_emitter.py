@@ -96,7 +96,30 @@ class TestArrayEmitter(unittest.TestCase):
                 np.array(ctrl_dat, dtype=ctrl_dtype)))  
 
     def test_select_rows_in_M(self):
-        self.assertTrue(False)
+        db_file = uft.path_of_data('rg_select_rows_in_M.db')
+        conn_str = 'sqlite:///{}'.format(db_file)
+        ae = array_emitter.ArrayEmitter()
+        ae = ae.get_rg_from_sql(conn_str, 'select_rows_in_M')
+        ae = ae.set_default_aggregation('SUM')
+        ae_1 = ae.set_interval(2005, 2006)
+        ae_1 = ae_1.select_rows_in_M('cohort = 2009')
+        ae_2 = ae.set_interval(2005, 2007)
+        ae_2 = ae_2.select_rows_in_M('cohort = 2010')
+        ae_1_1 = ae_1.select_rows_in_M('took_ap_compsci')
+        ae_1_2 = ae_1.select_rows_in_M('NOT took_ap_compsci')
+        ae_2_1 = ae_2.select_rows_in_M('took_ap_compsci')
+        ae_2_2 = ae_2.select_rows_in_M('NOT took_ap_compsci')
+        ctrl_dtype = [('id', '<i8'), ('math_gpa', '<f8'), 
+                      ('english_gpa', '<f8'), ('absences', '<f8'), 
+                      ('cohort', '<f8'), ('took_ap_compsci', '<f8')]
+        ctrl_data = [[(0, 1.0, 1.0, 1.0, 2009.0, 1.0)],
+                     [(2, 3.0, 3.0, 3.0, 2009.0, 0.0)],
+                     [(1, 2.2, 2.2, 2.2, 2010.0, 1.0)],
+                     [(3, 4.4, 4.4, 4.4, 2010.0, 0.0)]]
+        for ae_sel, dat in zip((ae_1_1, ae_1_2, ae_2_1, ae_2_2), ctrl_data):
+            ctrl = np.array(dat, dtype=ctrl_dtype)
+            res = ae_sel.emit_M()
+            self.assertTrue(ctrl, res)
 
 if __name__ == '__main__':
     unittest.main()
