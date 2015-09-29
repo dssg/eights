@@ -505,7 +505,21 @@ class ArrayEmitter(object):
                                              col_names=query_result.keys())        
 
 
-    def subset_over(self, directive):
+    def subset_over(
+            self, 
+            interval_train_window_start,
+            interval_train_window_size,
+            interval_test_window_start,
+            interval_test_window_size,
+            interval_inc_value,
+            interval_expanding=True,
+            row_M_col_name=None,
+            row_M_train_window_start=None,
+            row_M_train_window_size=None,
+            row_M_test_window_start=None,
+            row_M_test_window_size=None,
+            row_M_inc_value=None,
+            row_M_expanding=True):
         """
         Generates ArrayGenerators according to some subsetting directive.
 
@@ -517,4 +531,51 @@ class ArrayEmitter(object):
         -------
         ?
         """
+        # If user doesn't specify windows for row subsets, we assume it's the
+        # same as it is in the interval subsets
+        if row_M_train_window_start is None:
+            row_M_train_window_start = interval_train_window_start
+        if row_M_train_window_size is None:
+            row_M_train_window_size = interval_train_window_size
+        if row_M_test_window_start is None:
+            row_M_test_window_start = interval_test_window_start
+        if row_M_test_window_size is None:
+            row_M_test_window_size = interval_test_window_size
+        if row_M_inc_value is None:
+            row_M_inc_value = interval_inc_value
+
+        conn = self.__conn
+        col_specs = self.__col_specs
+        table_name = self.__rg_table_name
+
+        sql_get_max_interval_end = 'SELECT MAX({}) FROM {}'.format(
+               col_specs['start_time'],
+               table_name)
+        interval_end = conn.execute(sql_get_max_interval_end).fetch()[0]
+        if row_M_col_name is not None:
+            sql_get_max_col = ('SELECT MAX({}) FROM {} '
+                               'WHERE {} AND {} = {}').format(
+                                   col_specs['val'],
+                                   table_name,
+                                   col_specs['feature'],
+                                   row_M_col_name)
+            row_M_end = conn.execute(sql_get_max_col).fetch()[0]
+        else:
+            row_M_end = interval_end
+
+        current_interval_train_start = interval_train_window_start
+        current_interval_train_end = (interval_train_window_start + 
+                                      interval_train_window_size)
+        current_interval_test_start = interval_test_window_start
+        current_interval_test_end = (interval_test_window_start + 
+                                      interval_test_window_size)
+        current_row_M_train_start = row_M_train_window_start
+        current_row_M_train_end = (row_M_train_window_start + 
+                                      row_M_train_window_size)
+        current_row_M_test_start = row_M_test_window_start
+        current_row_M_test_end = (row_M_test_window_start + 
+                                      row_M_test_window_size)
+        while (current_interval_test_end < interval_end and
+               current_row_M_test_end < row_M_end):
+            #TODO subsetting logic
         raise NotImplementedError()
