@@ -4,6 +4,8 @@ from investigate import open_csv
 from uuid import uuid4
 from eights import utils
 
+from sklearn.ensemble import RandomForestClassifier
+
 class ArrayEmitter(object):
     """
     Array emitter is a tool that accepts tables from either SQL or CSVs in the 
@@ -415,15 +417,7 @@ class ArrayEmitter(object):
         cp.__stop_time = stop_time
         return cp
         
-    def emit_M(self):
-        """Creates a structured array in M-format
-
-        Returns
-        -------
-        np.ndarray
-            Numpy structured array constructed using the specified queries and
-            subsets
-        """
+    def get_query(self):
         start_time = self.__start_time
         stop_time = self.__stop_time
         if self.__convert_to_unix_time:
@@ -500,7 +494,18 @@ class ArrayEmitter(object):
             sql_from_clause_top,
             sql_from_clause_features, 
             sql_where_clause)
-        query_result = conn.execute(sql_select)
+        return sql_select
+
+    def emit_M(self):
+        """Creates a structured array in M-format
+
+        Returns
+        -------
+        np.ndarray
+            Numpy structured array constructed using the specified queries and
+            subsets
+        """
+        query_result = self.__conn.execute(self.get_query())
         return utils.cast_list_of_list_to_sa(query_result.fetchall(), 
                                              col_names=query_result.keys())        
 
@@ -512,14 +517,15 @@ class ArrayEmitter(object):
             interval_test_window_start,
             interval_test_window_size,
             interval_inc_value,
-            interval_expanding=True,
+            interval_expanding=False,
             row_M_col_name=None,
             row_M_train_window_start=None,
             row_M_train_window_size=None,
             row_M_test_window_start=None,
             row_M_test_window_size=None,
             row_M_inc_value=None,
-            row_M_expanding=True):
+            row_M_expanding=False,
+            clfs=[{'clf': RandomForestClassifier}]):
         """
         Generates ArrayGenerators according to some subsetting directive.
 
@@ -577,5 +583,32 @@ class ArrayEmitter(object):
                                       row_M_test_window_size)
         while (current_interval_test_end < interval_end and
                current_row_M_test_end < row_M_end):
-            #TODO subsetting logic
-        raise NotImplementedError()
+            ae_train = self.set_interval(current_interval_train_start,
+                                        current_interval_train_end)
+            ae_test = self.set_interval(current_interval_test_start,
+                                        current_interval_test_end)
+            if row_M_col_name is not None:
+                ae_train = ae_train.select_rows_in_M(
+                        '{col} >= {start} AND {col} <= {stop}'.format(
+                            col=row_M_col_name,
+                            start=current_row_M_train_start,
+                            stop=current_row_M_train_stop))
+                ae_test = ae_test.select_rows_in_M(
+                        '{col} >= {start} AND {col} <= {stop}'.format(
+                            col=row_M_col_name,
+                            start=current_row_M_test_start,
+                            stop=current_row_M_test_stop))
+            # TODO this should actually run clfs and build an experiment 
+            # rather than doing this yield
+            yield ae_train, ae_test
+
+            if not interval_expanding:
+                current_interval_train_start += interval_inc_value
+            current_interval_train_end += interval_inc_value
+            current_interval_test_start += interval_inc_value
+            current_interval_test_end += interval_inc_value
+            if not row_M_expanding:
+                current_row_M_train_start += row_M_inc_value
+            current_row_M_train_end += row_M_inc_value
+            current_row_M_test_start += row_M_inc_value
+            current_row_M_test_end += row_M_inc_value

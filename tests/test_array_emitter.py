@@ -121,6 +121,32 @@ class TestArrayEmitter(unittest.TestCase):
             res = ae_sel.emit_M()
             self.assertTrue(ctrl, res)
 
+    def test_subset_over(self):
+        db_file = uft.path_of_data('rg_subset_over.db')
+        conn_str = 'sqlite:///{}'.format(db_file)
+        ae = array_emitter.ArrayEmitter()
+        ae = ae.get_rg_from_sql(conn_str, 'select_rows_in_M')
+        ae = ae.set_default_aggregation('SUM')
+        for train, test in ae.subset_over(
+            interval_train_window_start=2004,
+            interval_train_window_size=1,
+            interval_test_window_start=2006,
+            interval_test_window_size=1,
+            interval_inc_value=1,
+            interval_expanding=False,
+            row_M_col_name='cohort',
+            row_M_train_window_start=2008,
+            row_M_train_window_size=0,
+            row_M_test_window_start=2009,
+            row_M_test_window_size=0,
+            row_M_inc_value=1,
+            row_M_expanding=False):
+            print '-'*80
+            print train.get_query()
+            print
+            print test.get_query()
+            print
+
 if __name__ == '__main__':
     unittest.main()
 
