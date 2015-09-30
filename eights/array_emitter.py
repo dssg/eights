@@ -249,6 +249,7 @@ class ArrayEmitter(object):
         cp.__col_specs['stop_time'] = stop_time_col
         cp.__col_specs['feature'] = feature_col
         cp.__col_specs['val'] = val_col
+        cp.__resolve_cols()
         return cp
 
     def get_rg_from_csv(self, csv_file_path, unit_id_col=None, 
@@ -304,6 +305,7 @@ class ArrayEmitter(object):
         cp.__col_specs['stop_time'] = stop_time_col
         cp.__col_specs['feature'] = feature_col
         cp.__col_specs['val'] = val_col
+        cp.__resolve_cols()
         # SQLite doesn't really have datetimes, so we transparently translate
         # to unix times.
         cp.__convert_to_unix_time = True
@@ -417,13 +419,7 @@ class ArrayEmitter(object):
         cp.__stop_time = stop_time
         return cp
         
-    def get_query(self):
-        start_time = self.__start_time
-        stop_time = self.__stop_time
-        if self.__convert_to_unix_time:
-            start_time = utils.to_unix_time(start_time)
-            stop_time = utils.to_unix_time(stop_time)
-        
+    def __resolve_cols(self):
         col_specs = self.__col_specs
         conn = self.__conn
         table_name = self.__rg_table_name
@@ -439,7 +435,18 @@ class ArrayEmitter(object):
         for spec in ('unit_id', 'start_time', 'stop_time', 'feature', 'val'):
             if col_specs[spec] is None:
                 col_specs[spec] = unspecified_col_names.pop(0)
+
+    def get_query(self):
+        start_time = self.__start_time
+        stop_time = self.__stop_time
+        if self.__convert_to_unix_time:
+            start_time = utils.to_unix_time(start_time)
+            stop_time = utils.to_unix_time(stop_time)
         
+        col_specs = self.__col_specs
+        conn = self.__conn
+        table_name = self.__rg_table_name
+
         # get all features
         sql_features = 'SELECT DISTINCT {} FROM {};'.format(
                 col_specs['feature'], 
@@ -557,15 +564,15 @@ class ArrayEmitter(object):
         sql_get_max_interval_end = 'SELECT MAX({}) FROM {}'.format(
                col_specs['start_time'],
                table_name)
-        interval_end = conn.execute(sql_get_max_interval_end).fetch()[0]
+        interval_end = conn.execute(sql_get_max_interval_end).fetchone()[0]
         if row_M_col_name is not None:
-            sql_get_max_col = ('SELECT MAX({}) FROM {} '
-                               'WHERE {} AND {} = {}').format(
+            sql_get_max_col = ("SELECT MAX({}) FROM {} "
+                               "WHERE {} = '{}'").format(
                                    col_specs['val'],
                                    table_name,
                                    col_specs['feature'],
                                    row_M_col_name)
-            row_M_end = conn.execute(sql_get_max_col).fetch()[0]
+            row_M_end = conn.execute(sql_get_max_col).fetchone()[0]
         else:
             row_M_end = interval_end
 
@@ -592,12 +599,12 @@ class ArrayEmitter(object):
                         '{col} >= {start} AND {col} <= {stop}'.format(
                             col=row_M_col_name,
                             start=current_row_M_train_start,
-                            stop=current_row_M_train_stop))
+                            stop=current_row_M_train_end))
                 ae_test = ae_test.select_rows_in_M(
                         '{col} >= {start} AND {col} <= {stop}'.format(
                             col=row_M_col_name,
                             start=current_row_M_test_start,
-                            stop=current_row_M_test_stop))
+                            stop=current_row_M_test_end))
             # TODO this should actually run clfs and build an experiment 
             # rather than doing this yield
             yield ae_train, ae_test

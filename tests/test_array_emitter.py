@@ -125,7 +125,7 @@ class TestArrayEmitter(unittest.TestCase):
         db_file = uft.path_of_data('rg_subset_over.db')
         conn_str = 'sqlite:///{}'.format(db_file)
         ae = array_emitter.ArrayEmitter()
-        ae = ae.get_rg_from_sql(conn_str, 'select_rows_in_M')
+        ae = ae.get_rg_from_sql(conn_str, 'subset_over')
         ae = ae.set_default_aggregation('SUM')
         for train, test in ae.subset_over(
             interval_train_window_start=2004,
